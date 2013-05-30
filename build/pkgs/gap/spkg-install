@@ -47,7 +47,6 @@ for patch in ../patches/*.patch; do
     patch -p1 <"$patch"
     if [ $? -ne 0 ]; then
         echo >&2 "Error applying '$patch'"
-        exit 1
     fi
 done
 
@@ -55,7 +54,7 @@ done
 echo "Configuring GAP..."
 ./configure \
     --prefix="$SAGE_LOCAL" PREFIX="$SAGE_LOCAL" \
-    --with-gmp="$SAGE_LOCAL" \
+    --with-gmp=system \
     CC="$CC" CXX="$CXX" CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS"
 if [[ $? -ne 0 ]]; then
     echo >&2 "Error configuring GAP."

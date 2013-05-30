@@ -23,7 +23,6 @@ mv mpn/x86/p6/addmul_1,asm mpn/x86/p6/addmul_1.asm &&
 mv mpn/x86/p6/submul_1,asm mpn/x86/p6/submul_1.asm
 if [ $? -ne 0 ]; then
     echo >&2 "Error: moving *,asm files failed."
-    exit 1
 fi
 
 echo "Applying patches to upstream sources..."
@@ -31,7 +30,6 @@ for patch in ../patches/*.patch; do
     patch -p1 <"$patch"
     if [ $? -ne 0 ]; then
         echo >&2 "Error: '$patch' failed to apply."
-        exit 1
     fi
 done
 
@@ -368,3 +366,4 @@ echo "    cd $SAGE_ROOT"
 echo "    env SAGE_UPGRADING=yes make"
 echo "but note that this will usually take quite a lot of time."
 echo
+exit 0

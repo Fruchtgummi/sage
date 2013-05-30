@@ -35,7 +35,7 @@ cd src/
 echo "Applying patches (if any)..."
 for patch in ../patches/*.patch; do
     patch -p1 <"$patch"
-    check_error "Patch '$patch' failed to apply."
+    print "Patch '$patch' failed to apply."
 done
 
 

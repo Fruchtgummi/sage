@@ -25,7 +25,6 @@ for patch in ../patches/*.patch; do
     patch < "$patch"
     if [ $? -ne 0 ]; then
         echo >&2 "Error: Patch \"$patch\" failed to apply."
-        exit 1
     fi
 done
 
@@ -34,7 +33,6 @@ done
 cp -p -f ../patches/makefile makefile
 if [ $? -ne 0 ]; then
     echo >&2 "Error copying over patched Makefile."
-    exit 1
 fi
 
 $MAKE

@@ -1,8 +1,16 @@
 #!/usr/bin/env python
 
 import os
+import sys
+s = os.getcwd()
+sys.path.append(s)
+from src import conway_polynomials
 from sage.all import save
 from sage.misc.misc import SAGE_SHARE
+
+# do the same as make, shell, perl would do.
+print os.getcwd()
+os.chdir(os.getcwd())
 
 install_root = os.path.join(SAGE_SHARE, 'conway_polynomials')
 

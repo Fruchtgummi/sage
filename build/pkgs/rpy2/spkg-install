@@ -6,7 +6,3 @@ include $(DIST_MK)
 install:
 	export RHOMES="$(SAGE_LOCAL)/lib/R"; \
 	cd src; $(SETUP_PY_INSTALL)
-
-#	cd src; sage-setup.py install $(FILELIST_ARG)
-
-	

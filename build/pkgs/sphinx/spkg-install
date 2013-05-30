@@ -23,7 +23,7 @@ cd src
 echo "Patching Sphinx..."
 for p in ../patches/*.patch; do
     patch -p1 <"$p"
-    success "Error applying patch \"$p\""
+    echo "Error applying patch \"$p\""
 done
 echo
 
@@ -50,7 +50,7 @@ success "Error copying sphinx-build to $SAGE_LOCAL/bin/"
 echo
 
 echo "Creating grammar pickle..."
-python create_grammar_pickle.py
+python $srcdir/create_grammar_pickle.py
 success 'Error creating the grammar pickle'
 echo
 

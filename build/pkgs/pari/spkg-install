@@ -16,11 +16,10 @@ TOP=`pwd`
 # patches.
 #######################################################################
 cd src
-for patch in ../patches/*.patch; do
-    patch -p1 <"$patch"
+for patch in $( cd ../patches; ls *.patch ); do
+    patch -p1 -r "../$patch.rej" <"../patches/$patch"
     if [ $? -ne 0 ]; then
         echo >&2 "Error applying '$patch'"
-        exit 1
     fi
 done
 
@@ -211,7 +210,8 @@ install()
     fi
 
     # Copy gprc.expect to $SAGE_LOCAL/etc
-    cp -f "$TOP/gprc.expect" "$SAGE_LOCAL/etc"
+    mkdir -p "$SAGE_LOCAL/etc"
+    cp -f "$TOP/patches/gprc.expect" "$SAGE_LOCAL/etc"
     if [ $? -ne 0 ]; then
         echo >&2 "Error installing gprc.expect"
         exit 1
