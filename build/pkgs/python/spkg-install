@@ -28,7 +28,7 @@ for patch in ../patches/*.patch; do
 done
 
 # We are setting LDFLAGS so that we pick up Sage's readline
-LDFLAGS="-L$SAGE_LOCAL/lib $LDFLAGS"
+LDFLAGS="-L$SAGE_LOCAL/lib -Wl,-rpath=$SAGE_LOCAL/lib $LDFLAGS"
 export LDFLAGS
 
 if [ "$SAGE_DEBUG" = "yes" ]; then
