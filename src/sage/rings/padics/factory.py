@@ -1516,28 +1516,6 @@ from padic_valuation import pAdicValuation
 import padic_printing
 padic_field_cache = {}
 
-def _mod_minpoly(primitive_element, total_degree, base):
-    powers = [primitive_element**j for j in range(total_degree+1)]
-    powers = [pow.lift() for pow in powers]
-    powers = [pow.list() for pow in powers]
-    assert all([c.is_zero() for c in pow[total_degree:]])
-    powers = [pow[:total_degree] for pow in powers]
-    powers = [pow + [powers[0][0].parent().zero()]*(total_degree-len(pow)) for pow in powers]
-    from sage.misc.flatten import flatten
-    powers = [flatten([c.vector(base=base) for c in pow]) for pow in powers]
-    from sage.matrix.constructor import matrix
-    A = matrix(powers[:-1])
-    b = -A.matrix_space().row_space()(powers[-1])
-    x = A.solve_left(b)
-    assert x*A == b, x*A-b
-
-    x = x.list()
-    assert len(x) == total_degree, total_degree
-    R = primitive_element.parent().modulus().parent().change_ring(base)
-    minpoly = R(x+[1])
-    assert sum([c*primitive_element**i for i,c in enumerate(minpoly.coeffs())]).is_zero()
-    return minpoly
-
 #######################################################################################################
 #
 #  The Extension Factory -- creates extensions of p-adic rings and fields
