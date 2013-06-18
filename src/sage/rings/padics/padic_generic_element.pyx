@@ -40,6 +40,7 @@ from sage.rings.infinity import infinity
 from sage.libs.pari.gen import pari
 from sage.libs.pari.gen import PariError
 import sage.rings.rational_field
+from sage.structure.element import coerce_binop
 
 cdef long maxordp = (1L << (sizeof(long) * 8 - 2)) - 1
 

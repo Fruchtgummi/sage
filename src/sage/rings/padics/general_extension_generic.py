@@ -95,7 +95,7 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
         return GeneralExtensionGeneric.__implementation_ring(self.base_ring(), self._polynomial_ring, self._poly)
 
     @staticmethod
-    def __implementation_ring(base, polynomial_ring, modulus)
+    def __implementation_ring(base, polynomial_ring, modulus):
         """
         Return a ring isomorphic to the extension of ``modulus`` over ``base``.
 
@@ -372,7 +372,7 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
         gen_in_implementation_ring = modulus.map_coefficients(base_to_implementation_ring, implementation_ring).any_root()
         to_implementation_ring = lambda f: f.map_coefficients(base_to_implementation_ring, implementation_ring)(gen_in_implementation_ring)
 
-        from_implementation_ring = lambda f: f.bivariate_polynomial(???,base.uniformizer())
+        #from_implementation_ring = lambda f: f.bivariate_polynomial(???,base.uniformizer())
 
         return implementation_ring, from_implementation_ring, to_implementation_ring
 
