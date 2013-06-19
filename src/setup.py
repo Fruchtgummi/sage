@@ -292,7 +292,7 @@ class sage_build_ext(build_ext):
 
     def build_extensions(self):
         if 'NO_CYTHON' in os.environ  and os.environ['NO_CYTHON'] == 'yes':
-            print "NOT building extensions"
+            print "Not building extensions."
             return
 
         from distutils.debug import DEBUG
@@ -496,46 +496,43 @@ class sage_build_ext(build_ext):
 #############################################
 
 if not sdist:
-    print "Updating Cython code...."
-    t = time.time()
+    import os
+    if "NO_CYTHON" in os.environ and os.environ["NO_CYTHON"]=="yes":
+        print "Not updating Cython code."
+    else:
+        print "Updating Cython code...."
+        t = time.time()
 
-    from Cython.Build import cythonize
-    import Cython.Compiler.Options
-    import Cython.Compiler.Main
+        from Cython.Build import cythonize
+        import Cython.Compiler.Options
 
-    # Sage uses these directives (mostly for historical reasons).
-    Cython.Compiler.Options.embed_pos_in_docstring = True
-    Cython.Compiler.Options.directive_defaults['autotestdict'] = False
-    Cython.Compiler.Options.directive_defaults['cdivision'] = True
-    Cython.Compiler.Options.directive_defaults['fast_getattr'] = True
-    # The globals() builtin in Cython was fixed to return to the current scope,
-    # but Sage relies on the broken behavior of returning to the nearest
-    # enclosing Python scope (e.g. to perform variable injection).
-    Cython.Compiler.Options.old_style_globals = True
+        # Sage uses these directives (mostly for historical reasons).
+        Cython.Compiler.Options.embed_pos_in_docstring = True
+        Cython.Compiler.Options.directive_defaults['autotestdict'] = False
+        Cython.Compiler.Options.directive_defaults['cdivision'] = True
+        Cython.Compiler.Options.directive_defaults['fast_getattr'] = True
+        # The globals() builtin in Cython was fixed to return to the current scope,
+        # but Sage relies on the broken behavior of returning to the nearest
+        # enclosing Python scope (e.g. to perform variable injection).
+        Cython.Compiler.Options.old_style_globals = True
 
-    if os.environ.get('SAGE_DEBUG', None) != 'no':
-        Cython.Compiler.Main.default_options['gdb_debug'] = True
-        Cython.Compiler.Main.default_options['output_dir'] = 'build'
+        force = True
+        version_file = os.path.join(os.path.dirname(__file__), '.cython_version')
+        if os.path.exists(version_file) and open(version_file).read() == Cython.__version__:
+            force = False
 
-    force = True
-    version_file = os.path.join(os.path.dirname(__file__), '.cython_version')
-    if os.path.exists(version_file) and open(version_file).read() == Cython.__version__:
-        force = False
+        for ext_module in ext_modules:
+            ext_module.include_dirs += include_dirs
 
-    for ext_module in ext_modules:
-        ext_module.include_dirs += include_dirs
+        ext_modules = cythonize(
+            ext_modules,
+            nthreads = int(os.environ.get('SAGE_NUM_THREADS', 0)),
+            build_dir = 'build/cythonized',
+            force=force)
 
-    ext_modules = cythonize(
-        ext_modules,
-        nthreads = int(os.environ.get('SAGE_NUM_THREADS', 0)),
-        build_dir = None, # Don't "cythonize out-of-tree" (cf. #14570) until
-                          # sage-clone and sage-sync-build can deal with that.
-        force=force)
-
-    open(version_file, 'w').write(Cython.__version__)
-    print "Finished compiling Cython code (time = %s seconds)" % (time.time() - t)
-    sys.stdout.flush()
-
+        open(version_file, 'w').write(Cython.__version__)
+        print "Finished compiling Cython code (time = %s seconds)" % (time.time() - t)
+        sys.stdout.flush()
 
 #########################################################
 ### Distutils

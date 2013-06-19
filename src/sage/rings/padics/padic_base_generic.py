@@ -374,3 +374,6 @@ class pAdicBaseGeneric(pAdicGeneric):
         g.axes(False)
         g.set_aspect_ratio(1)
         return g
+
+    def is_eisenstein_over_unramified(self):
+        return True

@@ -21,7 +21,9 @@ from sage.misc.cachefunc import cached_method
 
 from sage.rings.all import infinity
 
-class NewtonPolygon(object):
+from sage.structure.sage_object import SageObject
+
+class NewtonPolygon(SageObject):
     """
     A Newton polygon given by its set of points.
 
@@ -79,6 +81,48 @@ class NewtonPolygon(object):
 
         """
         return len(self._points) - 1
+
+    def __getitem__(self, i):
+        """
+        Return the ordinate of the Newton polygon at ``i``.
+
+        EXAMPLES::
+
+            sage: NP = NewtonPolygon([infinity,infinity,4,0,infinity,-8/3,-4,-4,infinity])
+            sage: NP[0]
+            +Infinity
+            sage: NP[4]
+            -4/3
+            sage: NP[0:3]
+            [+Infinity, +Infinity, 4]
+            sage: NP[-2]
+            -4
+
+        """
+        return self.ordinates()[i]
+
+    @cached_method
+    def ordinates(self):
+        """
+        Return the ordinates of the Newton polygon.
+
+        EXAMPLES::
+
+            sage: NP = NewtonPolygon([infinity,infinity,4,0,infinity,-8/3,-4,-4,infinity])
+            sage: NP.ordinates()
+            [+Infinity, +Infinity, 4, 0, -4/3, -8/3, -4, +Infinity]
+
+        """
+        ret = []
+        for side in self.sides():
+            l = side[1][0]-side[0][0]
+            if side[0][1] is infinity or side[1][1] is infinity:
+                ret.extend([infinity]*l)
+            else:
+
+                ret.extend([side[0][1]+i*(side[1][1]-side[0][1])/l for i in range(l)])
+        ret.append(self._points[-1][1])
+        return ret
 
     @cached_method
     def _finite_lower_convex_hull(self):
@@ -293,3 +337,8 @@ class NewtonPolygon(object):
             else:
                 ret.append((s[1][1]-s[0][1])/(s[1][0]-s[0][0]))
         return ret
+
+    def __eq__(self, other):
+        if not isinstance(other, NewtonPolygon):
+            return False
+        return self.sides() == other.sides()

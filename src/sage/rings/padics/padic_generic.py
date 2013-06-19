@@ -31,6 +31,7 @@ from sage.rings.ring import PrincipalIdealDomain
 from sage.rings.integer import Integer
 from sage.rings.padics.padic_printing import pAdicPrinter
 from sage.misc.cachefunc import cached_method
+from sage.categories.principal_ideal_domains import PrincipalIdealDomains
 
 class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
     def __init__(self, base, p, prec, print_mode, names, element_class, category=PrincipalIdealDomains()):

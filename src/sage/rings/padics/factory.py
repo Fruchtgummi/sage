@@ -1147,9 +1147,85 @@ class GenericExtensionFactory(AbstractFactory):
 
     """
     @staticmethod
+    def krasner_check(poly):
+        """
+        Return wheth the Eisenstein polynomial ``poly`` uniquely defines an
+        extension by Krasner's lemma.
+
+        ALGORITHM:
+
+        By Krasner's lemma, given `a,b` algebraic over `K`, we have that
+        `K(a)\subseteq K(b)` if `v(a-b)>v(a_i-a)` for all conjugates `a_i` of
+        `a`.
+
+        We can therefore guarantee that ``poly`` uniquely defines an extension,
+        if for all `a` and `c` whose minimal polynomials `f` and `g` reduce to
+        ``poly``, there is a conjugate `b` of `c` such that `a,b` satisfy
+        Krasner's lemma and vice versa.
+
+        One can show that the distance `d(f,g)=min\{v(g_i-f_i)+1/n\}` with `n`
+        the degree of `f` and `g` satisfies
+        `d(f,g)=\sum_{a_i}\min\{v(a-b),v(a-a_i)\}` for `b` the conjugate of `c`
+        closest to `a`.
+
+        A direct computation shows that `v(a-b)>v(a_i-a)` for all `a_i` iff
+        `d(f,g)<\max_{a_i\neq a}\{v(a-a_i)\}\sum_{a_i\neq a} v(a-a-i)`. The
+        right hand side of this expression can be computed from the Newton
+        polygon of `f(x+a)`.
+
+        In other words, to decide if ``poly`` uniquely defines an extension, we
+        compute these `v(a-a_i)` and we compute a bound on `d(f,g)`.
+
+        EXAMPLES::
+
+            sage: from sage.rings.padics.factory import QpExtensionFactory
+
+            sage: K = Qp(2,50)
+            sage: R.<x> = K[]
+            sage: QpExtensionFactory.krasner_check( x^2 + 2*x + 2 )
+
+        """
+        if not GenericExtensionFactory.is_eisenstein(poly):
+            raise ValueError("only implemented for Eisenstein polynomials")
+
+        K = poly.base_ring()
+        n = ZZ(poly.degree())
+
+        # a_i-a are the roots of f(x+a)
+        # the valuation of a_i-a is therefore given by the slopes of the Newton
+        # polygon of f(x+a)/x which can be determined from its Taylor expansion
+
+        # to compute the Taylor expansion, we have to work in the quotient L = K[x]/(f)
+        L = K.extension(poly, names="a", check=False)
+        coeffs = [(poly.derivative(i)(L.gen()),L(ZZ(i).factorial())) for i in range(1,n+1)]
+        vals = [a.valuation() - b.valuation() for a,b in coeffs]
+
+        from newton_polygon import NewtonPolygon
+        NP = NewtonPolygon(vals)
+        assert NP == NP.principal_part()
+
+        for i,((c,_),v) in enumerate(zip(coeffs,vals)):
+            if c.is_zero() and NP[i] == v:
+                raise ValueError("insufficient precision to determine whether polynomial defines a unique extension")
+
+        # the valuations of the a-a_i
+        conjugate_vals = []
+        for side,slope in zip(NP.sides(),NP.slopes()):
+            conjugate_vals.extend([-slope]*(side[1][0]-side[0][0]))
+        assert len(conjugate_vals) == n - 1
+
+        # now we compute a bound on d(f,g)
+        dfg = min([n*poly[i].precision_absolute() + i for i in range(n)])
+
+        print dfg,sum(conjugate_vals) + max(conjugate_vals)
+
+        if dfg <= sum(conjugate_vals) + max(conjugate_vals):
+            raise ValueError("polynomial does probably not determine a unique totally ramified extension")
+
+    @staticmethod
     def is_eisenstein(poly):
         """
-        Return whether ``poly`` is Eisenstein.
+        Return whether the monic irreducible polynomial ``poly`` is Eisenstein.
 
         A polynomial is Eisenstein if its leading coefficient is one, the
         constant term has valuation 1 and all other coefficients have positive
@@ -1181,6 +1257,55 @@ class GenericExtensionFactory(AbstractFactory):
         if not all([c.valuation() for c in poly.list()[:-1]]):
             return False
         return True
+
+    @staticmethod
+    def is_trivial(poly):
+        """
+        Return whether the monic irreducible polynomial ``poly`` defines a
+        trivial extension, i.e., whether it is linear.
+
+        EXAMPLES::
+
+            sage: R = Zp(5)
+            sage: S.<x> = R[]
+            sage: f = x^4 + 14*x + 9
+            sage: from sage.rings.padics.factory import ZpExtensionFactory
+            sage: ZpExtensionFactory.is_trivial(f)
+            False
+            sage: f = x + 1
+            sage: ZpExtensionFactory.is_trivial(f)
+            True
+
+        """
+        if not poly.is_monic():
+            raise ValueError("poly must be monic")
+        return poly.degree() == 1
+
+    @staticmethod
+    def is_totally_ramified(poly):
+        """
+        Return whether the monic irreducible polynomial ``poly`` defines a
+        totally ramified extension.
+
+        EXAMPLES::
+
+            sage: R = Zp(5)
+            sage: S.<x> = R[]
+            sage: f = x^4 + 14*x + 9
+            sage: from sage.rings.padics.factory import ZpExtensionFactory
+            sage: ZpExtensionFactory.is_totally_ramified(f)
+            False
+            sage: f = x^2 + 5*x + 25
+            sage: ZpExtensionFactory.is_totally_ramified(f)
+
+        """
+        if not poly.is_monic():
+            raise ValueError("poly must be monic")
+        F = poly.map_coefficients(lambda c:c.residue(), poly.base_ring().residue_class_field()).factor()
+        if len(F)!=1:
+            raise ValueError("poly must be irreducible")
+
+        return F[0][0].degree()==1
 
     @staticmethod
     def is_unramified(poly):

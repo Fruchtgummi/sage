@@ -23,6 +23,9 @@ from sage.misc.latex import latex
 from sage.rings.integer import Integer
 
 class EisensteinExtensionGeneric(pAdicExtensionGeneric):
+    """
+    TODO: this is only for Eisenstein over Qp/Zp.
+    """
     def __init__(self, poly, prec, print_mode, names, element_class):
         """
         Initializes self.
@@ -301,3 +304,6 @@ class EisensteinExtensionGeneric(pAdicExtensionGeneric):
 
 #     def has_root_of_unity(self, n):
 #         raise NotImplementedError
+
+    def is_eisenstein_over_unramified(self):
+        return True
