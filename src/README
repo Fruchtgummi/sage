@@ -1,0 +1,4 @@
+The build system in src is currenly *not* used by Sage ("the distribution"). it is intended to
+
+- create source tarballs
+- build distributable Sage ("the library") packages
