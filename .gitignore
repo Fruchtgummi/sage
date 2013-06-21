@@ -3,3 +3,11 @@
 /local
 /logs
 /upstream
+
+# backup
+*~
+
+# build system
+/GNUmakefile.in
+/GNUmakefile
+/src/*-stamp
