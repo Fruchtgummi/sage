@@ -33,16 +33,31 @@ $(CORE_MODULES:%=%-configure-stamp): %-configure-stamp: $(abs_srcdir)/%/configur
 	cd $*; $(abs_top_srcdir)/$*/configure $(CORE_OPTS) $(CORE_ENV)
 	touch $@
 
-$(CORE_MODULES:%=%-build): %-build: %-build-stamp
-$(CORE_MODULES:%=%-build-stamp): %-build-stamp: %-configure-stamp
+$(CORE_MODULES:%=%-reconfigure): %-reconfigure: $(abs_srcdir)/%/configure
+	-mkdir -p $*
+	cd $*; $(abs_top_srcdir)/$*/configure $(CORE_OPTS) $(CORE_ENV)
+	touch $(dirname $@/$*-configure-stamp)
+
+# FIXME: use more env.sh
+# $(CORE_MODULES:%=%-build): %-build: %-build-stamp
+$(CORE_MODULES:%=%-build): %-build: %-configure-stamp
 	export $(CORE_ENV); \
+	source $(ENV_SH); \
 	$(MAKE) -C$* V=$(V_$(V))
-	touch $@
+
+# hack, just bypass all stamps. don't use!
+$(CORE_MODULES:%=%-build-bypass): %-build-bypass:
+	export $(CORE_ENV) \
+	       PYTHONHOME="$(abs_builddir)/local" \
+	       PYTHONPATH="$(abs_builddir)/$$path"; \
+	source $(ENV_SH); \
+	$(MAKE) -C$* V=$(V_$(V))
 
 $(CORE_MODULES:%=%-install-stamp): %-install-stamp: %-install
 	touch $@
 
 $(CORE_MODULES:%=%-install): %-install: %-build-stamp
+	@echo $@ ...
 	$(MAKE) -C$* install
 
 # distribute core modules as tarballs
@@ -65,7 +80,9 @@ $(CORE_MODULES:%=%-builtin.tar.gz): %-builtin.tar.gz: %-configure-stamp
 
 ### core module dependencies ###
 
-src/doc-configure-stamp: # src/sage-install-stamp
+#FIXME: install takes ages, shouldnt be necessary
+src/doc-configure-stamp: src/sage-build
+
 src/sage-configure-stamp: # src/c_lib-build-stamp
 
 PYTHON ?= $(abs_top_builddir)/local/bin/python
@@ -93,6 +110,7 @@ src/c_lib-configure-stamp: @DEP_mpir@ @DEP_ntl@ @DEP_pari@ @DEP_polybori@ \
 
 BIN=src/bin-install-stamp
 CSAGE=src/c_lib-install-stamp
+DOC=src/doc-build               # doc will not be installed
 SAGE=src/sage-install-stamp
 
 sage-stuff: $(SAGE)
@@ -128,33 +146,31 @@ endef
 
 # FIXME: decruft environment!!!1
 # this apparently is *not* prefix
-SAGE_LOCAL=@abs_top_builddir@/local
+SAGE_LOCAL = @abs_top_builddir@/local
+ENV_SH = dist/etc/env.sh
 
 ### generic build stamp rule
+# FIXME: call $(MAKE) -f spkg-install (after transition)
 # FIXME: use more env.sh
-# FIXME: pass FILELIST
 # FIXME: PYTHONPATH must not be here
-# FIXME: SINGULARPATH must not be here
 # (source local/etc/env.d/*.sh from dist?)
-#$(INST)/%: $(PKGSDIR)/$$(firstword $$(subst -, ,$$*))/src-$$(lastword $$(subst -, ,$$*)) | $(SAGE_LOGS) $(INST) $(PKGSDIR)
 .SECONDEXPANSION:
 $(INST)/%: $(PKGSDIR)/% | $(SAGE_LOGS) $(INST) $(PKGSDIR)
-	path=$(PKGSDIR)/$(firstword $(subst -, ,$*)); \
+	path=$(PKGSDIR)/$(firstword $(subst -, ,$*)); mkdir -p $$path; \
 	[ -d $$path/patches -o -h $$path/patches ] || $(LN_S) $(abs_top_srcdir)/$$path/patches $$path;\
 	export CC="@CC@" CFLAGS="@CFLAGS@" \
 	       MAKE=$(MAKE) UNAME="@UNAME@" \
 	       srcdir="$(abs_top_srcdir)/$$path" \
 	       PYTHONHOME="$(abs_builddir)/local" \
-	       PYTHONPATH="$(abs_builddir)/$$path" \
-	       SINGULARPATH="$(SAGE_LOCAL)/share/singular" \
-	       SINGULAR_EXECUTABLE="$(SAGE_LOCAL)/bin/Singular"; \
-	source dist/etc/env.sh; \
+	       PYTHONPATH="$(abs_builddir)/$$path"; \
+	source $(ENV_SH); \
 	cd $$path; \
 	rm -rf src; \
 	$(LN_S) ../$* src || exit 1; \
-	echo "$(abs_top_srcdir)/$$path/spkg-install" ;\
+	echo "$(abs_top_srcdir)/$$path/spkg-install FILELIST=\"$@\"" ;\
+	export FILELIST="$(abs_top_builddir)/$@"; \
 	$(PIPE) "$(abs_top_srcdir)/$$path/spkg-install" 'tee -a $(SAGE_LOGS)/$*.log'
-	touch $@
+	@[ -s "$(abs_top_builddir)/$@" ] || echo "BUG, empty filelist?! (ignored)"
 
 .SECONDEXPANSION:
 $(INSTALL_FP_NAMES:%=%-info): %-info: build/pkgs/%/package-version.txt
@@ -178,7 +194,22 @@ DISABLED$(INSTALL_FP_NAMES:%=%-configure): %-configure: build/pkgs/%/src
 	       PYTHONHOME="$(abs_builddir)/local"; \
 	$(MAKE) -f$(abs_top_srcdir)/build/pkgs/$*/spkg-install -Cbuild/pkgs/$* configure
 
-
+# uninstall all installations of $*. shouldn't be more than one at a time.
+$(INSTALL_FP_NAMES:%=%-uninstall): %-uninstall:
+	@if test -n "$$(shopt -s nullglob; echo $(INST)/$*-*)"; then \
+	  dirs=;\
+	  while read f; do \
+	    [ -n "$${f/\/*/}" ] && \
+		   echo "BUG in $* filelist: relative path: $$f" && continue; \
+	    [ -d $$f ] && dirs+="$$f" || rm $$f; \
+	  done < $(INST)/$*-*; \
+	  for i in $$dirs; do \
+	    rmdir $$i; \
+	  done; \
+	  rm $(INST)/$*-*; \
+	else \
+	  echo "no $* installed..."; \
+	fi
 
 p=%
 define unpack
@@ -266,8 +297,19 @@ start: build
 # $ ./sage --docbuild -H
 doc: doc-html
 
-doc-html: build
-	$(PIPE) "./sage --docbuild --no-pdf-links all html $(SAGE_DOCBUILD_OPTS) 2>&1" "tee -a logs/dochtml.log"
+src/doc-configure-stamp: $(doc-symlink)
+
+docsymlink = $(SAGE_LOCAL)/share/doc/sage
+# this is required, as docs wont get installed by default.
+# relocation changes abs_top_builddir :|
+# lets just recreate the link (instead of pointing to ../../../../.....)
+$(docsymlink):
+	rm -f $@
+	$(LN_S) $(abs_top_srcdir)/src/doc/output $@
+
+doc-html: src/doc-build
+
+#$(PIPE) "./sage --docbuild --no-pdf-links all html $(SAGE_DOCBUILD_OPTS) 2>&1" "tee -a logs/dochtml.log"
 
 doc-html-mathjax: build
 	$(PIPE) "./sage --docbuild --no-pdf-links all html -j $(SAGE_DOCBUILD_OPTS) 2>&1" "tee -a logs/dochtml.log"
@@ -391,3 +433,10 @@ include deps.in
 
 uninstall-local:
 	rm -rf src/*-stamp
+
+# just remove it...
+$(INSTALL_FP_NAMES:%=%-clean): %-clean:
+	rm -rf build/pkgs/$*/src-*
+	rm -rf build/pkgs/$*-*
+	rm -rf build/pkgs/$*/*-stamp
+	@VPATH_BUILD_TRUE@rm -rf build/pkgs/$*

@@ -6,9 +6,9 @@
 # this is intended for installation within spkg-install
 #
 # same functionality as install-sh, but also
-# -F FILELIST append target filenames into filelist
-# -D DESTDIR  prepend destdir before copy
-# -v          verbose output
+# -F|--record FILELIST append target filenames into filelist
+# -D DESTDIR           prepend destdir before copy
+# -v                   verbose output
 #
 # EXAMPLES
 #
@@ -39,7 +39,7 @@ while test $# -ne 0; do
     -D)
       shift; destdir=$1; shift
       ;;
-    -F)
+    -F|--record)
       shift; filelist=$1; shift
       ;;
     -v)
@@ -109,10 +109,10 @@ esac
 
 if test -n "$filelist"; then
   set -C
-  until 2> /dev/null > .$filelist.lock; do :; done
-  trap 'rm -f .$filelist.lock; exit $?' INT TERM EXIT
+  trap 'rm -f $filelist.lock; exit $?' INT TERM EXIT
+  until 2> /dev/null > $filelist.lock; do :; done
   set +C
-endif
+fi
 
 # $@ holds the list of files
 for src in $@; do
@@ -124,9 +124,9 @@ for src in $@; do
   args="$args $1"
   if test -n "$filelist"; then
     if test x$verbose = xyes; then
-      echo "recording $dst_arg/$dst to $filelist"
+      echo "recording $dst to $filelist"
     fi
-    echo $dst_arg/$dst >> $filelist
+    echo $dst >> $filelist
   fi
   shift
 done

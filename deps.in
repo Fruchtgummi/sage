@@ -458,7 +458,9 @@ $(INST)/$(FP_pygments): @DEP_python@ @DEP_setuptools@
 # on the one hand, programs needed for the build/install process of the
 # Sage library (e.g. JINJA2), and on the
 # other hand all dependencies for Cython files (e.g. PARI, NTL, MPIR).
-src/sage-configure-stamp: $(CSAGE)
+#
+# this is unneeded.
+# src/sage-configure-stamp: src/c_lib-build
 
 src/c_lib-configure-stamp: \
     @DEP_atlas@ \
@@ -540,14 +542,6 @@ $(INST)/$(FP_sagenb): @DEP_sphinx@
 # direct phony targets: (FIXME: not phony yet)
 .SECONDEXPANSION:
 $(INSTALL_FP_NAMES:%=%-install): %-install: $(INST)/$$(FP_$$*)
-
-$(INSTALL_FP_NAMES:%=%-uninstall): %-uninstall:
-	@echo not implemented
-
-# just remove it...
-$(INSTALL_FP_NAMES:%=%-clean): %-clean:
-	rm -rf build/pkgs/$*/src-*
-	rm -rf build/pkgs/$*/*-stamp
 
 debugcheck:
 	echo $(FP_ntl) $(DEP_libm4rie)

@@ -11,6 +11,9 @@ AC_CONFIG_MACRO_DIR([m4])
 # abs_top_builddir is not available here.
 AC_PREFIX_DEFAULT(`pwd`/local)
 
+# VPATH
+AM_CONDITIONAL([VPATH_BUILD], [test ! x$srcdir = "x."])
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -317,8 +320,9 @@ AC_SUBST(UNAME, `uname`)
 AC_CONFIG_FILES([GNUmakefile
                  deps
                  dist/spkg.mk
-                 dist/bin/Makefile
                  dist/Makefile
+                 dist/bin/Makefile
+                 dist/etc/Makefile
                  dist/etc/env.sh])
 
 AC_CONFIG_FILES([dist/bin/sage-dist-install],
@@ -336,6 +340,8 @@ AC_CONFIG_FILES([sage],
 # AC_CONFIG_SUBDIRS([src/bin])
 
 AC_OUTPUT
+AC_SUBST([FOREIGN_AVAILABLE])
+AC_SUBST([FOREIGN_DISABLED])
 
 if test $FOREIGN_DEFAULT = yes; then
    packageinfo="installing all packages"
