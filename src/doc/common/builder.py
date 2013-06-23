@@ -28,11 +28,11 @@ from sage.misc.cachefunc import cached_method
 from sage.misc.misc import sage_makedirs as mkdir
 from sage.env import SAGE_DOC, SAGE_SRC
 
-# Load the options, including
-#     SAGE_DOC, LANGUAGES, SPHINXOPTS, PAPER, OMIT,
-#     PAPEROPTS, ALLSPHINXOPTS, NUM_THREADS, WEBSITESPHINXOPTS
-# from build_options.py.
-execfile(os.path.join(SAGE_DOC, 'common' , 'build_options.py'))
+# Load the options
+from build_options import SAGE_DOC, LANGUAGES, SPHINXOPTS, PAPER, OMIT, \
+                          PAPEROPTS, ALLSPHINXOPTS, NUM_THREADS, \
+                          WEBSITESPHINXOPTS, SAGE_DOC_SRC
+#execfile(os.path.join(SAGE_DOC, 'common' , 'build_options.py'))
 
 
 ##########################################
