@@ -11,3 +11,16 @@
 /GNUmakefile.in
 /GNUmakefile
 /src/*-stamp
+
+Makefile
+Makefile.in
+config.guess
+config.sub
+config.h.in
+configure
+missing
+autom4te.cache
+install-sh
+
+*m4
+!/m4/ac_foreign.m4
