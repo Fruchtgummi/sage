@@ -4,6 +4,7 @@ diff -rup singular-orig/Singular/Makefile.in singular-3.1.5.p7/Singular/Makefile
 @@ -665,11 +665,11 @@ install-bindist: $(HEADERS) $(SOURCES) M
  
  install-sharedist: ${SLIBS_FILES} LIB/gftables
++	chmod +rX ${SLIBS_FILES} ${GFTABLES}
  	${MKINSTALLDIRS} ${install_slibdir}
 -	cp ${SLIBS_FILES} ${install_slibdir}
 +	${INSTALL_DATA} ${SLIBS_FILES} ${install_slibdir}
@@ -13,27 +14,6 @@ diff -rup singular-orig/Singular/Makefile.in singular-3.1.5.p7/Singular/Makefile
  	${MKINSTALLDIRS} ${install_slibdir}/surfex
 -	cp LIB/surfex/surfex.jar ${install_slibdir}/surfex
 +	${INSTALL_DATA} LIB/surfex/surfex.jar ${install_slibdir}/surfex
- 	chmod -R +rX ${install_slibdir}/*
+-	chmod -R +rX ${install_slibdir}/*
  
  tar:
-diff -rup singular-orig/Singular/Makefile.in~ singular-3.1.5.p7/Singular/Makefile.in~
---- singular-orig/Singular/Makefile.in~	2013-06-25 09:56:21.000000000 +0200
-+++ singular-3.1.5.p7/Singular/Makefile.in~	2013-06-25 07:51:34.000000000 +0200
-@@ -568,7 +568,7 @@ installbin: ${SING_EXEC} libparse ESingu
- 	${INSTALL_PROGRAM} libparse ${RUN_SINGULARS} ${bindir}
- 	${INSTALL_PROGRAM} ESingular TSingular ${bindir}
- 	${INSTALL_PROGRAM} surfex ${bindir}
--	-chmod a+x ${SINGULAR}
-+	#chmod a+x ${SINGULAR}
- 	rm -f ${bindir}/${SING_EXEC}${EXEC_EXT}
- 	cd ${bindir}; ${LN_S} ${SINGULAR} Singular${EXEC_EXT};
- 
-@@ -580,7 +580,7 @@ installbin-nolns: ${SING_EXEC} libparse
- 	done
- 	${INSTALL_PROGRAM} libparse ${RUN_SINGULARS} ${bindir}
- 	${INSTALL_PROGRAM} ESingular TSingular ${DL_LIBS} ${bindir}
--	-chmod a+x ${SINGULAR}
-+	#chmod a+x ${SINGULAR}
- 	rm -f ${bindir}/${SING_EXEC}${EXEC_EXT}
- 	${INSTALL_PROGRAM} ${SINGULAR} ${bindir}/Singular${EXEC_EXT};
- 
