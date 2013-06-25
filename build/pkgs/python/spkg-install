@@ -70,6 +70,7 @@ build()
         exit 1
     fi
 
+    # FIXME: MAKEFLAGS?
     $MAKE
     if [ $? -ne 0 ]; then
         echo >&2 "Error building Python."
@@ -84,7 +85,7 @@ build()
     # The "-i" option to ignore errors is crucial, especially in the
     # case of upgrades.
     # FIXME: MAKEFLAGS?
-    $MAKE -j1 install
+    $MAKE -j1 install INSTALL="sage-dist-install -F '$FILELIST'"
     if [ $? -ne 0 ]; then
         echo >&2 "Error installing Python."
         exit 1
