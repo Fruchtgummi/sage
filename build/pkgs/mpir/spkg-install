@@ -314,6 +314,7 @@ fi
 ###############################################################################
 
 echo "Now building MPIR..."
+#FIXME: MAKEFLAGS?
 $MAKE
 if [ $? -ne 0 ]; then
     echo >&2 "Error building MPIR."
@@ -348,7 +349,8 @@ fi
 
 echo "Now installing MPIR..."
 # The potential race condition in `make install` was fixed in MPIR 2.1.4.
-$MAKE install
+#FIXME: MAKEFLAGS?
+$MAKE install INSTALL="sage-dist-install -F '$FILELIST'" DESTDIR="$DESTDIR"
 if [ $? -ne 0 ]; then
     echo >&2 "Error installing MPIR."
     if [ "$UNAME" != "CYGWIN" ]; then  # On Cygwin an error is not fatal.
@@ -356,6 +358,8 @@ if [ $? -ne 0 ]; then
     fi
 fi
 
+echo
+echo "FIXME: will this be taken care of automatically??"
 echo
 echo "Remember to rebuild the Sage library ('./sage -b') such that it"
 echo "will use the new MPIR."
