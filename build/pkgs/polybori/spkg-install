@@ -6,6 +6,7 @@ if [ "$SAGE_LOCAL" = "" ]; then
    exit 1
 fi
 
+CUR=`cwd`
 WORKDIR=${PWD}/src
 SCONS=scons
 
@@ -16,7 +17,7 @@ prepare_polybori()
     fi
 
     # place configuration file
-    cp ../patches/custom.py .
+    cp $CUR/patches/custom.py .
     if [ $? -ne 0 ]; then
         echo >&2 "Error copying 'custom.py'"
         exit 1
@@ -24,11 +25,10 @@ prepare_polybori()
 
     # Apply patches.  See SPKG.txt for information about what each patch
     # does.
-    for patch in ../patches/*.patch; do
+    for patch in $CUR/patches/*.patch; do
         patch -p1 < "$patch"
         if [ $? -ne 0 ]; then
             echo >&2 "Error applying '$patch'"
-            exit 1
         fi
     done
 }
