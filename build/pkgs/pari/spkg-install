@@ -16,8 +16,8 @@ TOP=`pwd`
 # patches.
 #######################################################################
 cd src
-for patch in $( cd ../patches; ls *.patch ); do
-    patch -p1 -r "../$patch.rej" <"../patches/$patch"
+for patch in $( cd $CUR/patches; ls *.patch ); do
+    patch -p1 -r < "$CUR/patches/$patch"
     if [ $? -ne 0 ]; then
         echo >&2 "Error applying '$patch'"
     fi
