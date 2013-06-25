@@ -129,6 +129,7 @@ FP_pari=$(call newest_version,pari)
 FP_patch=$(call newest_version,patch)
 FP_pexpect=$(call newest_version,pexpect)
 FP_pil=$(call newest_version,pil)
+FP_pkgconfig=$(call newest_version,pkgconfig)
 FP_polybori=$(call newest_version,polybori)
 FP_polytopes_db=$(call newest_version,polytopes_db)
 FP_ppl=$(call newest_version,ppl)
@@ -160,106 +161,17 @@ FP_zn_poly=$(call newest_version,zn_poly)
 
 # All targets except for the base packages
 # ... generate from configure.ac.
-INSTALL_FP_NAMES = \
-     atlas \
-     blas \
-     boehm_gc \
-     boost_cropped \
-     cddlib \
-     cephes \
-     cliquer \
-     conway_polynomials \
-     cvxopt \
-     cython \
-     docutils \
-     ecl \
-     eclib \
-     ecm \
-     elliptic_curves \
-     fflas_ffpack \
-     flint \
-     flintqs \
-     gf2x \
-     libfplll \
-     freetype \
-     genus2reduction \
-     gap \
-     gd \
-     gdmodule \
-     gfan \
-     givaro \
-     git \
-     glpk \
-     graphs \
-     gsl \
-     iconv \
-     iml \
-     ipython \
-     jinja2 \
-     jmol \
-     lapack \
-     lcalc \
-     lrcalc \
-     libgap \
-     libpng \
-     linbox \
-     libm4ri \
-     libm4rie \
-     matplotlib \
-     maxima \
-     mpc \
-     mpfi \
-     mpfr \
-     mpir \
-     mpmath \
-     networkx \
-     ntl \
-     numpy \
-     palp \
-     pari \
-     pexpect \
-     pil \
-     polybori \
-     polytopes_db \
-     ppl \
-     pycrypto \
-     pygments \
-     pynac \
-     python \
-     ratpoints \
-     r \
-     rpy2 \
-     readline \
-     rubiks \
-     sagenb \
-     sagetex \
-     scipy \
-     scons \
-     setuptools \
-     singular \
-     sphinx \
-     sqlalchemy \
-     sqlite \
-     symmetrica \
-     sympow \
-     sympy \
-     tachyon \
-     termcap \
-     zlib \
-     znpoly
 
 #doesnt work!
 # INSTALL_FP_STAMPS=$(INST)/$(INSTALL_FP_NAMES:%=$$(FP_%))
 
 scripts: $(BIN)
 
-all-local: $(INSTALL_FP_NAMES:%=%-install) \
+all-local: $(FOREIGN_ENABLED:%=%-install) \
      $(BIN) \
      $(SAGE) \
      $(CSAGE) \
      $(EXTCODE)
-
-EXTCODE = src/ext-install-stamp
 
 # TOOLCHAIN consists of dependencies determined by spkg/install,
 # including for example the GCC package.
@@ -466,7 +378,7 @@ pygments_DEPS+= @DEP_sqlalchemy@
 # this is unneeded.
 # src/sage-configure-stamp: src/c_lib-build
 
-src/c_lib-configure-stamp: \
+scripts_DEPS = \
     @DEP_atlas@ \
     @DEP_cephes@ \
     @DEP_cliquer@ \
@@ -504,6 +416,9 @@ src/c_lib-configure-stamp: \
     @DEP_singular@ \
     @DEP_symmetrica@ \
     @DEP_znpoly@
+
+src/c_lib-configure-stamp: $(csage_DEPS)
+src/bin-configure-stamp: $(scripts_DEPS)
 
 extcode: $(EXTCODE_TARGETS)
 
@@ -544,7 +459,7 @@ cephes):
 
 # direct phony targets: (FIXME: not phony yet)
 .SECONDEXPANSION:
-$(INSTALL_FP_NAMES:%=%-install): %-install: $(INST)/$$(FP_$$*)
+$(FOREIGN_ALL:%=%-install): %-install: $(INST)/$$(FP_$$*)
 
 debugcheck:
 	echo $(FP_ntl) $(DEP_libm4rie)

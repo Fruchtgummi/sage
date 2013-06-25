@@ -12,7 +12,6 @@ distcopy = distutils.file_util.copy_file
 distmkdir = distutils.dir_util.mkpath
 distbytecompile = distutils.util.byte_compile
 
-
 destdir = ""
 
 try:
@@ -22,7 +21,6 @@ except:
 
 def ownmkdir(*args, **kwds):
 	if args[0][0] == "/":
-		print "dir", destdir + args[0]
 		args = ( destdir + args[0], )
 	return distmkdir(*args, **kwds)
 
@@ -42,9 +40,7 @@ def myowncopy(*args, **kwds):
 	if args[1][0] == "/":
 		args = ( args[0], destdir + args[1] )
 
-	print "call", args
 	a = distcopy(*args, **kwds)
-	print "done"
 	return a
 
 distutils.file_util.copy_file = myowncopy
@@ -56,4 +52,5 @@ sys.argv[0] = "setup.py"
 c = os.getcwd()
 s = os.path.join(c, "setup.py")
 sys.path.append(os.getcwd())
+__file__ = c + "/setup.py"
 execfile("setup.py")

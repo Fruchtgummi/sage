@@ -5,10 +5,12 @@ paths are suboptimal.
 /build/pkgs should be /pkgs
 /build/etc should be /dist/etc (done?)
 /build/bin should be /dist/bin (done?)
+/src should be pkgs/libsage or sagelib
 
 dependencies should be where packages are, not in "deps"
 
 PYTHON dependency, currently using SAGE_LOCAL/bin/python unconditionally
+(do it like singular)
 
 CORE_MODULES should be built with VPATH.
 

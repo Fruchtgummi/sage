@@ -7,7 +7,7 @@
 # See below for targets to build the documentation in other formats,
 # to run various types of test suites, and to remove parts of the build etc.
 #
-SUBDIRS = dist build
+SUBDIRS = dist
 
 # just pkgs?
 PKGSDIR=build/pkgs
@@ -47,18 +47,16 @@ $(CORE_MODULES:%=%-build): %-build: %-configure-stamp
 
 # hack, just bypass all stamps. don't use!
 $(CORE_MODULES:%=%-build-bypass): %-build-bypass:
-	export $(CORE_ENV) \
-	       PYTHONHOME="$(abs_builddir)/local" \
-	       PYTHONPATH="$(abs_builddir)/$$path"; \
+	export $(CORE_ENV); \
 	source $(ENV_SH); \
 	$(MAKE) -C$* V=$(V_$(V))
 
-$(CORE_MODULES:%=%-install-stamp): %-install-stamp: %-install
-	touch $@
+$(CORE_MODULES:%=%-install): %-install: %-install-stamp
 
-$(CORE_MODULES:%=%-install): %-install: %-build-stamp
+$(CORE_MODULES:%=%-install-stamp): %-install-stamp: %-configure-stamp
 	@echo $@ ...
 	$(MAKE) -C$* install
+	touch $@
 
 # distribute core modules as tarballs
 # (probably unneeded)
@@ -85,15 +83,12 @@ src/doc-configure-stamp: src/sage-build
 
 src/sage-configure-stamp: # src/c_lib-build-stamp
 
-PYTHON ?= $(abs_top_builddir)/local/bin/python
 
-src/sage-configure-stamp: CORE_ENV+= CPPFLAGS="-I$(abs_builddir)/local/include -I$(abs_builddir)/src/c_lib/include $$CPPFLAGS"
-src/sage-configure-stamp: CORE_ENV+= PYTHON="$(PYTHON)"
+src/sage-configure-stamp: # no CORE_ENV+= CPPFLAGS="-I$(abs_builddir)/local/include -I$(abs_builddir)/src/c_lib/include $$CPPFLAGS"
 src/sage-configure-stamp: CORE_ENV+= PKG_CONFIG_LIBDIR="$(abs_top_builddir)/local/lib/pkgconfig"
 src/sage-configure-stamp: CORE_ENV+= LD_LIBRARY_PATH="$(abs_builddir)/local/lib:$$LD_LIBRARY_PATH"
 
-src/c_lib-configure-stamp: CORE_ENV+= CPPFLAGS="-I$(abs_builddir)/local/include -I$(abs_builddir)/src/c_lib/include $$CPPFLAGS"
-src/c_lib-configure-stamp: CORE_ENV+= PYTHON="$(PYTHON)"
+src/c_lib-configure-stamp: # no CORE_ENV+= CPPFLAGS="-I$(abs_builddir)/local/include -I$(abs_builddir)/src/c_lib/include $$CPPFLAGS"
 src/c_lib-configure-stamp: CORE_ENV+= PKG_CONFIG_LIBDIR="$(abs_top_builddir)/local/lib/pkgconfig"
 src/c_lib-configure-stamp: CORE_ENV+= LD_LIBRARY_PATH="$(abs_builddir)/local/lib:$$LD_LIBRARY_PATH"
 
@@ -106,14 +101,13 @@ src/sage-build-stamp: CORE_ENV+= LD_LIBRARY_PATH="$(abs_builddir)/local/lib:$$LD
 
 #c_lib depends from deps.in
 src/c_lib-configure-stamp: @DEP_mpir@ @DEP_ntl@ @DEP_pari@ @DEP_polybori@ \
-                           @DEP_pynac@ @DEP_python@
+                           @DEP_pynac@ @DEP_python@ @DEP_singular@
 
 BIN=src/bin-install-stamp
 CSAGE=src/c_lib-install-stamp
 DOC=src/doc-build               # doc will not be installed
 SAGE=src/sage-install-stamp
-
-sage-stuff: $(SAGE)
+EXTCODE = src/ext-install-stamp
 
 ## install the core library parts
 core-install: $(CORE_MODULES:%=%-install)
@@ -142,6 +136,11 @@ endef
 @UPSTREAM@/%.gz:
 	$(downloadit)
 
+@UPSTREAM@/pkgconfig-0.18.tar.gz:
+	wget http://pkgconfig.freedesktop.org/releases/pkgconfig-0.18.tar.gz
+# FIXME: checksum
+	mv pkconfig-0.18.tar.gz @UPSTREAM@
+
 @dotPRECIOUS@: @UPSTREAM@/%.bz2 @UPSTREAM@/%.gz
 
 # FIXME: decruft environment!!!1
@@ -150,30 +149,48 @@ SAGE_LOCAL = @abs_top_builddir@/local
 ENV_SH = dist/etc/env.sh
 
 ### generic build stamp rule
-# FIXME: call $(MAKE) -f spkg-install (after transition)
+# FIXME: call $(MAKE) -f spkg-install (after transition?)
 # FIXME: use more env.sh
 # FIXME: PYTHONPATH must not be here
 # (source local/etc/env.d/*.sh from dist?)
+$(INST)/%: FILELIST=$(abs_top_builddir)/$@
+#$(INST)/%: _inst-%
+
 .SECONDEXPANSION:
-$(INST)/%: $(PKGSDIR)/% | $(SAGE_LOGS) $(INST) $(PKGSDIR)
-	path=$(PKGSDIR)/$(firstword $(subst -, ,$*)); mkdir -p $$path; \
+$(INST)/%: $$($$(firstword $$(subst -, ,$$*))_DEPS) |\
+           $(PKGSDIR)/% $(SAGE_LOGS) $(INST) $(PKGSDIR)
+	@path=$(PKGSDIR)/$(firstword $(subst -, ,$*)); mkdir -p $$path; \
 	[ -d $$path/patches -o -h $$path/patches ] || $(LN_S) $(abs_top_srcdir)/$$path/patches $$path;\
 	export CC="@CC@" CFLAGS="@CFLAGS@" \
 	       MAKE=$(MAKE) UNAME="@UNAME@" \
-	       srcdir="$(abs_top_srcdir)/$$path" \
-	       PYTHONHOME="$(abs_builddir)/local" \
-	       PYTHONPATH="$(abs_builddir)/$$path"; \
+	       srcdir="$(abs_top_srcdir)/$$path"; \
 	source $(ENV_SH); \
 	cd $$path; \
 	rm -rf src; \
 	$(LN_S) ../$* src || exit 1; \
 	echo "$(abs_top_srcdir)/$$path/spkg-install FILELIST=\"$@\"" ;\
-	export FILELIST="$(abs_top_builddir)/$@"; \
-	$(PIPE) "$(abs_top_srcdir)/$$path/spkg-install" 'tee -a $(SAGE_LOGS)/$*.log'
-	@[ -s "$(abs_top_builddir)/$@" ] || echo "BUG, empty filelist?! (ignored)"
+	export FILELIST="$(FILELIST)"; \
+	echo MAKEFLAGS: "$(MAKEFLAGS)"; \
+	m="$(MAKEFLAGS)"; \
+	$(PIPE) "$(abs_top_srcdir)/$$path/spkg-install $${m##*--}" 'tee -a $(SAGE_LOGS)/$*.log'
+	@[ -s "$(abs_top_builddir)/$@" ] || echo "BUG, empty filelist?! (ignored)" || :
+	touch $@ # to be sure
 
 .SECONDEXPANSION:
-$(INSTALL_FP_NAMES:%=%-info): %-info: build/pkgs/%/package-version.txt
+$(FOREIGN_ALL:%=%-distcheck): %-distcheck: $$($$*_DEPS)
+	DESTDIR=$$( mktemp -d ); \
+	FILELIST=$$( mktemp ); \
+	T="$(INST)/$(FP_$*)"; \
+	mv "$$T" "$$T"X 2>/dev/null ; \
+	trap "mv '$$T'X '$$T'; exit $$?" INT TERM EXIT; \
+	$(MAKE) $$T FILELIST="$$FILELIST" DESTDIR="$$DESTDIR"; \
+	(diff <(sort $$FILELIST) <(cd $$DESTDIR; find | sort | sed s/^\.// ) | \
+   tee $@.log; exit $${PIPESTATUS[0]}) && \
+	rm -rf $$FILELIST $$DESTDIR || echo BUG: $$FILELIST $$DESTDIR differ
+
+
+.SECONDEXPANSION:
+$(FOREIGN_ALL:%=%-info): %-info: build/pkgs/%/package-version.txt
 	@echo "selected:  $*-$$(cat $<)"
 	@inst=$$( ls $(INST)/$*-* ); \
 		[ -f $$inst ] && echo installed: $$( basename $$inst )
@@ -185,17 +202,16 @@ $(INSTALL_FP_NAMES:%=%-info): %-info: build/pkgs/%/package-version.txt
 
 # convenience rules
 #incomplete/under construction (necessary?)
-DISABLED$(INSTALL_FP_NAMES:%=%-configure): %-configure: build/pkgs/%/src
+DISABLED$(FOREIGN_ALL:%=%-configure): %-configure: build/pkgs/%/src
 	path=build/pkgs/$*;\
 	export SAGE_LOCAL="$(abs_builddir)/local" CC="@CC@" CFLAGS="@CFLAGS@" \
 	       MAKE=$(MAKE) UNAME="@UNAME@" PATH=$(abs_builddir)/local/bin:$$PATH \
 	       LD_LIBRARY_PATH="$(abs_builddir)/local/lib:$$LD_LIBRARY_PATH" \
 	       srcdir="$(abs_top_srcdir)/$$path"; \
-	       PYTHONHOME="$(abs_builddir)/local"; \
 	$(MAKE) -f$(abs_top_srcdir)/build/pkgs/$*/spkg-install -Cbuild/pkgs/$* configure
 
 # uninstall all installations of $*. shouldn't be more than one at a time.
-$(INSTALL_FP_NAMES:%=%-uninstall): %-uninstall:
+$(FOREIGN_ALL:%=%-uninstall): %-uninstall:
 	@if test -n "$$(shopt -s nullglob; echo $(INST)/$*-*)"; then \
 	  dirs=;\
 	  while read f; do \
@@ -211,6 +227,11 @@ $(INSTALL_FP_NAMES:%=%-uninstall): %-uninstall:
 	  echo "no $* installed..."; \
 	fi
 
+UNINSTALL_FP = @FOREIGN_DISABLED@ @FOREIGN_AVAILABLE@
+install-decruft: $(UNINSTALL_FP:%=%-uninstall)
+.PHONY: uninstall-clean \
+        $(UNINSTALL_FP:%=%-uninstall) \
+        $(INSTALL_FP_NAMES:%=%-distcheck)
 p=%
 define unpack
 	@echo unpacking $@
@@ -237,6 +258,10 @@ $(PKGSDIR)/%/src: | @UPSTREAM@/$$(shell a=$$(FP_$$*) && shopt -s extglob && echo
 # actually need $(PKGSDIR)/<pkgname>/src-<versionno>
 .SECONDEXPANSION:
 $(PKGSDIR)/%: | @UPSTREAM@/$$(shell a=$$* && shopt -s extglob && echo "$$$${a$$(p).p[0-9]?([0-9])}" ).tar.bz2
+	$(unpackwithversion)
+
+.SECONDEXPANSION:
+$(PKGSDIR)/%: | @UPSTREAM@/$$(shell a=$$* && shopt -s extglob && echo "$$$${a$$(p).p[0-9]?([0-9])}" ).tar.gz
 	$(unpackwithversion)
 
 .SECONDEXPANSION:
@@ -328,8 +353,9 @@ clean-local:
 	@echo "Deleting package build directories..."
 	rm -rf local/var/tmp/sage/build
 
-	make -C src/c_lib clean
-	make -C src/sage clean
+	for i in $(CORE_MODULES); do \
+	  [ -f $$i/Makefile ] && make -C $$i clean; \
+	done
 # FIXME:
 # also remove foreign package src
 
@@ -435,7 +461,7 @@ uninstall-local:
 	rm -rf src/*-stamp
 
 # just remove it...
-$(INSTALL_FP_NAMES:%=%-clean): %-clean:
+$(FOREIGN_ALL:%=%-clean): %-clean:
 	rm -rf build/pkgs/$*/src-*
 	rm -rf build/pkgs/$*-*
 	rm -rf build/pkgs/$*/*-stamp
