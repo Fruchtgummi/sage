@@ -6,6 +6,8 @@ if [ "$SAGE_LOCAL" = "" ]; then
     exit 1
 fi
 
+CUR=`pwd`
+
 # This tells Bash to exit the script if any statement returns a non-true
 # value.
 set -e
@@ -169,11 +171,11 @@ cd src
 # Patch the Makefile for Sage. This custom Makefile contains Sage
 # specific compilation and linking flags. More importantly, we're building
 # cliquer as a dynamic shared library, instead of a stand alone program.
-patch -N -p1 <../patches/Makefile.patch || :
+patch -N -p1 <$CUR/patches/Makefile.patch || :
 
 # Add to the source the code we need
-patch -N <../patches/cl.c.patch || :
-cp ../patches/cl.h .
+patch -N <$CUR/patches/cl.c.patch || :
+cp $CUR/patches/cl.h .
 
 #Do not exit script if there is an error, but instead print an
 # informative error message.
