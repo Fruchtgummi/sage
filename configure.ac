@@ -2,10 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([sage], [5.9-autotools], [sage-devel@googlegroups.com])
+AC_INIT([sage], [5.11.beta3], [sage-support@googlegroups.com])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability silent-rules])
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_MACRO_DIR([m4])
+
+AC_CANONICAL_BUILD
 
 # `pwd` resolves $abs_top_builddir
 # abs_top_builddir is not available here.
@@ -18,92 +20,76 @@ AM_CONDITIONAL([VPATH_BUILD], [test ! x$srcdir = "x."])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
-AC_PROG_FC       # FIXME: not required, just check.
+AC_PROG_FC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_GREP     # required to build singular
 AC_PROG_SED      # used here and there.
 
-# install GCC when needed.
-# FIXME: override this (former SAGE_INSTALL_GCC environment)
-CHK_gcc=positive
+need_to_install_gcc=no
+AS_IF([test "x$CC" = x],[AC_MSG_ERROR([No C compiler found in your path. Install a C compiler or set the environment variable CC to point to one.])])
+AS_IF([test "x$GCC" != xyes],[
+    AC_MSG_NOTICE([Installing GCC because your '$CC' is not GNU gcc but $CC.])
+    need_to_install_gcc=yes
+],[
+    build_gcc_version=`$CC -dumpversion`
 
-# Check whether $CC is some version of GCC.  If it's a different
-# compiler, install GCC locally.
-# CCtype=`testcc.sh $CC`
-if test ! "$CC" = gcc; then
-  AC_MSG_NOTICE([Installing GCC because your '$CC' isn't GCC (GNU CC) but $CC.])
-  CHK_gcc=negative
-else
-  # $CC points to some version of GCC, find out which version.
-  GCCVERSION=`$CC -dumpversion`
-  case $GCCVERSION in
-      [0-3].*|4.[0-3]|4.[0-3].*)
-          # Install our own GCC if the system-provided one is older than gcc-4.4.
-          # * gcc-4.2.4 compiles a slow IML:
-          # https://groups.google.com/forum/?fromgroups#!topic/sage-devel/Ux3t0dW2FSI
-          # * gcc-4.3 might have trouble building ATLAS:
-          # https://groups.google.com/forum/?fromgroups#!topic/sage-devel/KCeFqQ_w2FE
-          AC_MSG_NOTICE([Installing GCC because you have $CC version $GCCVERSION, which is quite old.])
-          CHK_gcc=negative;;
-      4.4*|4.5*)
-          # GCC 4.4.x and GCC 4.5.x fail to compile PARI/GP on ia64:
-          # * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46044
-          if test x`uname -m` = xia64; then
-              AC_MSG_NOTICE([Installing GCC because you have $CC version $GCCVERSION on ia64.])
-              AC_MSG_NOTICE([gcc <= 4.5 fails to compile PARI/GP on ia64.])
-              CHK_gcc=negative
-          fi;;
-      4.6.[01])
-          # Also install GCC if we have version 4.6.0 or 4.6.1, which is
-          # known to give trouble within Sage:
-          # * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48702
-          # * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48774
-          AC_MSG_NOTICE([Installing GCC because you have $CC version $GCCVERSION.])
-          AC_MSG_NOTICE([gcc-4.6.0 and gcc-4.6.1 have known bugs affecting Sage.])
-          CHK_gcc=negative;;
-      4.6*)
-          # GCC 4.6.x doesn't compile ECL on Cygwin:
-          # * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=52061
-          if uname | grep CYGWIN >/dev/null; then
-              AC_MSG_NOTICE([Installing GCC because you have $CC version $GCCVERSION on Cygwin.])
-              AC_MSG_NOTICE([gcc-4.6.x fails to compile ECL on Cygwin.])
-              CHK_gcc=negative
-          fi;;
-      4.7.0)
-          # GCC 4.7.0 is very broken on ia64, see
-          # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48496
-          # This is fixed in GCC 4.7.1.
-          if test x`uname -m` = xia64; then
-              AC_MSG_NOTICE([Installing GCC because you have $CC version $GCCVERSION on ia64.])
-              AC_MSG_NOTICE([gcc-4.7.0 has a serious bug on ia64.])
-              CHK_gcc=negative
-          fi;;
-  esac
-fi
+    dnl Install our own GCC if the system-provided one is older than gcc-4.4.
+    dnl * gcc-4.2.4 compiles a slow IML:
+    dnl https://groups.google.com/forum/?fromgroups#!topic/sage-devel/Ux3t0dW2FSI
+    dnl * gcc-4.3 might have trouble building ATLAS:
+    dnl https://groups.google.com/forum/?fromgroups#!topic/sage-devel/KCeFqQ_w2FE
+    AS_VERSION_COMPARE(["$build_gcc_version"],[4.4],[
+        AC_MSG_NOTICE([Installing GCC because you have $CC version $build_gcc_version, which is quite old.])
+        need_to_install_gcc=yes
+    ])
 
-# try to guess SAGE_* stuff
-sage_local=$prefix
-if test "x$prefix" = xNONE; then
-    sage_local=$ac_default_prefix
-else
-    AC_MSG_ERROR([custom prefix is not implementable yet.])
-fi
+    AS_IF([test "x$build_cpu" = "xia64"],[
+        dnl GCC 4.4.x and GCC 4.5.x fail to compile PARI/GP on ia64:
+        dnl * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46044
+        AS_VERSION_COMPARE(["$build_gcc_version"],[4.6],[
+            AC_MSG_NOTICE([Installing GCC because you have $CC version $build_gcc_version on ia64 which fails to compile PARI/GP.])
+            need_to_install_gcc=yes
+        ])
+        dnl GCC 4.7.0 is very broken on ia64, see
+        dnl http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48496
+        AS_VERSION_COMPARE(["$build_gcc_version"],[4.7.0],[
+            AC_MSG_NOTICE([Installing GCC because you have $CC version $build_gcc_version on ia64 which is known not to work.])
+            need_to_install_gcc=yes
+        ])
+    ])
 
-AC_SUBST(SAGE_LOCAL, $sage_local)
+    dnl Also install GCC if we have version 4.6.0 or 4.6.1, which is
+    dnl known to give trouble within Sage:
+    dnl * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48702
+    dnl * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=48774
+    AS_CASE([$build_gcc_version],[4.6.@<:@01@:>@],[
+        AC_MSG_NOTICE([Installing GCC because you have $CC version $build_gcc_version which has known bugs affecting Sage.])
+        need_to_install_gcc=yes
+    ])
 
-# Check C++ and Fortran compilers.
-if test -z "$CXX"; then
-  echo >&2 "Installing GCC because a C++ compiler is missing."
-  need_to_install_gcc=yes
-fi
+    dnl GCC 4.6.x doesn't compile ECL on Cygwin:
+    dnl * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=52061
+    AS_CASE([$build_os],[*cygwin*],[
+        AS_CASE([$build_gcc_version],[4.6*],[
+            AC_MSG_NOTICE([Installing GCC because you have $CC version $build_gcc_version which does not compile ECL on Cygwin.])
+            need_to_install_gcc=yes
+        ])
+    ])
+])
 
-if test -z "$FC"; then
-  echo >&2 "Installing GCC because a Fortran compiler is missing."
-  need_to_install_gcc=yes
-fi
+AS_IF([test "x$CXX" = x],[
+    AC_MSG_NOTICE([Installing GCC because a C++ compiler is missing.])
+    need_to_install_gcc=yes
+])
 
+AS_IF([test "x$FC" = x],[
+    AC_MSG_NOTICE([Installing GCC because a Fortran compiler is missing.])
+    need_to_install_gcc=yes
+])
+
+# FIXME: we have to set FC,GCC,... if need_to_install_gcc=yes - why should we only set FC?
 if test "$need_to_install_gcc" = yes -o -x "$sage_local/bin/gfortran"; then
     FC=gfortran
     unset SAGE_FORTRAN_LIB
