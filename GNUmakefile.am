@@ -181,8 +181,6 @@ $(FOREIGN_ALL:%=%-distcheck): %-distcheck: $$($$*_DEPS)
 	DESTDIR=$$( mktemp -d ); \
 	FILELIST=$$( mktemp ); \
 	T="$(INST)/$(FP_$*)"; \
-	mv "$$T" "$$T"X 2>/dev/null ; \
-	trap "mv '$$T'X '$$T'; exit $$?" INT TERM EXIT; \
 	$(MAKE) $$T FILELIST="$$FILELIST" DESTDIR="$$DESTDIR"; \
 	(diff <(sort $$FILELIST) <(cd $$DESTDIR; find | sort | sed s/^\.// ) | \
    tee $@.log; exit $${PIPESTATUS[0]}) && \
