@@ -1149,8 +1149,13 @@ class GenericExtensionFactory(AbstractFactory):
     @staticmethod
     def krasner_check(poly):
         """
-        Return wheth the Eisenstein polynomial ``poly`` uniquely defines an
+        Check whether the Eisenstein polynomial ``poly`` uniquely defines an
         extension by Krasner's lemma.
+
+        OUTPUT:
+
+        Raise a ValueError if ``poly`` does not uniquely determine an extension
+        or if its precision is insufficient to apply the algorithm.
 
         ALGORITHM:
 
@@ -1180,9 +1185,18 @@ class GenericExtensionFactory(AbstractFactory):
 
             sage: from sage.rings.padics.factory import QpExtensionFactory
 
-            sage: K = Qp(2,50)
+            sage: K = Qp(2,2)
             sage: R.<x> = K[]
             sage: QpExtensionFactory.krasner_check( x^2 + 2*x + 2 )
+            sage: QpExtensionFactory.krasner_check( x^2 + 2 )
+            Traceback (most recent call last):
+            ...
+            ValueError: polynomial does probably not determine a unique totally ramified extension
+
+            sage: K = Qp(2,3)
+            sage: R.<x> = K[]
+            sage: QpExtensionFactory.krasner_check( x^2 + 2*x + 2 )
+            sage: QpExtensionFactory.krasner_check( x^2 + 2 )
 
         """
         if not GenericExtensionFactory.is_eisenstein(poly):
@@ -1216,8 +1230,6 @@ class GenericExtensionFactory(AbstractFactory):
 
         # now we compute a bound on d(f,g)
         dfg = min([n*poly[i].precision_absolute() + i for i in range(n)])
-
-        print dfg,sum(conjugate_vals) + max(conjugate_vals)
 
         if dfg <= sum(conjugate_vals) + max(conjugate_vals):
             raise ValueError("polynomial does probably not determine a unique totally ramified extension")
