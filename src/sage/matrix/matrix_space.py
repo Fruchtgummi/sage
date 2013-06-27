@@ -48,7 +48,7 @@ import matrix_rational_sparse
 
 import matrix_mpolynomial_dense
 
-#import padics.matrix_padic_capped_relative_dense
+import matrix_local_generic_dense
 
 ## import matrix_cyclo_dense
 ## import matrix_cyclo_sparse
@@ -957,9 +957,8 @@ class MatrixSpace(UniqueRepresentation, parent_gens.ParentWithGens):
                 return matrix_mod2e_dense.Matrix_mod2e_dense
             elif sage.rings.polynomial.multi_polynomial_ring_generic.is_MPolynomialRing(R) and R.base_ring() in _Fields:
                 return matrix_mpolynomial_dense.Matrix_mpolynomial_dense
-            #elif isinstance(R, sage.rings.padics.padic_ring_capped_relative.pAdicRingCappedRelative):
-            #    return padics.matrix_padic_capped_relative_dense
-            # the default
+            elif isinstance(R, sage.rings.padics.local_generic.LocalGeneric):
+                return matrix_local_generic_dense.Matrix_local_generic_dense
             else:
                 from sage.symbolic.ring import SR   # causes circular imports
                 if R is SR:

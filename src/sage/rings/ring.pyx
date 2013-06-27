@@ -500,6 +500,15 @@ cdef class Ring(ParentWithGens):
             Principal ideal (0) of Univariate Polynomial Ring in x over Rational Field
             sage: R.ideal()
             Principal ideal (0) of Univariate Polynomial Ring in x over Rational Field
+
+        Make sure that :trac:`13644` is fixed::
+
+            sage: K = Qp(3)
+            sage: R.<a> = K[]
+            sage: L.<a> = K.extension(a^2-3)
+            sage: L.ideal(a)
+            Principal ideal (1 + O(a^40)) of Eisenstein Extension of 3-adic Field with capped relative precision 20 in a defined by (1 + O(3^20))*a^2 + (O(3^21))*a + (2*3 + 2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + 2*3^12 + 2*3^13 + 2*3^14 + 2*3^15 + 2*3^16 + 2*3^17 + 2*3^18 + 2*3^19 + 2*3^20 + O(3^21))
+
         """
         if kwds.has_key('coerce'):
             coerce = kwds['coerce']
@@ -508,6 +517,7 @@ cdef class Ring(ParentWithGens):
             coerce = True
 
         from sage.rings.ideal import Ideal_generic
+        from sage.structure.parent import is_Parent
         gens = args
         while isinstance(gens, (list, tuple)) and len(gens) == 1:
             first = gens[0]
@@ -526,7 +536,7 @@ cdef class Ring(ParentWithGens):
                 break
             elif isinstance(first, (list, tuple)):
                 gens = first
-            elif self.has_coerce_map_from(first):
+            elif is_Parent(first) and self.has_coerce_map_from(first):
                 gens = first.gens() # we have a ring as argument
             else:
                 break

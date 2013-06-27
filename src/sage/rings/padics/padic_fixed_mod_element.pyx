@@ -700,7 +700,7 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
         INPUT::
 
             - self -- a p-adic element
-            - absprec -- an integer
+            - absprec -- an integer TODO
 
         OUTPUT::
 
@@ -715,8 +715,13 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
             True
             sage: R(17^2).is_zero(absprec=2)
             True
+            sage: R(0).is_zero(absprec=infinity)
+            True
+            sage: R(0).is_zero(absprec=10)
+            True
+
         """
-        if absprec is None:
+        if absprec is None or absprec is infinity:
             return mpz_sgn(self.value) == 0
         if not PY_TYPE_CHECK(absprec, Integer):
             absprec = Integer(absprec)
@@ -1080,21 +1085,41 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
 
     def residue(self, absprec=1):
         r"""
-        Reduces this mod $p^{\mbox{prec}}$
+        Reduces ``self`` modulo `p^\mathrm{absprec}`.
 
-        INPUT::
+        INPUT:
 
-            - self -- a p-adic element
-            - absprec - an integer (default 1)
+        - ``absprec`` - a non-negative integer (default: 1)
 
-        OUTPUT::
+        OUTPUT:
 
-            - element of Z/(p^prec Z) -- self reduced mod p^prec
+        ``self`` reduced modulo `p^\mathrm{absprec}` as an element of
+        `\mathbb{Z}/p^\mathrm{absprec}\mathbb{Z}`
 
         EXAMPLES::
 
-            sage: R = Zp(7,4,'fixed-mod'); a = R(8); a.residue(1)
+            sage: R = Zp(7,4,'fixed-mod')
+            sage: a = R(8)
+            sage: a.residue(1)
             1
+            sage: a.residue(2)
+            8
+
+        TESTS::
+
+            sage: R = Zp(7,4,'fixed-mod')
+            sage: a = R(8)
+            sage: a.residue(0)
+            0
+            sage: a.residue(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: Cannot reduce modulo a negative power of p.
+            sage: a.residue(5)
+            Traceback (most recent call last):
+            ...
+            PrecisionError: Not enough precision known in order to compute residue.
+
         """
         cdef Integer selfvalue, modulus
         selfvalue = PY_NEW(Integer)
@@ -1103,8 +1128,10 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
         cdef unsigned long aprec
         if not PY_TYPE_CHECK(absprec, Integer):
             absprec = Integer(absprec)
-        if mpz_fits_ulong_p((<Integer>absprec).value) == 0:
-            raise ValueError, "When calling residue, use the exponent of p, not the integer p^exp."
+        if absprec > self.precision_absolute():
+            raise PrecisionError, "Not enough precision known in order to compute residue."
+        elif absprec < 0:
+            raise ValueError, "Cannot reduce modulo a negative power of p."
         else:
             aprec = mpz_get_ui((<Integer>absprec).value)
         if aprec > self.prime_pow.prec_cap:

@@ -1292,28 +1292,44 @@ cdef class pAdicCappedAbsoluteElement(pAdicBaseGenericElement):
 
     def residue(self, absprec = 1):
         r"""
-        Reduces ``self`` modulo ``p^absprec``
+        Reduces ``self`` modulo `p^\mathrm{absprec}`.
 
         INPUT:
 
-        - ``self`` -- a `p`-adic element
-
-        - ``absprec`` - an integer
+        - ``absprec`` - a non-negative integer (default: 1)
 
         OUTPUT:
 
-        - element of `\mathbb{Z}/p^{\mbox{absprec}} \mathbb{Z}` --
-          ``self`` reduced modulo ``p^absprec``.
+        ``self`` reduced modulo `p^\mathrm{absprec}` as an element of
+        `\mathbb{Z}/p^\mathrm{absprec}\mathbb{Z}`
 
         EXAMPLES::
 
-            sage: R = Zp(7,4,'capped-abs'); a = R(8); a.residue(1)
+            sage: R = Zp(7,4,'capped-abs')
+            sage: a = R(8)
+            sage: a.residue(1)
             1
+            sage: a.residue(2)
+            8
+
+        TESTS::
+
+            sage: a.residue(0)
+            0
+            sage: a.residue(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: Cannot reduce modulo a negative power of p.
+            sage: a.residue(5)
+            Traceback (most recent call last):
+            ...
+            PrecisionError: Not enough precision known in order to compute residue.
+
         """
         if absprec > self.precision_absolute():
             raise PrecisionError, "Not enough precision known in order to compute residue."
         elif absprec < 0:
-            raise ValueError, "cannot reduce modulo a negative power of p"
+            raise ValueError, "Cannot reduce modulo a negative power of p."
         cdef Integer selfvalue
         selfvalue = PY_NEW(Integer)
         mpz_set(selfvalue.value, self.value)

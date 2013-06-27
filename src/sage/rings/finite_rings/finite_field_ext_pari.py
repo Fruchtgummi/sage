@@ -165,7 +165,7 @@ class FiniteField_ext_pari(FiniteField_generic):
         We do NOT yet define natural consistent inclusion maps
         between different finite fields.
     """
-    def __init__(self, q, name, modulus=None):
+    def __init__(self, q, name, modulus='conway'):
         """
         Create finite field of order `q` with variable printed as name.
 
@@ -205,17 +205,13 @@ class FiniteField_ext_pari(FiniteField_generic):
         self.__order = q
         self.__is_field = True
 
-        if modulus is None or modulus == "default":
-            from constructor import exists_conway_polynomial
-            if exists_conway_polynomial(self.__char, self.__degree):
-                modulus = "conway"
-            else:
-                modulus = "random"
-
-        if isinstance(modulus,str):
-            if modulus == "conway":
-                from constructor import conway_polynomial
-                modulus = conway_polynomial(self.__char, self.__degree)
+        if isinstance(modulus, str):
+            if modulus.startswith('conway'):
+                from sage.rings.finite_rings.constructor import find_pseudo_conway_polynomial_tree
+                self._PCPT = find_pseudo_conway_polynomial_tree(self.__char, self.__degree) # we store the tree so that the weakrefs don't fly away.  It also provides a nice interface for creating subfields.
+                self._prefix = modulus[6:]
+                if len(self._prefix) == 0: self._prefix = 'z'
+                modulus = self._PCPT.get_pseudo_conway_poly(self.__degree)
             elif modulus == "random":
                 # The following is fast/deterministic, but has serious problems since
                 # it crashes on 64-bit machines, and I can't figure out why:
@@ -593,9 +589,7 @@ class FiniteField_ext_pari(FiniteField_generic):
             ...
             TypeError: no canonical coercion from Finite Field in a of size 2^2 to Finite Field in a of size 2^3
             sage: FiniteField_ext_pari(16,'a')._coerce_(FiniteField_ext_pari(4,'a').0)
-            Traceback (most recent call last):
-            ...
-            TypeError: no canonical coercion from Finite Field in a of size 2^2 to Finite Field in a of size 2^4
+            a^2 + a
             sage: k = FiniteField_ext_pari(8,'a')
             sage: k._coerce_(FiniteField(7,'a')(2))
             Traceback (most recent call last):
@@ -603,21 +597,25 @@ class FiniteField_ext_pari(FiniteField_generic):
             TypeError: no canonical coercion from Finite Field of size 7 to Finite Field in a of size 2^3
         """
         from sage.rings.integer_ring import ZZ
+        from sage.rings.finite_rings.finite_field_base import is_FiniteField
         from sage.rings.finite_rings.integer_mod_ring import IntegerModRing_generic
         if R is int or R is long or R is ZZ:
             return True
-        if isinstance(R, FiniteField_ext_pari):
+        if is_FiniteField(R):
             if R is self:
                 return True
+            from sage.rings.residue_field import ResidueField_generic
+            if isinstance(R, ResidueField_generic):
+                return False
             if R.characteristic() == self.characteristic():
+                if isinstance(R, IntegerModRing_generic):
+                    return True
                 if R.degree() == 1:
                     return True
-                elif self.degree() % R.degree() == 0:
-                    # TODO: This is where we *would* do coercion from one nontrivial finite field to another...
-                    return False
-        from sage.rings.residue_field import ResidueField_generic
-        if isinstance(R, IntegerModRing_generic) and R.characteristic() == self.characteristic() and not isinstance(R, ResidueField_generic):
-            return True
+                if self.degree() % R.degree() == 0:
+                    if hasattr(self, '_PCPT') and hasattr(R, '_PCPT') and R._PCPT is not None:
+                        from homset import FiniteFieldHomset, FiniteFieldHomomorphism_im_gens
+                        return FiniteFieldHomomorphism_im_gens(FiniteFieldHomset(R, self), self.gen()**((self.order()-1)//(R.order()-1)))
 
     def __len__(self):
         """

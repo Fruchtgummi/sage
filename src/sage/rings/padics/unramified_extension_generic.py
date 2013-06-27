@@ -20,6 +20,7 @@ AUTHORS:
 
 from padic_extension_generic import pAdicExtensionGeneric
 from sage.rings.finite_rings.constructor import GF
+from sage.misc.cachefunc import cached_method
 
 class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
     """
@@ -71,6 +72,16 @@ class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
                 raise NotImplementedError
         return "Unramified Extension of %s in %s defined by %s"%(
             self.ground_ring(), self.variable_name(), self.modulus())
+
+    def hom(self, im_gens):
+        if len(im_gens)!=1:
+            raise ValueError
+        from sage.categories.morphism import SetMorphism
+        from sage.categories.rings import Rings
+        from sage.categories.homset import Hom
+        from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+        R = PolynomialRing(self.base_ring(),names=('T',))
+        return SetMorphism(Hom(self,im_gens[0].parent(),Rings()), lambda x:R(x.matrix()[0].list())(im_gens[0]))
 
     def ramification_index(self, K = None):
         """
@@ -193,6 +204,7 @@ class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
             return True
         raise NotImplementedError
 
+    @cached_method
     def gen(self, n=0):
         """
         Returns a generator for this unramified extension.

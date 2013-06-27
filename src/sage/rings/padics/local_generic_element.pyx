@@ -21,9 +21,9 @@ AUTHORS:
 #*****************************************************************************
 
 from sage.rings.infinity import infinity
-from sage.structure.element cimport ModuleElement, RingElement, CommutativeRingElement
+from sage.structure.element cimport ModuleElement, RingElement, PrincipalIdealDomainElement
 
-cdef class LocalGenericElement(CommutativeRingElement):
+cdef class LocalGenericElement(PrincipalIdealDomainElement):
     #cpdef ModuleElement _add_(self, ModuleElement right):
     #    raise NotImplementedError
 
@@ -262,6 +262,7 @@ cdef class LocalGenericElement(CommutativeRingElement):
 
         Test that slices also work over fields::
 
+            sage: K = Qp(5, 6)
             sage: a = K(1/25); a
             5^-2 + O(5^4)
             sage: b = K(25); b
@@ -296,6 +297,14 @@ cdef class LocalGenericElement(CommutativeRingElement):
             2*5^2 + 2*5^3 + O(5^5)
             sage: a.slice(None, 5, None)
             2*5^2 + 2*5^3 + O(5^5)
+
+        Test that :trac:`13300` is fixed::
+
+            sage: K=Qp(3,5)
+            sage: R.<a> = K[]
+            sage: L.<a> = K.extension(a^2+a-1)
+            sage: a[0:2]
+             a + O(3^2)
 
         """
         if i is None:

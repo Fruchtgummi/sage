@@ -20,9 +20,10 @@ AUTHORS:
 from sage.rings.ring import CommutativeRing
 from sage.structure.parent import Parent
 from sage.rings.integer import Integer
+from sage.categories.commutative_rings import CommutativeRings
 
 class LocalGeneric(CommutativeRing):
-    def __init__(self, base, prec, names, element_class):
+    def __init__(self, base, prec, names, element_class, category=CommutativeRings()):
         """
         Initializes self.
 

@@ -7,34 +7,43 @@ just designed to be inherited from).
 AUTHORS:
 
 - David Roe
+
+- Julian Rueth (2012-10-24): added two step extensions
 """
+#*****************************************************************************
+#       Copyright (C) 2007-2009 David Roe <roed@math.harvard.edu>
+#                     2012      Julian Rueth <julian.rueth@fsfe.org>
+#
+#  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
+
 
 from pow_computer_ext import PowComputer_ext_maker
 from sage.libs.ntl.ntl_ZZ_pX import ntl_ZZ_pX
 
 from unramified_extension_generic import UnramifiedExtensionGeneric
 from eisenstein_extension_generic import EisensteinExtensionGeneric
-#from padic_general_extension_generic import pAdicGeneralExtensionGeneric
+from two_step_extension_generic import TwoStepExtensionGeneric
+from general_extension_generic import GeneralExtensionGeneric
 
 from generic_nodes import pAdicCappedRelativeRingGeneric, \
                           pAdicCappedRelativeFieldGeneric, \
                           pAdicCappedAbsoluteRingGeneric, \
                           pAdicFixedModRingGeneric
 
-#from unramified_extension_absolute_element import UnramifiedExtensionAbsoluteElement
-#from unramified_extension_capped_relative_element import UnramifiedExtensionCappedRelativeElement
-#from unramified_extension_lazy_element import UnramifiedExtensionLazyElement
-#from eisenstein_extension_absolute_element import EisensteinExtensionAbsoluteElement
-#from eisenstein_extension_capped_relative_element import EisensteinExtensionCappedRelativeElement
-#from eisenstein_extension_lazy_element import EisensteinExtensionLazyElement
-#from padic_general_extension_absolute_element import pAdicGeneralExtensionAbsoluteElement
-#from padic_general_extension_capped_relative_element import pAdicGeneralExtensionCappedRelativeElement
-#from padic_general_extension_lazy_element import pAdicGeneralExtensionLazyElement
-
 from padic_ZZ_pX_FM_element import pAdicZZpXFMElement
 from padic_ZZ_pX_CR_element import pAdicZZpXCRElement
 from padic_ZZ_pX_CA_element import pAdicZZpXCAElement
 
+from padic_laurent_FM_element import pAdicLaurentFMElement
+from padic_laurent_CR_element import pAdicLaurentCRElement
+from padic_laurent_CA_element import pAdicLaurentCAElement
+
+from padic_general_FM_element import pAdicGeneralFMElement
+from padic_general_CR_element import pAdicGeneralCRElement
 
 class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCappedRelativeRingGeneric):
     """
@@ -43,7 +52,7 @@ class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCap
         sage: R.<a> = ZqCR(27,10000); R == loads(dumps(R))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A capped relative representation of Zq.
 
@@ -62,8 +71,6 @@ class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCap
             - halt -- unused
 
             - print_mode -- A dictionary of print options.
-
-            - shift_seed -- unused
 
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
@@ -91,7 +98,7 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
         sage: R.<a> = QqCR(27,10000); R == loads(dumps(R))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A representation of Qq.
 
@@ -110,8 +117,6 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
             - halt -- unused
 
             - print_mode -- A dictionary of print options.
-
-            - shift_seed -- unused
 
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
@@ -133,16 +138,6 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
         self._pre_poly = prepoly
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXCRElement)
 
-#class UnramifiedExtensionRingLazy(UnramifiedExtensionGeneric, pAdicLazyRingGeneric):
-#    def __init__(self, poly, prec, halt, print_mode, names):
-#        UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, UnramifiedExtensionLazyElement)
-#        pAdicLazyRingGeneric.__init__(self, poly.base_ring().prime(), prec, print_mode, names, halt)
-
-#class UnramifiedExtensionFieldLazy(UnramifiedExtensionGeneric, pAdicLazyFieldGeneric):
-#    def __init__(self, poly, prec, halt, print_mode, names):
-#        UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, UnramifiedExtensionLazyElement)
-#        pAdicLazyFieldGeneric.__init__(self, poly.base_ring().prime(), prec, print_mode, names, halt)
-
 class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
     """
     TESTS::
@@ -150,7 +145,7 @@ class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCap
         sage: R.<a> = ZqCA(27,10000); R == loads(dumps(R))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A capped absolute representation of Zq.
 
@@ -169,8 +164,6 @@ class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCap
             - halt -- unused
 
             - print_mode -- A dictionary of print options.
-
-            - shift_seed -- unused
 
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
@@ -199,7 +192,7 @@ class UnramifiedExtensionRingFixedMod(UnramifiedExtensionGeneric, pAdicFixedModR
         sage: R.<a> = ZqFM(27,10000); R == loads(dumps(R))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A fixed modulus representation of Zq.
 
@@ -219,8 +212,6 @@ class UnramifiedExtensionRingFixedMod(UnramifiedExtensionGeneric, pAdicFixedModR
 
             - print_mode -- A dictionary of print options.
 
-            - shift_seed -- unused
-
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
         EXAMPLES::
@@ -237,14 +228,6 @@ class UnramifiedExtensionRingFixedMod(UnramifiedExtensionGeneric, pAdicFixedModR
         self._pre_poly = prepoly
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXFMElement)
 
-    #def coerce_map_explicit(self, S):
-    #    from sage.rings.padics.morphism import Morphism_ZZ_UnrFM, Morphism_ZpFM_UnrFM
-    #    if S is ZZ:
-    #        return Morphism_ZZ_UnrFM(self)
-    #    elif isinstance(S, pAdicRingFixedMod) and S.prime() == self.prime():
-    #        return Morphism_ZpFM_UnrFM(S, self)
-    #    return None
-
 class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCappedRelativeRingGeneric):
     """
     TESTS::
@@ -253,7 +236,7 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A capped relative representation of an eisenstein extension of Zp.
 
@@ -273,8 +256,6 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
 
             - print_mode -- A dictionary of print options.
 
-            - shift_seed -- unused
-
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
         EXAMPLES::
@@ -293,6 +274,7 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
+        raise NotImplementedError("TODO")
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         if unram_prec <= 30:
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), unram_prec, unram_prec, prec, False, ntl_poly, "small", "e", shift_poly)
@@ -310,7 +292,7 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A capped relative representation of an eisenstein extension of Qp.
 
@@ -329,8 +311,6 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
             - halt -- unused
 
             - print_mode -- A dictionary of print options.
-
-            - shift_seed -- unused
 
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
@@ -351,6 +331,7 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
         # Currently doesn't support polynomials with non-integral coefficients
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
+        shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         if unram_prec <= 30:
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), unram_prec, unram_prec, prec, True, ntl_poly, "small", "e", shift_poly)
@@ -360,16 +341,6 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
         self._pre_poly = prepoly
         EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXCRElement)
 
-#class EisensteinExtensionRingLazy(EisensteinExtensionGeneric, pAdicLazyRingGeneric):
-#    def __init__(self, poly, prec, halt, print_mode, names):
-#        EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, EisensteinExtensionLazyElement)
-#        pAdicLazyRingGeneric.__init__(self, poly.base_ring().prime(), prec, print_mode, names, halt)
-
-#class EisensteinExtensionFieldLazy(EisensteinExtensionGeneric, pAdicLazyFieldGeneric):
-#    def __init__(self, poly, prec, halt, print_mode, names):
-#        EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, EisensteinExtensionLazyElement)
-#        pAdicLazyFieldGeneric.__init__(self, poly.base_ring().prime(), prec, print_mode, names, halt)
-
 class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
     """
     TESTS::
@@ -378,7 +349,7 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A capped absolute representation of an eisenstein extension of Zp.
 
@@ -398,8 +369,6 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
 
             - print_mode -- A dictionary of print options.
 
-            - shift_seed -- unused
-
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
         EXAMPLES::
@@ -418,6 +387,7 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
+        raise NotImplementedError("TODO")
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         if unram_prec <= 30:
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), unram_prec, unram_prec, prec, False, ntl_poly, "small", "e", shift_poly)
@@ -435,7 +405,7 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A fixed modulus representation of an eisenstein extension of Zp.
 
@@ -455,8 +425,6 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
 
             - print_mode -- A dictionary of print options.
 
-            - shift_seed -- unused
-
             - names -- a 4-tuple, (variable_name, residue_name, unramified_subextension_variable_name, uniformizer_name)
 
         EXAMPLES::
@@ -475,6 +443,7 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
+        raise NotImplementedError("TODO")
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         #print poly.base_ring().prime(), prec, poly.degree(), ntl_poly
         # deal with prec not a multiple of e better.
@@ -483,36 +452,98 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         self._pre_poly = prepoly
         EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXFMElement)
 
-    #def coerce_map_explicit(self, S):
-    #    from sage.rings.padics.morphism import Morphism_ZZ_EisFM, Morphism_ZpFM_EisFM
-    #    if S is ZZ:
-    #        return Morphism_ZZ_EisFM(self)
-    #    elif isinstance(S, pAdicRingFixedMod) and S.prime() == self.prime():
-    #        return Morphism_ZpFM_EisFM(S, self)
-    #    return None
+class TwoStepExtensionRingCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeRingGeneric):
+    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
+        r"""
+        TESTS::
 
-#class pAdicGeneralExtensionRingCappedRelative(pAdicGeneralExtensionGeneric, pAdicCappedRelativeRingGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionCappedRelativeElement)
+            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingCappedRelative
+            sage: K = ZpCR(3,10)
+            sage: Ru.<u> = K[]
+            sage: upoly = u^2 + 3*u + 4
+            sage: Ra.<a> = Ru[]
+            sage: epoly = a^3 - 9*u*a^2 + 3*u
+            sage: M = TwoStepExtensionRingCappedRelative((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
+            sage: M
+            Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
-#class pAdicGeneralExtensionFieldCappedRelative(pAdicGeneralExtensionGeneric, pAdicCappedRelativeFieldGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionCappedRelativeElement)
+        """
+        self.prime_pow = None # general extension do not use the pow_computer yet
+        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCRElement)
 
-#class pAdicGeneralExtensionRingLazy(pAdicGeneralExtensionGeneric, pAdicLazyRingGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionLazyElement)
-#        pAdicLazyRingGeneric.__init__(self, upoly.base_ring().prime(), prec, print_mode, names, halt)
+class TwoStepExtensionFieldCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeFieldGeneric):
+    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
+        r"""
+        TESTS::
 
-#class pAdicGeneralExtensionFieldLazy(pAdicGeneralExtensionGeneric, pAdicLazyFieldGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionLazyElement)
-#        pAdicLazyFieldGeneric.__init__(self, upoly.base_ring().prime(), prec, print_mode, names, halt)
+            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionFieldCappedRelative
+            sage: K = QpCR(3,10)
+            sage: Ru.<u> = K[]
+            sage: upoly = u^2 + 3*u + 4
+            sage: Ra.<a> = Ru[]
+            sage: epoly = a^3 - 9*u*a^2 + 3*u
+            sage: M = TwoStepExtensionFieldCappedRelative((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
+            sage: M
+            Eisenstein extension of unramified extension of 3-adic Field with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
-#class pAdicGeneralExtensionRingCappedAbsolute(pAdicGeneralExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionAbsoluteElement)
+        """
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCRElement)
 
-#class pAdicGeneralExtensionRingFixedMod(pAdicGeneralExtensionGeneric, pAdicFixedModRingGeneric):
-#    def __init__(self, upoly, epoly, poly, prec, halt, print_mode, names):
-#        pAdicGeneralExtensionGeneric.__init__(self, upoly, epoly, poly, prec, print_mode, names, pAdicGeneralExtensionAbsoluteElement)
+class TwoStepExtensionRingCappedAbsolute(TwoStepExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
+    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
+        r"""
+        TESTS::
+
+            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingCappedAbsolute
+            sage: K = ZpCA(3,10)
+            sage: Ru.<u> = K[]
+            sage: upoly = u^2 + 3*u + 4
+            sage: Ra.<a> = Ru[]
+            sage: epoly = a^3 - 9*u*a^2 + 3*u
+            sage: M = TwoStepExtensionRingCappedAbsolute((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
+            sage: M
+            Eisenstein extension of unramified extension of 3-adic Ring with capped absolute precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
+
+        """
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCAElement)
+
+class TwoStepExtensionRingFixedMod(TwoStepExtensionGeneric, pAdicFixedModRingGeneric):
+    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
+        r"""
+        TESTS::
+
+            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingFixedMod
+            sage: K = ZpFM(3,10)
+            sage: Ru.<u> = K[]
+            sage: upoly = u^2 + 3*u + 4
+            sage: Ra.<a> = Ru[]
+            sage: epoly = a^3 - 9*u*a^2 + 3*u
+            sage: M = TwoStepExtensionRingFixedMod((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
+            sage: M
+            Eisenstein extension of unramified extension of 3-adic Ring of fixed modulus 3^10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
+
+        """
+        self.prime_pow = None # general extension do not use the pow_computer yet
+        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentFMElement)
+
+class GeneralExtensionFieldCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeFieldGeneric):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCRElement)
+
+class GeneralExtensionRingCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeRingGeneric):
+    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralCRElement)
+
+class GeneralExtensionRingCappedAbsolute(GeneralExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
+    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralCRElement)
+
+class GeneralExtensionRingFixedMod(GeneralExtensionGeneric, pAdicFixedModRingGeneric):
+    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+        self.prime_pow = None # general extensions do not use the pow_computer yet
+        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralFMElement)

@@ -194,6 +194,7 @@ from padic_capped_relative_element import pAdicCappedRelativeElement
 from padic_capped_absolute_element import pAdicCappedAbsoluteElement
 from padic_fixed_mod_element import pAdicFixedModElement
 from sage.rings.integer_ring import ZZ
+from sage.categories.principal_ideal_domains import PrincipalIdealDomains
 
 class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGeneric):
     r"""
@@ -265,6 +266,36 @@ class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGener
         if do_latex:
             return "\\ZZ_{%s}" % self.prime()
         return "%s-adic Ring with capped relative precision %s"%(self.prime(), self.precision_cap())
+
+    def _factor_univariate_polynomial(self, f):
+        """
+        Computes the factorization of ``f`` into irreducible polynomials.
+
+        INPUT:
+
+            - ``f`` -- a univariate polynomial defined over this ring
+
+        OUTPUT:
+
+        A factorization of ``f`` into irreducible factors over this ring
+
+        ..SEEALSO ::
+
+            :meth:`sage.rings.polynomial.polynomial_element.Polynomial.factor`
+
+        EXAMPLES::
+
+            sage: R.<x> = ZpCR(13,5)[]
+            sage: (x^2 + 1).factor()
+            ((1 + O(13^5))*x + (5 + 5*13 + 13^2 + 5*13^4 + O(13^5))) * ((1 + O(13^5))*x + (8 + 7*13 + 11*13^2 + 12*13^3 + 7*13^4 + O(13^5)))
+
+        """
+        from sage.rings.padics.factory import ZpCA
+        m = min([x.precision_absolute() for x in f.list()])
+        R = ZpCA(self.prime(), prec = m)
+        F = f.change_ring(R).factor()
+        from sage.structure.factorization import Factorization
+        return Factorization([(a.change_ring(self), b) for (a, b) in F], unit=self(F.unit()))
 
 class pAdicRingCappedAbsolute(pAdicRingBaseGeneric, pAdicCappedAbsoluteRingGeneric):
     r"""
@@ -532,3 +563,40 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
             return self(self.prime()**k * a, absprec = k + self.precision_cap())
         else:
             raise NotImplementedError, "Don't know %s algorithm"%algorithm
+
+    def _factor_univariate_polynomial(self, f):
+        """
+        Computes the factorization of ``f`` into irreducible polynomials.
+
+        INPUT:
+
+            - ``f`` -- a univariate polynomial defined over this ring
+
+        OUTPUT:
+
+        A factorization of ``f`` into irreducible factors over this ring
+
+        ..SEEALSO ::
+
+            :meth:`sage.rings.polynomial.polynomial_element.Polynomial.factor`
+
+        EXAMPLES::
+
+            sage: R.<x> = QpCR(13,5)[]
+            sage: (x^2 + 1).factor()
+            ((1 + O(13^5))*x + (5 + 5*13 + 13^2 + 5*13^4 + O(13^5))) * ((1 + O(13^5))*x + (8 + 7*13 + 11*13^2 + 12*13^3 + 7*13^4 + O(13^5)))
+
+        TESTS:
+
+        Check that :trac:`?` has been resolved::
+
+            sage: R.<x> = QpCR(3,5)[]
+            sage: (x^2 + 1/3).factor()
+            (3^-1 + O(3^4)) * ((3 + O(3^5))*x^2 + (O(3^5))*x + (1 + O(3^5)))
+
+        """
+        min_val = min([x.valuation() for x in f.list()])
+        g = f.map_coefficients(lambda c:c>>min_val)
+        F = g.change_ring(self.integer_ring()).factor()
+        from sage.structure.factorization import Factorization
+        return Factorization([(a.change_ring(self), b) for (a, b) in F], unit=self.uniformizer_pow(min_val))

@@ -11,6 +11,7 @@ import sage.rings.padics.misc as misc
 import sage.rings.padics.precision_error as precision_error
 import sage.rings.fraction_field_element as fraction_field_element
 import copy
+from sage.structure.element import coerce_binop
 
 from sage.libs.all import pari, pari_gen
 from sage.libs.ntl.all import ZZX
@@ -36,6 +37,13 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
             sage: T.<t> = ZZ[]
             sage: R(t + 2)
             (1 + O(13^7))*t + (2 + O(13^7))
+
+        Check that :trac:`13620` has been fixed::
+
+            sage: f = R.zero()
+            sage: R(f.dict())
+            0
+
         """
         Polynomial.__init__(self, parent, is_gen=is_gen)
         parentbr = parent.base_ring()
@@ -90,7 +98,7 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
                 check = False
         elif isinstance(x, dict):
             zero = parentbr.zero_element()
-            n = max(x.keys())
+            n = max(x.keys()) if len(x) else 0
             v = [zero for _ in xrange(n + 1)]
             for i, z in x.iteritems():
                 v[i] = z
@@ -109,10 +117,6 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
         if check:
             x = [parentbr(z) for z in x]
 
-        # Remove this -- for p-adics this is terrible, since it kills any non exact zero.
-        #if len(x) == 1 and not x[0]:
-        #    x = []
-
         self._list = x
         self._valaddeds = [a.valuation() for a in x]
         self._valbase = sage.rings.padics.misc.min(self._valaddeds)
@@ -130,6 +134,9 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
             self._normalized = True
             if not absprec is infinity or not relprec is infinity:
                 self._adjust_prec_info(absprec, relprec)
+
+        if self.degree() == -1 and self._valbase is infinity:
+            self._list = []
 
     def _new_constant_poly(self, a, P):
         """
@@ -280,10 +287,10 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
         """
         Returns a list of coefficients of self.
 
-        NOTE:
-        The length of the list returned may be greater
-        than expected since it includes any leading zeros
-        that have finite absolute precision.
+        .. NOTE::
+
+            The length of the list returned may be greater than expected since
+            it includes any leading zeros that have finite absolute precision.
 
         EXAMPLES::
 
@@ -297,8 +304,12 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
              13^2 + O(13^9),
              0,
              2 + O(13^7)]
-         """
+            sage: R.zero().list()
+            []
+            sage: R(K(0,2)).list()
+            [O(13^2)]
 
+        """
         if self._list is None:
             self._comp_list()
         return list(self._list)
@@ -342,26 +353,29 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
 
     def content(self):
         """
-        Returns the content of self.
+        Computes the content of ``self``.
 
-        The content is returned to maximum precision: since it's only
-        defined up to a unit, we can choose p^k as the representative.
+        OUTPUT:
 
-        Returns an error if the base ring is actually a field: this is
-        probably not a function you want to be using then, since any
-        nonzero answer will be correct.
-
-        The content of the exact zero polynomial is zero.
+            If ``self`` is zero, return ``self`` as an element of the base
+            ring.
+            Otherwise, since the content is only defined up to a unit, return
+            the content as `p^k` with maximal precision.
 
         EXAMPLES::
 
             sage: K = Zp(13,7)
             sage: R.<t> = K[]
-            sage: a = 13^7*t^3 + K(169,4)*t - 13^4
-            sage: a.content()
+            sage: f = 13^7*t^3 + K(169,4)*t - 13^4
+            sage: f.content()
             13^2 + O(13^9)
             sage: R(0).content()
             0
+            sage: f = R(K(0,3)); f
+            (O(13^3))
+            sage: f.content()
+            O(13^3)
+
             sage: P.<x> = ZZ[]
             sage: f = x + 2
             sage: f.content()
@@ -373,9 +387,26 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
             1 + O(2^10)
             sage: (2*fp).content()
             2 + O(2^11)
+
+        Over a field, the content is the base ring's one unless it is zero::
+
+            sage: K = Qp(13,7)
+            sage: R.<t> = K[]
+            sage: f = 13^7*t^3 + K(169,4)*t - 13^4
+            sage: f.content()
+            1 + O(13^7)
+            sage: f = R.zero()
+            sage: f.content()
+            0
+            sage: f = R(K(0,3))
+            sage: f.content()
+            O(13^3)
+
         """
+        if self.is_zero():
+            return self[0]
         if self.base_ring().is_field():
-            raise TypeError, "ground ring is a field.  Answer is only defined up to units."
+            return self.base_ring().one()
         if self._normalized:
             return self.base_ring()(self.base_ring().prime_pow(self._valbase))
         if self._valaddeds is None:
@@ -962,7 +993,7 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
         return Polynomial_padic_capped_relative_dense(self.parent(), (zzpoly, self._valbase, relprec, False, valadded, None), construct = True)
 
     def quo_rem(self, right):
-        return self._quo_rem_naive(right)
+        return self._quo_rem_hensel(right)
 
     def _quo_rem_naive(self, right):
         """
@@ -986,12 +1017,6 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
 
     #def lcm(self, right):
     #    raise NotImplementedError
-
-    def xgcd(self, right):
-        from sage.misc.stopgap import stopgap
-        stopgap("Extended gcd computations over p-adic fields are performed using the standard Euclidean algorithm which might produce mathematically incorrect results in some cases.", 13439)
-
-        return self._xgcd(right)
 
     #def discriminant(self):
     #    raise NotImplementedError
@@ -1085,21 +1110,6 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
         elif min(self._relprecs) <= 0:
             raise PrecisionError, "Polynomial is not known to high enough precision"
         return self._poly.factor_mod(self.base_ring().prime())
-
-    def factor(self):
-        # This will eventually be improved.
-        if self == 0:
-            raise ValueError, "Factorization of the zero polynomial not defined"
-        from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-        from sage.rings.padics.factory import ZpCA
-        base = self.base_ring()
-        #print self.list()
-        m = min([x.precision_absolute() for x in self.list()])
-        #print m
-        R = ZpCA(base.prime(), prec = m)
-        S = PolynomialRing(R, self.parent().variable_name())
-        F = S(self).factor()
-        return Factorization([(self.parent()(a), b) for (a, b) in F], base(F.unit()))
 
 def _extend_by_infinity(L, n):
     return L + [infinity] * (n - len(L))

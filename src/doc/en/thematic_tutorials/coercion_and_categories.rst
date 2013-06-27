@@ -1530,6 +1530,7 @@ Let us see what tests are actually performed::
     running ._test_some_elements() . . . pass
     running ._test_zero() . . . pass
 
+
 .. end of output
 
 Implementing a new category with additional tests
@@ -1694,6 +1695,7 @@ interesting.
     running ._test_prod() . . . pass
     running ._test_some_elements() . . . pass
     running ._test_zero() . . . pass
+
 
 .. end of output
 

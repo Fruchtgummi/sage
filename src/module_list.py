@@ -1655,6 +1655,26 @@ ext_modules = [
               libraries=['ntl', 'gmp', 'csage', 'gmpxx', 'm', 'stdc++'],
               language='c++'),
 
+    Extension('sage.rings.padics.padic_general_element',
+              sources = ['sage/rings/padics/padic_general_element.pyx'],
+              language='c++'),
+
+    Extension('sage.rings.padics.padic_laurent_element',
+              sources = ['sage/rings/padics/padic_laurent_element.pyx'],
+              language='c++'),
+
+    Extension('sage.rings.padics.padic_laurent_CR_element',
+              sources = ['sage/rings/padics/padic_laurent_CR_element.pyx'],
+              language='c++'),
+
+    Extension('sage.rings.padics.padic_laurent_CA_element',
+              sources = ['sage/rings/padics/padic_laurent_CA_element.pyx'],
+              language='c++'),
+
+    Extension('sage.rings.padics.padic_laurent_FM_element',
+              sources = ['sage/rings/padics/padic_laurent_FM_element.pyx'],
+              language='c++'),
+
     Extension('sage.rings.padics.pow_computer',
               sources = ['sage/rings/padics/pow_computer.pyx'],
               libraries = ["csage", "ntl", "gmp", "gmpxx", "m", "stdc++"],

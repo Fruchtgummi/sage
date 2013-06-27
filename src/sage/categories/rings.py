@@ -258,6 +258,63 @@ class Rings(Category_singleton):
                 from sage.rings.noncommutative_ideals import IdealMonoid_nc
                 return IdealMonoid_nc(self)
 
+        def is_perfect(self):
+            """
+            Return whether this ring is perfect.
+
+            OUTPUT:
+
+            Returns ``True`` if the ring has characteristic zero or if its
+            characteristic is a prime `p` and every element has a `p`-th root.
+
+            EXAMPLES::
+
+                sage: ZZ.is_perfect()
+                True
+                sage: QQ.is_perfect()
+                True
+                sage: GF(3).is_perfect()
+                True
+                sage: K.<x> = FunctionField(GF(3))
+                sage: K.is_perfect()
+                False
+                sage: Integer(4).is_perfect()
+                False
+
+            """
+            if self.characteristic().is_zero():
+                return True
+            if not self.characteristic().is_prime():
+                return False
+
+            raise NotImplementedError("is_perfect() not implemented for this ring.")
+
+        def _test_is_perfect(self, **options):
+            """
+            Run generic tests on the method :meth:`is_perfect`.
+
+            See also: :class:`TestSuite`.
+
+            EXAMPLES::
+
+                sage: ZZ._test_perfect()
+            """
+            tester = self._tester(**options)
+            try:
+                characteristic = self.characteristic()
+            except AttributeError:
+                return # raised when self.one() does not have a additive_order()
+            except NotImplementedError:
+                return
+
+            if characteristic.is_zero():
+                tester.assertTrue(self.is_perfect())
+            elif characteristic.is_prime():
+                for x in self.some_elements():
+                    tester.AssertTrue(x.is_nth_power(characteristic))
+            else:
+                tester.assertFalse(self.is_perfect())
+
         def characteristic(self):
             """
             Return the characteristic of this ring.
@@ -616,8 +673,160 @@ class Rings(Category_singleton):
             raise TypeError, "Use self.quo(I) or self.quotient(I) to construct the quotient ring."
 
     class ElementMethods:
-        pass
+        def is_nth_power(self, n):
+            """
+            Return whether this element is an ``n``-th power in its parent ring.
 
+            INPUT:
+
+            - ``n`` -- an element that can be an exponent in this ring (e.g. an
+              integer)
+
+            OUTPUT:
+
+            Returns ``True`` if there is an element `a` in the parent ring such
+            that this element equals `a^n`.
+
+            ALGORITHM:
+
+            For general rings, only trivial cases are implemented.
+
+            .. SEEALSO::
+
+                :meth:`nth_root`
+
+            EXAMPLES::
+
+                sage: R.<x,y> = ZZ[]
+                sage: x.is_nth_power(1)
+                True
+                sage: x.is_nth_power(-1)
+                False
+                sage: x.is_nth_power(2)
+                Traceback (most recent call last):
+                ...
+                NotImplementedError: is_square() not implemented for elements of Multivariate Polynomial Ring in x, y over Integer Ring
+                sage: x.is_nth_power(0)
+                False
+
+            """
+            if n == 0:
+                return self.is_one()
+            if n == 1:
+                return True
+            if n < 0:
+                return self.is_unit() and (~self).is_nth_power(-n)
+            if n == self.parent().characteristic() and self.parent().is_perfect():
+                return True
+            if n == 2:
+                return self.is_square()
+
+            raise NotImplementedError("element does not provide an implementation for is_nth_power() for general exponents.")
+
+        def _test_is_nth_power(self, **options):
+            """
+            Run generic tests on the method :meth:`is_nth_power`.
+
+            See also: :class:`TestSuite`.
+
+            EXAMPLES::
+
+                sage: GF(3)(2)._test_is_nth_power()
+
+            """
+            tester = self._tester(**options)
+            tester.assertTrue(self.is_nth_power(1))
+            tester.assertEqual(self.is_nth_power(-1),self.is_unit())
+            try: # check consistency with is_square
+                tester.assertEqual(self.is_nth_power(2),self.is_square())
+            except NotImplementedError: pass
+
+            # check some exponents
+            from sage.rings.integer_ring import IntegerRing
+            for n in IntegerRing().some_elements():
+                try:
+                    tester.assertTrue((self**n).is_nth_power(n))
+                except NotImplementedError: pass
+
+        def nth_root(self, n):
+            """
+            Compute an ``n``-th root of this element in its parent ring.
+
+            INPUT:
+
+            - ``n`` -- an element that can be an exponent in this ring (e.g. an
+              integer)
+
+            OUTPUT:
+
+            Returns an element ``a`` in the parent ring such that this element
+            equals `a^n`. Raises an error if no such element exists.
+
+            ALGORITHM:
+
+            For general rings, only trivial cases are implemented.
+
+            .. SEEALSO::
+
+                :meth:`is_nth_power`
+
+            EXAMPLES::
+
+                sage: R.<x,y> = ZZ[]
+                sage: x.nth_root(1)
+                x
+                sage: x.nth_root(-1)
+                Traceback (most recent call last):
+                ...
+                ValueError: element is not an n-th power.
+                sage: x.nth_root(2)
+                Traceback (most recent call last):
+                ...
+                NotImplementedError: is_square() not implemented for elements of Multivariate Polynomial Ring in x, y over Integer Ring
+                sage: x.nth_root(0)
+                Traceback (most recent call last):
+                ...
+                ValueError: element is not an n-th power.
+
+            """
+            if not self.is_nth_power(n):
+                raise ValueError("element is not an n-th power.")
+
+            if n == 0:
+                assert self.is_one() # self is 1 - otherwise it can't be an n-th power
+                return self
+            if n == 1:
+                return self
+            if n < 0:
+                return (~self).nth_root(-n)
+            if n == 2:
+                return self.sqrt()
+
+            raise NotImplementedError("element does not provide an implementation for nth_root() for general exponents.")
+
+        def _test_nth_root(self, **options):
+            """
+            Run generic tests on the method :meth:`nth_root`.
+
+            See also: :class:`TestSuite`.
+
+            EXAMPLES::
+
+                sage: GF(3)(2)._test_nth_root()
+
+            """
+            tester = self._tester(**options)
+            tester.assertEqual(self.nth_root(1), self)
+            if self.is_unit():
+                tester.assertEqual(self.nth_root(-1), ~self)
+
+            # check some exponents
+            from sage.rings.integer_ring import ZZ
+            for n in ZZ.some_elements():
+                try:
+                    if self.is_nth_power(n):
+                        tester.assertEquals(self.nth_root(n)**n, self)
+                except NotImplementedError: pass
 
     class HomCategory(HomCategory):
         pass

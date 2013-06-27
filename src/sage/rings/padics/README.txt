@@ -59,11 +59,11 @@ a, D        UnramifiedExtensionRingCappedAbsolute     [d] (padic_extension_leave
 a, E        UnramifiedExtensionRingFixedMod           [e] (padic_extension_leaves.py)
 a, F        UnramifiedExtensionRingLazy               [f] (padic_extension_leaves.py, does not yet exist)
 a, I        UnramifiedExtensionFieldLazy              [g] (padic_extension_leaves.py, does not yet exist)
-S        TwoStepExtensionGeneric                      [h] (two_step_extension_generic.py, does not yet exist)
-h, C        TwoStepExtensionRingCappedRelative        [i] (padic_extension_leaves.py, does not yet exist)
-h, H        TwoStepExtensionFieldCappedRelative       [j] (padic_extension_leaves.py, does not yet exist)
-h, D        TwoStepExtensionRingCappedAbsolute        [k] (padic_extension_leaves.py, does not yet exist)
-h, E        TwoStepExtensionRingFixedMod              [l] (padic_extension_leaves.py, does not yet exist)
+S        TwoStepExtensionGeneric                      [h] (two_step_extension_generic.py)
+h, C        TwoStepExtensionRingCappedRelative        [i] (padic_extension_leaves.py)
+h, H        TwoStepExtensionFieldCappedRelative       [j] (padic_extension_leaves.py)
+h, D        TwoStepExtensionRingCappedAbsolute        [k] (padic_extension_leaves.py)
+h, E        TwoStepExtensionRingFixedMod              [l] (padic_extension_leaves.py)
 h, F        TwoStepExtensionRingLazy                  [m] (padic_extension_leaves.py, does not yet exist)
 h, I        TwoStepExtensionFieldLazy                 [n] (padic_extension_leaves.py, does not yet exist)
 S        pAdicRelativeExtensionGeneric                [h] (padic_relative_extension_generic.py, does not yet exist)
@@ -91,6 +91,11 @@ LocalGenericElement (local_generic_element.pyx)                                 
         pAdicZZpXCAElement (padic_ZZ_pX_CA_element.pyx)                           :
         pAdicZZpXFMElement (padic_ZZ_pX_FM_element.pyx)                           :
         pAdicZZpXLElement (padic_ZZ_pX_L_element.pyx, does not yet exist)         :
+      pAdicLaurentElement (padic_laurent_element.pyx)                             : two step extensions of Qp and Zp, using Laurent series
+       pAdicLaurentCRElement (padic_laurent_CR_element.pyx)                       :
+       pAdicLaurentCAElement (padic_laurent_CA_element.pyx)                       :
+       pAdicLaurentFMElement (padic_laurent_FM_element.pyx)                       :
+       pAdicLaurentLElement (padic_laurent_L_element.pyx, does not yet exist)     :
       pAdicZZpEXElement (padic_ZZ_pEX_element.pyx, does not yet exist)            : generic absolute extensions of Qp and Zp, using ntl ZZ_pEX
         pAdicZZpEXCRElement (padic_ZZ_pEX_CR_element.pyx, does not yet exist)     :
         pAdicZZpEXCAElement (padic_ZZ_pEX_CA_element.pyx, does not yet exist)     :

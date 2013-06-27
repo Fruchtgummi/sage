@@ -164,7 +164,15 @@ cdef class Cache_ntl_gf2e(SageObject):
 
         late_import()
         if isinstance(modulus,str):
-            if modulus == "minimal_weight":
+            if modulus.startswith('conway'):
+                from sage.rings.finite_rings.constructor import find_pseudo_conway_polynomial_tree
+                p = int(parent.characteristic())
+                self._PCPT = find_pseudo_conway_polynomial_tree(p, k) # we store the tree so that the weakrefs don't fly away.  It also provides a nice interface for creating subfields.
+                self._prefix = modulus[6:]
+                if len(self._prefix) == 0: self._prefix = 'z'
+                modulus = self._PCPT.get_pseudo_conway_poly(k)
+                self._is_conway = ConwayPolynomials().has_polynomial(p, k)
+            elif modulus == "minimal_weight":
                 GF2X_BuildSparseIrred(ntl_m, k)
             elif modulus == "first_lexicographic":
                 GF2X_BuildIrred(ntl_m, k)
@@ -180,7 +188,9 @@ cdef class Cache_ntl_gf2e(SageObject):
                 GF2X_SetCoeff(ntl_m, i, c)
         else:
             raise ValueError("Modulus parameter not understood")
+        sig_on()
         GF2EContext_construct_GF2X(&self.F, &ntl_m)
+        sig_off()
 
         self._parent = <FiniteField?>parent
         self._zero_element = self._new()
@@ -1094,6 +1104,14 @@ cdef class FiniteField_ntl_gf2eElement(FinitePolyExtElement):
             sage: g = K.random_element()
             sage: g.minpoly()(g)
             0
+
+        We check that the NTL modulus is restored properly::
+
+            sage: k.<a> = GF(2^1000)
+            sage: b = a^(k.order()//(2^20-1))
+            sage: l.<c> = GF(2^20)
+            sage: b.minpoly()
+            x^20 + x^17 + x^16 + x^14 + x^13 + x^11 + x^8 + x^7 + x^3 + x + 1
         """
         (<Cache_ntl_gf2e>self._parent._cache).F.restore()
         cdef GF2X_c r = GF2X_IrredPolyMod(GF2E_rep(self.x), GF2E_modulus())

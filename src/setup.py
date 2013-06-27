@@ -291,6 +291,9 @@ from distutils import log
 class sage_build_ext(build_ext):
 
     def build_extensions(self):
+        if 'NO_CYTHON' in os.environ  and os.environ['NO_CYTHON'] == 'yes':
+            print "NOT building extensions"
+            return
 
         from distutils.debug import DEBUG
 

@@ -39,6 +39,12 @@ class pAdicBaseGeneric(pAdicGeneric):
             raise RuntimeError
         self._populate_coercion_lists_(coerce_list=coerce_list, convert_list=convert_list, element_constructor=element_class)
 
+    def hom(self, im_gens):
+        if len(im_gens)!=0:
+            raise ValueError
+        from sage.categories.homset import Hom
+        return Hom(self,self).identity()
+
     def fraction_field(self, print_mode=None):
         r"""
         Returns the fraction field of ``self``.

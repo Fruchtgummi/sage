@@ -862,7 +862,6 @@ class FiniteField_ext_pariElement(FinitePolyExtElement):
 
         EXAMPLES::
 
-            sage: from sage.rings.finite_rings.finite_field_ext_pari import FiniteField_ext_pari
             sage: k = GF(next_prime(10**10))
             sage: a = k(17)/k(19)
             sage: b = a.lift(); b

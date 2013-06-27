@@ -36,6 +36,54 @@ class EisensteinExtensionGeneric(pAdicExtensionGeneric):
         pAdicExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
         #self._precompute()
 
+    def hom(self, im_gens):
+        if len(im_gens)!=1:
+            raise ValueError
+        from sage.categories.morphism import SetMorphism
+        from sage.categories.rings import Rings
+        from sage.categories.homset import Hom
+        from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+        R = PolynomialRing(self.base_ring(),names=('T',))
+        def list(x):
+            ret = x.matrix()[0].list()
+            while ret and ret[-1].is_zero(): ret.pop()
+            return ret
+
+        return SetMorphism(Hom(self,im_gens[0].parent(),Rings()), lambda x:R(list(x))(im_gens[0]))
+
+    def _compute_shift_seed(self, premodulus, base):
+        from sage.symbolic.expression import is_Expression
+        if is_Expression(premodulus):
+            # Here we assume that the output of coeffs is sorted in increasing order by exponent:
+            coeffs = premodulus.coeffs()
+            preseed = premodulus / coeffs[-1][0]
+            preseed -= preseed.variables()[0]**coeffs[-1][1]
+            preseed /= base.prime() # here we assume that the base is unramified over Qp
+            shift_seed = -preseed.polynomial(base)
+        else: # a polynomial
+            if not premodulus.is_monic():
+                preseed = premodulus / premodulus.leading_coefficient()
+            else:
+                preseed = premodulus
+            preseed = preseed[:preseed.degree()]
+            if base.is_fixed_mod():
+                shift_seed = -preseed.change_ring(base)
+                shift_seed = shift_seed.parent()([a >> 1 for a in shift_seed.list()])
+            else:
+                if base.e() == 1:
+                    try:
+                        preseed *= 1/base.prime()
+                        shift_seed = -preseed.change_ring(base)
+                    except TypeError:
+                        # give up on getting more precision
+                        shift_seed = -preseed.change_ring(base)
+                        shift_seed /= base.uniformizer()
+                else:
+                    # give up on getting more precision
+                    shift_seed = -preseed.change_ring(base)
+                    shift_seed /= base.uniformizer()
+        return shift_seed
+
     def _repr_(self, do_latex = False):
         """
         Returns a print representation of this extension.

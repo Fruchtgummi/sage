@@ -125,17 +125,17 @@ class FiniteField_givaro(FiniteField):
         self._kwargs['cache'] = cache
 
         self._is_conway = False
-        if modulus is None or modulus == 'conway':
+        if isinstance(modulus, str) and modulus.startswith('conway'):
             if k == 1:
                 modulus = 'random' # this will use the gfq_factory_pk function.
-            elif ConwayPolynomials().has_polynomial(p, k):
-                from sage.rings.finite_rings.constructor import conway_polynomial
-                modulus = conway_polynomial(p, k)
-                self._is_conway = True
-            elif modulus is None:
-                modulus = 'random'
             else:
-                raise ValueError, "Conway polynomial not found"
+                from sage.rings.finite_rings.constructor import find_pseudo_conway_polynomial_tree
+                self._PCPT = find_pseudo_conway_polynomial_tree(p, k) # we store the tree so that the weakrefs don't fly away.  It also provides a nice interface for creating subfields.
+                self._prefix = modulus[6:]
+                if len(self._prefix) == 0: self._prefix = 'z'
+                modulus = self._PCPT.get_pseudo_conway_poly(k)
+                # The following is only used for _gap_init_, so we check to see if the defining polynomial is actually a conway polynomial.
+                self._is_conway = ConwayPolynomials().has_polynomial(p, k)
 
         from sage.rings.polynomial.all import is_Polynomial
         if is_Polynomial(modulus):
@@ -355,9 +355,7 @@ class FiniteField_givaro(FiniteField):
             sage: F9 = FiniteField_givaro(9)
             sage: F81 = FiniteField_givaro(81)
             sage: F81(F9.gen())
-            Traceback (most recent call last):
-            ...
-            TypeError: unable to coerce from a finite field other than the prime subfield
+            2*a^3 + 2*a^2 + 1
         """
         return self._cache.element_from_data(e)
 
@@ -392,9 +390,11 @@ class FiniteField_givaro(FiniteField):
                 if R.degree() == 1:
                     return True
                 elif self.degree() % R.degree() == 0:
-                    # This is where we *would* do coercion from one nontrivial finite field to another...
-                    # We use this error message for backward compatibility until #8335 is finished
-                    raise TypeError, "unable to coerce from a finite field other than the prime subfield"
+                    if hasattr(self, '_PCPT') and hasattr(R, '_PCPT') and R._PCPT is not None:
+                        from homset import FiniteFieldHomset, FiniteFieldHomomorphism_im_gens
+                        return FiniteFieldHomomorphism_im_gens(FiniteFieldHomset(R, self), self.gen()**((self.order()-1)//(R.order()-1)))
+                    else:
+                        print hasattr(self, '_PCPT'),hasattr(R, '_PCPT')
 
     def gen(self, n=0):
         r"""

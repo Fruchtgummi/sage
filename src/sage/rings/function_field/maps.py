@@ -33,7 +33,207 @@ EXAMPLES::
 #*****************************************************************************
 
 from sage.categories.morphism import Morphism
+from sage.categories.map import Map
 from sage.rings.morphism import RingHomomorphism
+
+class FunctionFieldDerivation(Map):
+    r"""
+    A base class for derivations of function fields.
+
+    EXAMPLES::
+
+        sage: K.<x> = FunctionField(QQ)
+        sage: d = K.derivation()
+        sage: isinstance(d, sage.rings.function_field.maps.FunctionFieldDerivation)
+        True
+
+    """
+    def __init__(self, K):
+        r"""
+        Initialize a derivation from ``K`` to ``K``.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: d = K.derivation() # indirect doctest
+
+        """
+        self.__field = K
+        from sage.categories.homset import Hom
+        Map.__init__(self, Hom(K,K))
+
+    def _repr_type(self):
+        r"""
+        Return the type of this map (a derivation), for the purposes of printing out self.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: d = K.derivation()
+            sage: d._repr_type()
+            'Derivation'
+
+        """
+        return "Derivation"
+
+    def is_injective(self):
+        r"""
+        Return whether this derivation is injective.
+
+        OUTPUT:
+
+        Returns ``False`` since derivations are never injective.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: d = K.derivation()
+            sage: d.is_injective()
+            False
+
+        """
+        return False
+
+    def domain(self):
+        r"""
+        Return the domain of this derivation.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: K.derivation().domain()
+            Rational function field in x over Rational Field
+
+        """
+        return self.__field
+
+    def codomain(self):
+        r"""
+        Return the codomain of this derivation.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: K.derivation().codomain()
+            Rational function field in x over Rational Field
+
+        """
+        return self.__field
+
+class FunctionFieldDerivation_rational(FunctionFieldDerivation):
+    r"""
+    A derivation of rational function fields over the constant base field.
+
+    EXAMPLES::
+
+        sage: K.<x> = FunctionField(QQ)
+        sage: d = K.derivation()
+        sage: isinstance(d, sage.rings.function_field.maps.FunctionFieldDerivation_rational)
+        True
+
+    """
+    def __init__(self, K, u):
+        r"""
+        Initialize a derivation of ``K`` which sends the generator of ``K`` to
+        ``u``.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: d = K.derivation() # indirect doctest
+
+        """
+        FunctionFieldDerivation.__init__(self, K)
+        self._u = u
+
+    def _call_(self, x):
+        r"""
+        Compute the derivation of ``x``.
+
+        INPUT:
+
+        - ``x`` -- an element of the rational function field
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: d = K.derivation()
+            sage: d(x) # indirect doctest
+            1
+            sage: d(x^3)
+            3*x^2
+
+        """
+        f,g = x.numerator(),x.denominator()
+
+        if not f.gcd(g).is_one():
+            raise NotImplementedError("derivations only implemented for rational functions with coprime numerator and denominator.")
+
+        numerator = f.derivative()*g - f*g.derivative()
+        if numerator.is_zero():
+            return self.codomain().zero()
+        else:
+            return self._u * self.codomain()( numerator / g**2 )
+
+class FunctionFieldDerivation_polymod(FunctionFieldDerivation):
+    r"""
+    A derivation of function fields over the constant base field.
+
+    EXAMPLES::
+
+        sage: K.<x> = FunctionField(QQ)
+        sage: R.<y> = K[]
+        sage: L.<y> = K.extension(y^2 - x)
+        sage: d = L.derivation()
+        sage: isinstance(d, sage.rings.function_field.maps.FunctionFieldDerivation_polymod)
+        True
+
+    """
+    def __init__(self, L, d):
+        r"""
+        Initialize a derivation of ``L`` which extends the derivation ``d`` on
+        its base field.
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: R.<y> = K[]
+            sage: L.<y> = K.extension(y^2 - x)
+            sage: d = L.derivation()
+
+        """
+        FunctionFieldDerivation.__init__(self, L)
+        self._d = d
+
+    def _call_(self, x):
+        r"""
+        Compute the derivative of ``x``.
+
+        INPUT:
+
+        - ``x`` -- an element of the function field
+
+        EXAMPLES::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: R.<y> = K[]
+            sage: L.<y> = K.extension(y^2 - x)
+            sage: d = L.derivation()
+            sage: d(x) # indirect doctest
+            1
+            sage: d(y)
+            (-1/2/-x)*y
+            sage: d(y^2)
+            1
+
+        """
+        if x.is_zero():
+            return self.codomain().zero()
+
+        f = x.minpoly()
+        if not f.gcd(f.derivative()).is_one():
+            raise NotImplementedError("derivations only for separable elements.")
+        return - f.map_coefficients(lambda c:self._d(c))(x) / f.derivative()(x)
 
 class FunctionFieldIsomorphism(Morphism):
     r"""

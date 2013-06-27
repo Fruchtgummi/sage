@@ -320,7 +320,6 @@ cdef class FiniteField(Field):
             ...
             TypeError: images do not define a valid homomorphism
         """
-
         if (self.characteristic() != codomain.characteristic()):
             raise ValueError, "no map from %s to %s"%(self, codomain)
         if (len(im_gens) != 1):
@@ -744,6 +743,174 @@ cdef class FiniteField(Field):
             9088054599082082 # 64-bit
         """
         return hash("GF") + hash(self.order())
+
+    def construction(self):
+        """
+        Returns the construction of this finite field, as a ConstructionFunctor and the base field.
+
+        EXAMPLES::
+        
+            sage: v = GF(3^3).construction(); v
+            (AlgebraicExtensionFunctor, Finite Field of size 3)
+            sage: v[0].polys[0]
+            3
+            sage: v = GF(2^1000,'a').construction(); v[0].polys[0]
+            a^1000 + a^5 + a^4 + a^3 + 1
+        """
+        from sage.categories.pushout import AlgebraicExtensionFunctor
+        if self.degree() == 1:
+            # this is not of type FiniteField_prime_modn
+            from sage.rings.integer import Integer
+            return AlgebraicExtensionFunctor([Integer(1)], [None],[None]), self.base_ring()
+        elif hasattr(self, '_PCPT') and self._PCPT is not None:
+            return AlgebraicExtensionFunctor([self.degree()], [self.variable_name()],[None],prefix=self._prefix), self.base_ring()
+        else:
+            return AlgebraicExtensionFunctor([self.polynomial()], [self.variable_name()],[None]), self.base_ring()
+
+    def extension(self, modulus, name=None, names=None, embedding=None, prefix='z'):
+        """
+        Returns an extension of this finite field.
+
+        INPUT::
+
+        - modulus -- either a polynomial with coefficients in this field or an integer.  
+                     If an integer, returns the pseudo-Conway extension of this field of that degree.
+        - name -- the name of the generator in the new extension
+        - embedding -- currently not used; for compatibility with other AlgebraicExtensionFunctor calls.
+        - prefix -- Passed on to the finite field constructor.  See the documentation of 
+                    ``GF`` in ``sage.rings.finite_rings.constructor``
+
+        OUTPUT::
+        
+        An extension of the given modulus, or pseudo-Conway of the given degree if the modulus is just an integer.
+        
+        EXAMPLES::
+
+            sage: k = GF(3^4)
+            sage: k.extension(3)
+            Finite Field in z12 of size 3^12
+            sage: R.<x> = GF(2)[]
+            sage: GF(2).extension(x^1000 + x^5 + x^4 + x^3 + 1,'a')
+            Finite Field in a of size 2^1000
+            sage: R.<x> = GF(3)[]
+
+        Extensions of non-prime finite fields by polynomials are not yet supported: we fall back to generic code.
+
+            sage: k.extension(x^5 + x^2 + x - 1)
+            Univariate Quotient Polynomial Ring in x over Finite Field in z4 of size 3^4 with modulus x^5 + x^2 + x + 2
+        """
+        from constructor import GF
+        from sage.rings.integer import Integer
+        from sage.rings.polynomial.all import is_Polynomial
+        if name is None and names is not None:
+            name = names
+        if self.degree() == 1:
+            if isinstance(modulus, Integer):
+                return GF(self.characteristic()**modulus, modulus='conway', name=name, prefix=prefix)
+            if isinstance(modulus, (list, tuple)):
+                return GF(self.characteristic()**(len(modulus) - 1), name=name, modulus=modulus, prefix=prefix)
+            elif is_Polynomial(modulus):
+                if modulus.change_ring(self).is_irreducible():
+                    return GF(self.characteristic()**(modulus.degree()), name=name, modulus=modulus, prefix=prefix)
+                else:
+                    return Field.extension(self, modulus, name=name, embedding=embedding)
+        elif isinstance(modulus, Integer):
+            if hasattr(self, '_PCPT') and self._PCPT is not None:
+                return GF(self.order()**modulus, name=name, prefix=prefix)
+        return Field.extension(self, modulus, name=name, embedding=embedding)
+
+    def subfields(self, degree=0, name=None):
+        """
+        Return all proper subfields of self of the given degree, 
+        or of all possible degrees if degree is 0.  
+
+        The subfields are returned as 
+        absolute fields together with an embedding into self.
+
+        INPUT::
+
+        - degree -- (default 0) An integer.
+        - name -- A string, a dictionary or None.
+                  If degree is nonzero, name must be a string (or None, if this is a pseudo-Conway extension), and will be the variable name of the returned field.
+                  If degree is zero, the dictionary should have keys the divisors of the degree of this field, with the desired variable name for the field of that degree as an entry.
+                  As a shortcut, you can provide a string and the degree of each subfield will be appended for the variable name of that subfield.
+                  If None, uses the prefix of this field.
+    
+        OUTPUT::
+
+        A list of pairs (K, e), where K ranges over the subfields of this field and e gives an embedding of K into this field.
+
+        EXAMPLES::
+
+            sage: k.<a> = GF(2^21)
+            sage: k.subfields()
+            [(Finite Field of size 2, 
+              Conversion map:
+                  From: Finite Field of size 2
+                  To:   Finite Field in a of size 2^21),
+             (Finite Field in z3 of size 2^3,
+              Ring morphism:
+                  From: Finite Field in z3 of size 2^3
+                  To:   Finite Field in a of size 2^21
+                  Defn: z3 |--> a^20 + a^19 + a^17 + a^15 + a^11 + a^9 + a^8 + a^6 + a^2),
+             (Finite Field in z7 of size 2^7,
+              Ring morphism:
+                  From: Finite Field in z7 of size 2^7
+                  To:   Finite Field in a of size 2^21
+                  Defn: z7 |--> a^20 + a^19 + a^17 + a^15 + a^14 + a^6 + a^4 + a^3 + a)]
+        """
+        from sage.rings.integer import Integer
+        from constructor import GF
+        p = self.characteristic()
+        if degree != 0:
+            degree = Integer(degree)
+            if degree.divides(self.degree()):
+                if hasattr(self, '_PCPT') and self._PCPT is not None:
+                    K = GF(p**degree, name=name, prefix=self._prefix)
+                    return [K, self.coerce_map_from(K)]
+                elif degree == 1:
+                    K = GF(p)
+                    return [K, self.coerce_map_from(K)]
+                else:
+                    deg_gen = self.multiplicative_generator()**((self.order() - 1)//(p**degree-1))
+                    from homset import FiniteFieldHomset, FiniteFieldHomomorphism_im_gens
+                    K = GF(p**degree, modulus=deg_gen.minimal_polynomial(), name=name, prefix=self._prefix)
+                    return [K, FiniteFieldHomomorphism_im_gens(FiniteFieldHomset(K, self), deg_gen)]
+            else:
+                return []
+        if hasattr(self, '_PCPT') and self._PCPT is not None:
+            if name is None:
+                name = self._prefix
+        else:
+            if isinstance(name, str):
+                prefix = name
+                name = {}
+            else:
+                if self._prefix is None:
+                    prefix = self.variable_name()
+                else:
+                    prefix = self._prefix
+                if name is None:
+                    name = {}
+                elif not isinstance(name, dict):
+                    raise ValueError, "name must be None, a string or a dictionary indexed by divisors of the degree"
+            for m in self.degree().divisors():
+                name[m] = prefix + str(m)
+        ans = []
+        from homset import FiniteFieldHomset, FiniteFieldHomomorphism_im_gens
+        for m in self.degree().divisors():
+            if m == self.degree(): continue
+            if hasattr(self, '_PCPT') and self._PCPT is not None:
+                K = GF(p**m, prefix=name)
+                ans.append((K, self.coerce_map_from(K)))
+            elif m == 1:
+                ans.append((GF(p), self.coerce_map_from(K)))
+            else:
+                deg_gen = self.multiplicative_generator()**((self.order() - 1)//(p**m-1))
+                K = GF(p**m, modulus=deg_gen.minimal_polynomial(), name=name[m])
+                print K
+                ans.append((K, FiniteFieldHomomorphism_im_gens(FiniteFieldHomset(K, self), deg_gen)))
+        return ans
 
     def algebraic_closure(self):
         """

@@ -1,12 +1,24 @@
 """
 p-Adic Extension Element
 
-A common superclass for all elements of extension rings and field of Zp and Qp.
+A common superclass for all elements of extension rings and field of
+`\mathbb{Z}_p` and `\mathbb{Q}_p`.
 
 AUTHORS:
 
-- David Roe
+- David Roe (2007): intial version
+
+- Julian Rueth (2012-10-18): added residue()
 """
+#*****************************************************************************
+#       Copyright (C) 2007-2010 David Roe <roed@math.harvard.edu>
+#                     2012 Julian Rueth <julian.rueth@fsfe.org>
+#
+#  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
 
 from sage.rings.padics.pow_computer cimport PowComputer_class
 from sage.rings.integer import Integer
@@ -367,3 +379,94 @@ cdef class pAdicExtElement(pAdicGenericElement):
             ppow = ppow << 1
             ans += ppow * L[m]**exp
         return ans
+
+    def residue(self, absprec=1):
+        r"""
+        Reduces ``self`` modulo `\pi^\mathrm{absprec}`.
+
+        INPUT:
+
+        - ``absprec`` - a non-negative integer (default: 1)
+
+        OUTPUT:
+
+        ``self`` reduced modulo `\pi^\mathrm{absprec}`.
+
+        If ``absprec`` is zero, then as an element of `\mathbb{Z}/(1)`.
+
+        If ``absprec`` is one, then as an element of the residue field.
+
+        .. NOTE::
+
+            Only implemented for ``absprec`` less than or equal to one.
+
+        AUTHORS:
+
+        - Julian Rueth (2012-10-18): intial version
+
+        EXAMPLES:
+
+        Unramified case::
+
+            sage: R = ZpCA(3,5)
+            sage: S.<a> = R[]
+            sage: W.<a> = R.extension(a^2 + 9*a + 1)
+            sage: (a + 1).residue(1)
+            a0 + 1
+            sage: a.residue(2)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: residue() not implemented in extensions for absprec larger than one.
+
+        Eisenstein case::
+
+            sage: R = ZpCA(3,5)
+            sage: S.<a> = R[]
+            sage: W.<a> = R.extension(a^2 + 9*a + 3)
+            sage: (a + 1).residue(1)
+            1
+            sage: a.residue(2)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: residue() not implemented in extensions for absprec larger than one.
+
+        TESTS:
+
+            sage: K = Qp(3,5)
+            sage: S.<a> = R[]
+            sage: W.<a> = R.extension(a^2 + 9*a + 1)
+            sage: (a/3).residue(0)
+            Traceback (most recent call last):
+            ...
+            ValueError: Element must have non-negative valuation in order to compute residue.
+
+            sage: R = ZpFM(3,5)
+            sage: S.<a> = R[]
+            sage: W.<a> = R.extension(a^2 + 9*a + 1)
+            sage: W.one().residue(0)
+            0
+            sage: a.residue(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: Cannot reduce modulo a negative power of the uniformizer.
+            sage: a.residue(16)
+            Traceback (most recent call last):
+            ...
+            PrecisionError: Not enough precision known in order to compute residue.
+
+        """
+        from sage.rings.padics.precision_error import PrecisionError
+        if absprec < 0:
+            raise ValueError("Cannot reduce modulo a negative power of the uniformizer.")
+        if absprec > self.precision_absolute():
+            raise PrecisionError("Not enough precision known in order to compute residue.")
+        if self.valuation() < 0:
+            raise ValueError("Element must have non-negative valuation in order to compute residue.")
+
+        if absprec == 0:
+            from sage.rings.finite_rings.integer_mod import Mod
+            return Mod(0,1)
+        elif absprec == 1:
+            return self[0]
+        else:
+            raise NotImplementedError("residue() not implemented in extensions for absprec larger than one.")

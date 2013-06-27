@@ -2493,11 +2493,12 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
     """
     rank = 3
 
-    def __init__(self, polys, names, embeddings, cyclotomic=None):
+    def __init__(self, polys, names, embeddings, cyclotomic=None, prefix=None):
         """
         INPUT:
 
-        - ``polys``: a list of polynomials
+        - ``polys``: a list of polynomials (or of integers, for 
+          finite fields and unramified local extensions)
         - ``names``: a list of strings of the same length as the
           list ``polys``
         - ``embeddings``: a list of approximate complex values,
@@ -2507,6 +2508,9 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
         - ``cyclotomic``: optional integer. If it is provided,
           application of the functor to the rational field yields
           a cyclotomic field, rather than just a number field.
+        - ``prefix``: optional string.  If it is provided, it will
+          allow application of this functor to some finite fields to
+          function without providing a variable name
 
         REMARK:
 
@@ -2571,6 +2575,7 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
         self.names = list(names)
         self.embeddings = list(embeddings)
         self.cyclotomic = int(cyclotomic) if cyclotomic is not None else None
+        self.prefix = prefix
 
     def _apply_functor(self, R):
         """
@@ -2588,13 +2593,17 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
             Univariate Quotient Polynomial Ring in a over Real Field with 53 bits of precision with modulus a^3 + a^2 + 1.00000000000000
         """
         from sage.all import QQ, ZZ, CyclotomicField
+        from sage.rings.finite_rings.finite_field_base import is_FiniteField
         if self.cyclotomic:
             if R==QQ:
                 return CyclotomicField(self.cyclotomic)
             if R==ZZ:
                 return CyclotomicField(self.cyclotomic).maximal_order()
         if len(self.polys) == 1:
-            return R.extension(self.polys[0], self.names[0], embedding=self.embeddings[0])
+            if is_FiniteField(R):
+                return R.extension(self.polys[0], self.names[0], embedding=self.embeddings[0], prefix=self.prefix)
+            else:
+                return R.extension(self.polys[0], self.names[0], embedding=self.embeddings[0])
         return R.extension(self.polys, self.names, embedding=self.embeddings)
 
     def __cmp__(self, other):
@@ -2633,6 +2642,9 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
           associated with the pushout of the codomains
           of the two embeddings is returned, provided that
           it is a number field.
+        - If these two extensions are defined by Conway polynomials over finite fields 
+          (indicated by the fact that their ``poly`` fields are just integers),
+          merges them into a single extension of degree the product of the two degrees.
         - Otherwise, None is returned.
 
         REMARK:
@@ -2644,6 +2656,10 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
 
         TESTS::
 
+            sage: k = GF(3^3)
+            sage: l = GF(3^2)
+            sage: k.gen() + l.gen() # indirect doctest
+            z6^5 + 2*z6^4 + 2*z6^3 + z6^2 + 2*z6 + 1
             sage: P.<x> = QQ[]
             sage: L.<b> = NumberField(x^8-x^4+1, embedding=CDF.0)
             sage: M1.<c1> = NumberField(x^2+x+1, embedding=b^4-1)
@@ -2673,7 +2689,9 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
             CoercionException: ('Ambiguous Base Extension', Number Field in a with defining polynomial x^3 - 2, Number Field in b with defining polynomial x^6 - 2)
 
         """
-        if not isinstance(other,AlgebraicExtensionFunctor):
+        if isinstance(other, AlgebraicClosureFunctor):
+            return other
+        elif not isinstance(other,AlgebraicExtensionFunctor):
             return None
         if self == other:
             return self
@@ -2693,7 +2711,13 @@ class AlgebraicExtensionFunctor(ConstructionFunctor):
 #                return self
 #            if  other.embeddings==[None]:
 #                return other
-        # ... or we may use the given embeddings:
+        # ... or we may use the given embeddings
+        from sage.rings.integer import Integer
+        # finite fields use an integer to encode the pseudo-Conway extension that allows pushouts
+        if isinstance(self.polys[0], Integer) and isinstance(other.polys[0], Integer) and self.prefix is not None and self.prefix == other.prefix:
+            if self.embeddings != [None] or other.embeddings != [None]:
+                raise NotImplementedError
+            return AlgebraicExtensionFunctor([self.polys[0]*other.polys[0]],[None],[None],prefix=self.prefix)
         if self.embeddings!=[None] and other.embeddings!=[None]:
             from sage.all import QQ
             KS = self(QQ)

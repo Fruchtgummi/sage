@@ -4129,8 +4129,7 @@ cdef class Matrix(sage.structure.element.Matrix):
         zero = self.base_ring()(0)
         cdef Py_ssize_t i
         for i from 0 <= i < self._nrows:
-            if v[i] != zero:
-                s += v[i]*self.row(i, from_list=True)
+            s += v[i]*self.row(i, from_list=True)
         return s
 
     cdef Vector _matrix_times_vector_(self, Vector v):

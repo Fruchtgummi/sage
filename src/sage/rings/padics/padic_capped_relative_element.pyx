@@ -2235,33 +2235,54 @@ cdef class pAdicCappedRelativeElement(pAdicBaseGenericElement):
         return ans
 
     def residue(self, absprec=1):
-        """
-        Reduces this element modulo $p^{\mbox{absprec}}$.
+        r"""
+        Reduces ``self`` modulo `p^\mathrm{absprec}`.
 
         INPUT:
 
-        - self -- a p-adic element
-        - absprec - an integer (defaults to 1)
+        - ``absprec`` - a non-negative integer (default: 1)
 
         OUTPUT:
 
-        Element of $Z/(p^{absprec} Z)$ -- self reduced mod p^absprec
+        ``self`` reduced modulo `p^\mathrm{absprec}` as an element of
+        `\mathbb{Z}/p^\mathrm{absprec}\mathbb{Z}`
 
         EXAMPLES::
 
-            sage: R = Zp(7,4,'capped-rel'); a = R(8); a.residue(1)
+            sage: R = Zp(7,4)
+            sage: a = R(8)
+            sage: a.residue(1)
             1
-            sage: R = Qp(7,4,'capped-rel'); a = R(8); a.residue(1)
+            sage: a.residue(2)
+            8
+
+            sage: K = Qp(7,4)
+            sage: a = K(8)
+            sage: a.residue(1)
             1
-            sage: a.residue(6)
-            Traceback (most recent call last):
-            ...
-            PrecisionError: Not enough precision known in order to compute residue.
-            sage: b = a/7
-            sage: b.residue(1)
+            sage: a.residue(2)
+            8
+            sage: b = K(1/7)
+            sage: b.residue()
             Traceback (most recent call last):
             ...
             ValueError: Element must have non-negative valuation in order to compute residue.
+
+        TESTS::
+
+            sage: R = Zp(7,4)
+            sage: a = R(8)
+            sage: a.residue(0)
+            0
+            sage: a.residue(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: Cannot reduce modulo a negative power of p.
+            sage: a.residue(5)
+            Traceback (most recent call last):
+            ...
+            PrecisionError: Not enough precision known in order to compute residue.
+
         """
         cdef Integer selfvalue, modulus
         cdef PowComputer_class powerer
@@ -2271,7 +2292,7 @@ cdef class pAdicCappedRelativeElement(pAdicBaseGenericElement):
         if absprec > self.precision_absolute():
             raise PrecisionError, "Not enough precision known in order to compute residue."
         elif absprec < 0:
-            raise ValueError, "cannot reduce modulo a negative power of p"
+            raise ValueError, "Cannot reduce modulo a negative power of p."
         aprec = mpz_get_ui((<Integer>absprec).value)
         if self.ordp < 0:
             self._normalize()

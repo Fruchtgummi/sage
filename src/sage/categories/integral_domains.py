@@ -54,4 +54,5 @@ class IntegralDomains(Category_singleton):
             return True
 
     class ElementMethods:
-        pass
+        def is_nilpotent(self):
+            return self.is_zero()

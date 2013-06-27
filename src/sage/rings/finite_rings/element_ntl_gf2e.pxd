@@ -8,11 +8,14 @@ cdef class FiniteField_ntl_gf2eElement(FinitePolyExtElement)
 
 cdef class Cache_ntl_gf2e(SageObject):
     cdef GF2EContext_c F
+    cdef public object _PCPT
+    cdef public object _prefix
     cdef FiniteField _parent
     cdef public FiniteField_ntl_gf2eElement _zero_element
     cdef public FiniteField_ntl_gf2eElement _one_element
     cdef public FiniteField_ntl_gf2eElement _gen
     cdef FiniteField_ntl_gf2eElement _new(self)
+    cdef public object _is_conway
     cpdef FiniteField_ntl_gf2eElement fetch_int(self, number)
 
 cdef class FiniteField_ntl_gf2eElement(FinitePolyExtElement):
