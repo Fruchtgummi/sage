@@ -59,7 +59,8 @@ A totally ramified extension not defined by an Eisenstein polynomial::
 
     sage: K = Qp(5)
     sage: R.<a> = K[]
-    sage: L.<a> = K.extension(a^2 + 5*a + 25); L
+    sage: L.<a> = K.extension(a^2 + 125*a + 125); L
+    Totally ramified extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23))
 
 .. _padic_precision
 
@@ -1299,15 +1300,19 @@ class GenericExtensionFactory(AbstractFactory):
             False
             sage: f = x^2 + 5*x + 25
             sage: ZpExtensionFactory.is_totally_ramified(f)
+            False
+
+        This method does not check whether ``poly`` is irreducible::
+
+            sage: f = x^2 + 10*x + 25 # not an irreducible polynomial
+            sage: ZpExtensionFactory.is_totally_ramified(f)
+            True
 
         """
         if not poly.is_monic():
             raise ValueError("poly must be monic")
-        F = poly.map_coefficients(lambda c:c.residue(), poly.base_ring().residue_class_field()).factor()
-        if len(F)!=1:
-            raise ValueError("poly must be irreducible")
 
-        return F[0][0].degree()==1
+        return poly.base_ring().valuation().is_totally_ramified(poly)
 
     @staticmethod
     def is_unramified(poly):
