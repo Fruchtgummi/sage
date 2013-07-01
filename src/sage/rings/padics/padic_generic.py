@@ -113,6 +113,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         return [self.gen()]
 
+    @cached_method
+    def valuation(self):
+        from padic_valuation import pAdicValuation
+        return pAdicValuation(self)
+
     def _factor_univariate_polynomial(self, f):
         """
         TESTS::
@@ -125,36 +130,12 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
 
         """
         from sage.structure.factorization import Factorization
-        unit = self.one()
-
-        min_val = min([c.valuation() for c in f.list()])
-        if min_val != 0:
-            unit >>= min_val
-            f.map_coefficients(lambda c:c << min_val)
-        if f.leading_coefficient().unit_part() != 1:
-            unit *= f.leading_coefficient().unit_part()
-            f *= f.leading_coefficient().unit_part().inverse_of_unit()
-        if f.leading_coefficient().valuation():
-            raise NotImplementedError
-        if f.is_constant():
-            return Factorization([],unit=unit)
-
-        if f.is_squarefree():
-            F = Factorization([(f,1)])
-        else:
-            F = f.squarefree_decomposition()
-
-        from sage.rings.polynomial.padics.factor.factoring import pfactortree, Improve
-        from sage.misc.flatten import flatten
+        F = f.squarefree_decomposition()
         ret = []
         for g,e in F:
-            G = flatten(pfactortree(g))
-            if len(G) != 1 or G[0].phi_divides_Phi():
-                ret.extend([(Improve(frame),e) for frame in G])
-            else:
-                ret.append((g,e))
+            ret.extend(self.valuation().montes_factorization(f))
 
-        return Factorization(ret,unit=unit)
+        return Factorization(ret)
 
     def _any_root_univariate_polynomial_normalize(self, poly):
         min_val = min([c.valuation() for c in poly.list()])
