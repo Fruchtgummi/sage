@@ -40,10 +40,6 @@ Trivial extensions::
     sage: K.<u> = Qq(25)
     sage: R.<t> = K[]
     sage: L.<t> = K.extension(t + u); L
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
     Trivial extension of Unramified Extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) in t defined by (1 + O(5^20))*t + u + O(5^20)
 
     sage: K = Qp(5)
@@ -51,18 +47,12 @@ Trivial extensions::
     sage: L.<a> = K.extension(a^2 + 5)
     sage: R.<t> = K[]
     sage: M.<t> = L.extension(t + a); M
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
     Trivial extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in t defined by (1 + O(a^40))*t + a + O(a^41)
 
 An iterated trivial extension::
 
     sage: R.<s> = M[]
     sage: N.<s> = M.extension(s + t); N
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
-    Exception TypeError: "unhashable type: 'sage.rings.padics.padic_ZZ_pX_CR_element.pAdicZZpXCRElement'" in 'sage.rings.polynomial.polynomial_element.Polynomial._hash_c' ignored
     Trivial extension of Trivial extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in t defined by (1 + O(a^40))*t + a + O(a^41) in s defined by (1 + O(a^40))*s + 4*a + a^3 + O(a^41)
 
 A totally ramified extension not defined by an Eisenstein polynomial::

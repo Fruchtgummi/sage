@@ -1328,18 +1328,6 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
         mpz_set_ui(val.value, mpz_remove(unit.value, self.value, self.prime_pow.prime.value))
         return (val, unit)
 
-    def __hash__(self):
-        """
-        Hashing.
-
-        EXAMPLES::
-
-            sage: R = ZpCA(11, 5)
-            sage: hash(R(3)) == hash(3)
-            True
-        """
-        return hash(self.lift_c())
-
 def make_pAdicFixedModElement(parent, value):
     """
     Unpickles a capped relative element.

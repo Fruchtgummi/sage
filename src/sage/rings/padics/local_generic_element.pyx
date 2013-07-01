@@ -27,6 +27,9 @@ cdef class LocalGenericElement(PrincipalIdealDomainElement):
     #cpdef ModuleElement _add_(self, ModuleElement right):
     #    raise NotImplementedError
 
+    def __hash__(self):
+        raise TypeError
+
     cpdef RingElement _div_(self, RingElement right):
         r"""
         Returns the quotient of ``self`` by ``right``.

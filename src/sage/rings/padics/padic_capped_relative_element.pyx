@@ -2415,22 +2415,6 @@ cdef class pAdicCappedRelativeElement(pAdicBaseGenericElement):
         mpz_set_si(val.value, self.ordp)
         return (val, unit)
 
-    def __hash__(self):
-        """
-        Hashing.
-
-        EXAMPLES::
-
-            sage: R = Zp(5)
-            sage: hash(R(17)) #indirect doctest
-            17
-
-            sage: hash(R(-1))
-            1977822444 # 32-bit
-            95367431640624 # 64-bit
-        """
-        return hash(self.lift_c())
-
     def _teichmuller_set(self):
         """
         Sets self to be the Teichmuller representative with the same residue as self.

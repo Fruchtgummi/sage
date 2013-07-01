@@ -828,7 +828,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
     def __hash__(self):
         return self._hash_c()
 
-    cdef long _hash_c(self):
+    cdef long _hash_c(self) except -1:
         """
         This hash incorporates the variable name in an effort to respect
         the obvious inclusions into multi-variable polynomial rings.

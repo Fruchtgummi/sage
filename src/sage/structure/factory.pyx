@@ -163,13 +163,21 @@ cdef class UniqueFactory(SageObject):
             Making object b
             False
         """
+        cache_key = key
         try:
-            return self._cache[version, key]
+            return self._cache[version, cache_key]
         except KeyError:
             pass
+        except TypeError: # cache_key is not hashable
+            cache_key = create_cache_key(cache_key)
+            try:
+                return self._cache[version, cache_key]
+            except KeyError:
+                pass
         obj = self.create_object(version, key, **extra_args)
-        self._cache[version, key] = obj
+        self._cache[version, cache_key] = obj
         try:
+            #TODO: repeat pattern above if other_keys are not cacheable
             other_keys = self.other_keys(key, obj)
             for key in other_keys:
                 try:
@@ -365,6 +373,13 @@ def lookup_global(name):
         import sage.all as all
     return getattr(all, name)
 
+def create_cache_key(key):
+    if isinstance(key, tuple):
+        return (create_cache_key(c) for c in key)
+    elif isinstance(key, SageObject):
+        return key._cache_key_()
+    else:
+        return key
 
 # To make the pickle jar happy:
 from sage.structure.test_factory import test_factory

@@ -442,6 +442,45 @@ cdef class Element(sage_object.SageObject):
             pass
         return res
 
+    cpdef _cache_key_(self):
+        """
+        Return a hashable object uniquely identifying this element.
+
+        Some elements, e.g. `p`-adic numbers, are not hashable since that would
+        break the contract that equality under ``==`` implies equal hashes. For
+        example ``3 + O(3^2) == O(3)`` in the `3`-adics hence there is no
+        non-trivial hash value to assign to both sides::
+
+        sage: K = Qp(3)
+        sage: a = K(3,2)
+        sage: b = K(0,1)
+        sage: a == b
+        True
+        sage: hash(a)
+        Traceback (most recent call last):
+        ...
+        TypeError
+
+        To make such elements cacheable, they can override this method, and
+        provide a unique hashable key::
+
+        sage: A = a._cache_key_(); A
+        (3, 2)
+        sage: B = b._cache_key_(); B
+        (0, 1)
+        sage: A == B
+        False
+        sage: hash(A) == hash(B)
+        False
+
+        Elements which are hashable should just return ``self``::
+
+        sage: 1._cache_key_()
+        1
+
+        """
+        return self
+
     def __hash__(self):
         return hash(str(self))
 

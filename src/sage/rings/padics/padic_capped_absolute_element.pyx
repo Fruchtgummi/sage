@@ -1511,18 +1511,6 @@ cdef class pAdicCappedAbsoluteElement(pAdicBaseGenericElement):
             mpz_set_ui(val.value, 0)
             return (val, self)
 
-    def __hash__(self):
-        """
-        Hashing.
-
-        EXAMPLES::
-
-            sage: R = ZpCA(11, 5)
-            sage: hash(R(3)) == hash(3)
-            True
-        """
-        return hash(self.lift())
-
 def make_pAdicCappedAbsoluteElement(parent, x, absprec):
     """
     Unpickles a capped absolute element.
