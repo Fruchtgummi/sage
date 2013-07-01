@@ -400,7 +400,7 @@ cdef class pAdicGeneralElement(pAdicExtElement):
         ret._element = self._element.unit_part()
         return ret
 
-    def lift_to_precision(self, absprec):
+    def lift_to_precision(self, absprec=None):
         """
         Returns a lift of this element which is defined at least to precision
         ``absprec``.
