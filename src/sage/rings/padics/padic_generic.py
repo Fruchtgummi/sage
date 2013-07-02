@@ -133,7 +133,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         F = f.squarefree_decomposition()
         ret = []
         for g,e in F:
-            ret.extend(self.valuation().montes_factorization(f))
+            ret.extend(self.valuation().montes_factorization(g))
 
         return Factorization(ret)
 
