@@ -1411,11 +1411,6 @@ class GenericExtensionFactory(AbstractFactory):
         # a univariate polynomial over base, the actual modulus to use for the extension
         modulus = self._normalize_modulus(base, premodulus, check)
 
-        # modulus must be irreducible
-        if check:
-            if not modulus.is_irreducible():
-                raise ValueError("modulus is not irreducible")
-
         # decide on the extension class: unramified, Eisenstein, or general
         ext = None
         if modulus.degree() == 1:
