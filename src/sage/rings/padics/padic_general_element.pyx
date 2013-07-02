@@ -105,6 +105,9 @@ cdef class pAdicGeneralElement(pAdicExtElement):
         if absprec is not None:
             self._element = self._element.add_bigoh(absprec)
 
+    cpdef _cache_key_(self):
+        return self._element._cache_key_()
+
     def precision_absolute(self):
         """
         The precision to which ``self`` is accurate.

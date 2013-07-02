@@ -23,6 +23,9 @@ cdef class pAdicBaseGenericElement(pAdicGenericElement):
         self.prime_pow = <PowComputer_base>parent.prime_pow
         pAdicGenericElement.__init__(self, parent)
 
+    cpdef _cache_key_(self):
+        return self.lift(),self.precision_absolute()
+
     cdef int _set_mpz_into(self, mpz_t dest) except -1:
         raise NotImplementedError
 

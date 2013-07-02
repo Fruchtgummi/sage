@@ -49,6 +49,13 @@ cdef class pAdicZZpXElement(pAdicExtElement):
         self.prime_pow = <PowComputer_ZZ_pX>parent.prime_pow
         pAdicExtElement.__init__(self, parent)
 
+    cpdef _cache_key_(self):
+        ret = []
+        if not self.is_zero():
+            ret = [Integer(n) for n in self._ntl_rep().list()]
+        ret.append(self.precision_absolute())
+        return tuple(ret)
+
     cdef int _set_from_list(self, L) except -1:
         """
         Sets ``self`` from a list.

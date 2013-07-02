@@ -374,9 +374,10 @@ def lookup_global(name):
     return getattr(all, name)
 
 def create_cache_key(key):
+    from sage.structure.element import is_Element
     if isinstance(key, tuple):
-        return (create_cache_key(c) for c in key)
-    elif isinstance(key, SageObject):
+        return tuple(create_cache_key(c) for c in key)
+    elif is_Element(key):
         return key._cache_key_()
     else:
         return key

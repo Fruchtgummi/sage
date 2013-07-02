@@ -828,6 +828,9 @@ cdef class Polynomial(CommutativeAlgebraElement):
     def __hash__(self):
         return self._hash_c()
 
+    cpdef _cache_key_(self):
+        return tuple([c._cache_key_() for c in self])
+
     cdef long _hash_c(self) except -1:
         """
         This hash incorporates the variable name in an effort to respect
