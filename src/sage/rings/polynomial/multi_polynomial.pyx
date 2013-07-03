@@ -551,7 +551,7 @@ cdef class MPolynomial(CommutativeRingElement):
                 D[ETuple(tmp)] = a
             return D
 
-    cdef long _hash_c(self):
+    cdef long _hash_c(self) except -1:
         """
         This hash incorporates the variable name in an effort to respect the obvious inclusions
         into multi-variable polynomial rings.
@@ -1184,16 +1184,22 @@ cdef class MPolynomial(CommutativeRingElement):
 
         r = 0
         offset = 0
+
+        variable = self.parent().gens().index(variable)
+
+        restrictions = [None]*self.parent().ngens()
         for _ in range(n):
             for c in range(m, -1, -1):
-                M[r, m - c + offset] = self.coefficient({variable:c})
+                restrictions[variable] = c
+                M[r, m - c + offset] = self.coefficient(restrictions)
             offset += 1
             r += 1
 
         offset = 0
         for _ in range(m):
             for c in range(n, -1, -1):
-                M[r, n - c + offset] = right.coefficient({variable:c})
+                restrictions[variable] = c
+                M[r, n - c + offset] = right.coefficient(restrictions)
             offset += 1
             r += 1
 

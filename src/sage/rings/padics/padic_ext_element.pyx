@@ -25,6 +25,9 @@ from sage.rings.integer import Integer
 from sage.libs.ntl.ntl_ZZ_p cimport ntl_ZZ_p
 
 cdef class pAdicExtElement(pAdicGenericElement):
+    def polynomial(self):
+        return self.parent().polynomial_ring()(self.vector())
+
     cdef int _set_from_list(self, L) except -1:
         """
         Sets self from a list.

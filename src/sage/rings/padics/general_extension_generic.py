@@ -92,19 +92,24 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             sage: L._implementation_ring()
 
         """
-        return GeneralExtensionGeneric.__implementation_ring(self.base_ring(), self._polynomial_ring, self._poly)
+        ret = GeneralExtensionGeneric.__implementation_ring(self, self.base_ring(), self._poly)
+        assert ret[1].domain() is ret[0]
+        assert ret[1].codomain() is self
+        assert ret[2].domain() is self
+        assert ret[2].codomain() is ret[0]
+        return ret
 
     @staticmethod
-    def __implementation_ring(base, polynomial_ring, modulus):
+    def __implementation_ring(extension, base, modulus):
         """
         Return a ring isomorphic to the extension of ``modulus`` over ``base``.
 
         INPUT:
 
-        - ``base`` -- the base ring of ``modulus``
+        - ``extension`` -- a ring representing the extension of ``base`` by
+          ``modulus``, essentially something that has a ``hom()`` method
 
-        - ``polynomial_ring`` -- the ring used to represent element in the
-          extension
+        - ``base`` -- the base ring of ``modulus``
 
         - ``modulus`` -- a polynomial over ``base``
 
@@ -121,41 +126,39 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             3-adic Field with capped relative precision 20
 
         """
-        GeneralExtensionGeneric.__implementation_ring_check_args(base, polynomial_ring, modulus)
+        GeneralExtensionGeneric.__implementation_ring_check_args(extension, base, modulus)
 
         from sage.rings.padics.factory import GenericExtensionFactory
         if GenericExtensionFactory.is_trivial(modulus):
-            return GeneralExtensionGeneric.__implementation_ring_trivial(base, polynomial_ring, modulus)
-        elif not base.is_eisenstein_over_unramified():
-            # reduce to the case where base is an Eisenstein over unramified extension
-            base2, base2_to_base, base_to_base2 = base.make_eisenstein_over_unramified()
-            modulus_over2 = modulus.map_coefficients(base_to_base2, base2)
-            polynomial_ring2 = polynomial_ring.change_ring(base2)
-
-            implementation_ring, from_implementation_ring, to_implementation_ring = GeneralExtensionGeneric.__implementation_ring(base2, polynomial_ring2, modulus_over2)
-
-            from_implementation_ring = lambda f:from_implementation_ring(f).map_coefficients(base2_to_base, base)
-            to_implementation_ring = lambda f: to_implementation_ring(f.map_coefficients(base_to_base2, base2))
-            return implementation_ring, from_implementation_ring, to_implementation_ring
-        else:
+            return GeneralExtensionGeneric.__implementation_ring_trivial(extension, base, modulus)
+        elif base is base.ground_ring_of_tower() or base.is_eisenstein_over_unramified():
             if GenericExtensionFactory.is_eisenstein(modulus):
-                return GeneralExtensionGeneric.__implementation_ring_eisenstein(base, polynomial_ring, modulus)
+                return GeneralExtensionGeneric.__implementation_ring_eisenstein(extension, base, modulus)
             elif GenericExtensionFactory.is_unramified(modulus):
-                return GeneralExtensionGeneric.__implementation_ring_unramified(base, polynomial_ring, modulus)
+                return GeneralExtensionGeneric.__implementation_ring_unramified(extension, base, modulus)
             elif GenericExtensionFactory.is_totally_ramified(modulus):
-                return GeneralExtensionGeneric.__implementation_ring_totally_ramified(base, polynomial_ring, modulus)
+                return GeneralExtensionGeneric.__implementation_ring_totally_ramified(extension, base, modulus)
             else:
-                return GeneralExtensionGeneric.__implementation_ring_general(base, polynomial_ring, modulus)
+                return GeneralExtensionGeneric.__implementation_ring_general(extension, base, modulus)
+        else:
+            # reduce to the case where base is an Eisenstein over unramified extension
+            base2, base2_to_base, base_to_base2 = base._basic_or_eisenstein_over_unramified()
+
+            implementation_ring = base2.extension(modulus.map_coefficients(base_to_base2, base2), names=modulus.parent().variable_names())
+
+            from_implementation_ring = implementation_ring.hom([extension.gen()], base2_to_base)
+            to_implementation_ring = extension.hom([implementation_ring.gen()], base_to_base2)
+            return implementation_ring, from_implementation_ring, to_implementation_ring
 
     @staticmethod
-    def __implementation_ring_check_args(base, polynomial_ring, modulus):
+    def __implementation_ring_check_args(extension, base, modulus):
         """
         Helper method for :meth:`__implementation_ring` to check the validity
         of the parameters.
 
         Input is the same as in :meth:`__implementation_ring`.
 
-        EXAMPLES:
+        EXAMPLES::
 
             sage: K = Qp(3)
             sage: R.<x> = K[]
@@ -171,38 +174,47 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             raise NotImplementedError("modulus must be monic")
         if modulus.base_ring() is not base:
             raise ValueError("modulus must be defined over base")
-        if polynomial_ring.base_ring() is not base:
-            raise ValueError("polynomial_ring must be over base")
 
     @staticmethod
-    def __implementation_ring_trivial(base, polynomial_ring, modulus):
+    def __implementation_ring_trivial(extension, base, modulus):
         """
         Helper method for :meth:`__implementation_ring`` if ``modulus`` defines
         a trivial extension.
 
         Input and output are the same as in :meth:`__implementation_ring`.
 
-        EXAMPLES::
+        TESTS::
 
             sage: K = Qp(3)
             sage: R.<a> = K[]
-            sage: L.<a> = K.extension(a + 1)
+            sage: L.<a> = K.extension(a + 1); L
+            Trivial extension of 3-adic Field with capped relative precision 20 in a defined by (1 + O(3^20))*a + (1 + O(3^20))
             sage: L.implementation_ring() # indirect doctest
             3-adic Field with capped relative precision 20
+            sage: a == -1
+            True
+
+        Twice extended rings::
+
+            sage: R.<b> = L[]
+            sage: M.<b> = L.extension(b + a); M
+            sage: M.implementation_ring()
+            sage: b == 1
+            True
 
         """
-        GeneralExtensionGeneric.__implementation_ring_check_args(base, polynomial_ring, modulus)
+        GeneralExtensionGeneric.__implementation_ring_check_args(extension, base, modulus)
 
         if modulus.degree() != 1 or not modulus.is_monic():
             raise ValueError("modulus must be a monic polynomial of degree 1")
 
         implementation_ring = base
-        from_implementation_ring = polynomial_ring
-        to_implementation_ring = lambda f:f(-modulus[0])
+        from_implementation_ring = implementation_ring.hom(extension) # the embedding
+        to_implementation_ring = extension.hom([-modulus[0]])
         return base, from_implementation_ring, to_implementation_ring
 
     @staticmethod
-    def __implementation_ring_totally_ramified(base, polynomial_ring, modulus):
+    def __implementation_ring_totally_ramified(extension, base, modulus):
         """
         Helper method for :meth:`__implementation_ring`` if ``modulus`` defines
         a totally ramified extension but ``modulus`` is not Eisenstein.
@@ -231,7 +243,7 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             Eisenstein Extension of 3-adic Field with capped relative precision 5 in x defined by (1 + O(3^3))*x^2 + (2*3 + 2*3^2 + 2*3^3 + O(3^4))*x + (3 + O(3^3))
 
         """
-        GeneralExtensionGeneric.__implementation_ring_check_args(base, polynomial_ring, modulus)
+        GeneralExtensionGeneric.__implementation_ring_check_args(extension, base, modulus)
 
         from factory import GenericExtensionFactory
         if GenericExtensionFactory.is_eisenstein(modulus):
@@ -270,23 +282,22 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
 
         # now we reduced to the case of an Eisenstein extension; solve that
         # case recursively and combine the pieces
-        implementation_ring = base.extension(epoly,names=epoly.parent().variable_name())
+        implementation_ring = base.extension(epoly,names=epoly.parent().variable_names())
 
         # to get from the Eisenstein extension back to this ring, we note that
         # the uniformizer from above is the uniformizer in the Eisenstein
         # extension (can we get more precision here?)
-        image_of_uniformizer = uniformizer.lift()(polynomial_ring.gen())
-        from_implementation_ring = lambda f: f.polynomial()(image_of_uniformizer)
+        from_implementation_ring = implementation_ring.hom([uniformizer.lift()(extension.gen())])
 
         # to go the other way, we send the generator of this ring to any root
         # in the implementation ring (is there a better way?)
         image_of_gen = modulus.change_ring(implementation_ring).any_root()
-        to_implementation_ring = lambda f:f(image_of_gen)
+        to_implementation_ring = extension.hom([image_of_gen])
 
         return implementation_ring, from_implementation_ring, to_implementation_ring
 
     @staticmethod
-    def __implementation_ring_eisenstein(base, polynomial_ring, modulus):
+    def __implementation_ring_eisenstein(extension, base, modulus):
         """
         Helper method for :meth:`__implementation_ring`` if ``modulus`` is
         Eisenstein.
@@ -310,32 +321,39 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             sage: M.implementation_ring() # indirect doctest
 
         """
-        GeneralExtensionGeneric.__implementation_ring_check_args(base, polynomial_ring, modulus)
+        GeneralExtensionGeneric.__implementation_ring_check_args(extension, base, modulus)
 
+        from sage.rings.padics.factory import GenericExtensionFactory
         if not GenericExtensionFactory.is_eisenstein(modulus):
             raise ValueError("modulus must be Eisenstein")
 
         unramified_base = base.maximal_unramified_subextension()
-        raise NotImplementedError("create bivariate ring")
-        raise NotImplementedError("bring both Eisenstein polynomials into that ring")
-        epoly = f.resultant(g, var)
 
-        implementation_ring = unramified_base.extension(epoly, names=epoly.variable_name())
+        from sage.rings.all import PolynomialRing
+        bivariate_ring = PolynomialRing(unramified_base, names=(base.modulus().variable_name(),modulus.variable_name()))
+        univariate_over_unramified = bivariate_ring.remove_var(modulus.variable_name())
+
+        f = bivariate_ring(base.eisenstein_polynomial())
+        g = bivariate_ring(modulus.map_coefficients(lambda c:univariate_over_unramified(c.polynomial()), univariate_over_unramified))
+        epoly_ring = bivariate_ring.remove_var(bivariate_ring.gen(0))
+        epoly = f.sylvester_matrix(g, bivariate_ring.gen(0)).change_ring(epoly_ring).det()
+
+        implementation_ring = unramified_base.extension(epoly, names=epoly.parent().variable_names())
 
         # to get back to the Eisenstein over Eisenstein over unramified
         # extension, we ignore one of the Eisenstein extensions and simply not
         # reduce modulo the middle extension - this is probably not what we
         # want in the long run
-        from_implementation_ring = lambda f: polynomial_ring(f.polynomial().list())
+        from_implementation_ring = implementation_ring.hom([extension.gen()])
 
         # we find the image of the uniformizer of base in implementation_ring
         # by factoring its minpoly
         base_uniformizer = base.eisenstein_polynomial().change_ring(implementation_ring).any_root()
-        to_implementation_ring = lambda f: f.map_coefficients(lambda c:c.polynomial(unramified_base.gen(), base_uniformizer), implementation_ring)(implementation_ring.uniformizer())
+        to_implementation_ring = extension.hom([base_uniformizer], extension.base().hom([implementation_ring.uniformizer()]))
 
         return implementation_ring, from_implementation_ring, to_implementation_ring
 
-    def __implementation_ring_unramified(base, polynomial_ring, modulus):
+    def __implementation_ring_unramified(extension, base, modulus):
         """
         Helper method for :meth:`__implementation_ring`` if ``modulus`` is
         unramified.
@@ -361,8 +379,9 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
             sage: N.implementation_ring() # indirect doctest
 
         """
-        GeneralExtensionGeneric.__implementation_ring_check_args(base, polynomial_ring, modulus)
+        GeneralExtensionGeneric.__implementation_ring_check_args(extension, base, modulus)
 
+        from sage.rings.padics.factory import GenericExtensionFactory
         if not GenericExtensionFactory.is_unramified(modulus):
             raise ValueError("modulus must be unramified")
 
@@ -611,3 +630,33 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
 
     def is_eisenstein_over_unramified(self):
         return False
+
+    def hom(self, im_gens, base=None):
+        if im_gens in self.category():
+            if base is not None:
+                raise ValueError("base must be None if im_gens is a ring")
+            if not im_gens.has_coerce_map_from(self):
+                raise ValueError("%s does not define a coercion to %s"%(self,im_gens))
+            return im_gens.coerce_map_from(self)
+
+        if len(im_gens) != 1:
+            raise ValueError("im_gens must be a list of length 1")
+
+        codomain = im_gens[0].parent()
+
+        if base is None:
+            hom = lambda f: f.polynomial()(im_gens[0])
+        else:
+            hom = lambda f: f.map_coefficients(base)(im_gens[0])
+
+        from sage.categories.morphism import SetMorphism
+        from sage.categories.homset import Hom
+        return SetMorphism(Hom(self, codomain, self.category()), hom)
+
+    def make_basic_or_eisenstein_over_unramified(self):
+        implementation_ring, from_implementation_ring, to_implementation_ring = self._implementation_ring()
+        from padic_base_generic import pAdicBaseGeneric
+        if isinstance(implementation_ring, pAdicBaseGeneric) or implementation_ring.is_eisenstein_over_unramified():
+            return implementation_ring, from_implementation_ring, to_implementation_ring
+        ret, from_ret, to_ret = implementation_ring.make_eisenstein_over_unramified()
+        return ret, from_implementation_ring*from_ret, to_ret*to_implementation_ring

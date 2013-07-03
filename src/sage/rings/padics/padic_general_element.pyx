@@ -22,6 +22,7 @@ from sage.rings.integer import Integer
 from sage.structure.element import is_Element
 from sage.structure.element cimport RingElement, ModuleElement, CommutativeRingElement, Element
 from sage.rings.padics.precision_error import PrecisionError
+from sage.misc.cachefunc import cached_method
 
 cdef class pAdicGeneralElement(pAdicExtElement):
     r"""
@@ -82,19 +83,29 @@ cdef class pAdicGeneralElement(pAdicExtElement):
         """
         pAdicExtElement.__init__(self, parent)
 
+        self._element = None
+        self.__polynomial = None
+
         if x is None:
             self._element = parent.implementation_ring().zero()
-        elif is_Element(x) and x.parent() is self.parent():
+        elif is_Element(x) and x.parent() is parent:
             self._element = x._element
-        elif is_Element(x) and x.parent() is self.parent().implementation_ring():
+            self.__polynomial = x.__polynomial
+        elif is_Element(x) and x.parent() is parent.base_ring():
+            if absprec is not None:
+                raise NotImplementedError
+            self.__polynomial = parent._polynomial_ring(x)
+            self._element = parent._implementation_ring()[2](self)
+        elif is_Element(x) and x.parent() is parent.implementation_ring():
             self._element = x
-        elif is_Element(x) and x.parent() is self.parent().base_ring():
-            self._element = parent._implementation_ring()[2](parent._polynomial_ring(x))
-        elif is_Element(x) and x.parent() is self.parent().residue_field():
+        elif is_Element(x) and x.parent() is parent.residue_field():
             self._element = parent.implementation_ring()(x)
         elif isinstance(x,list):
             if all([c in self.parent().base_ring() for c in x]):
-                self._element = parent._implementation_ring()[2](parent._polynomial_ring(x))
+                if absprec is not None:
+                    raise NotImplementedError
+                self.__polynomial = parent._polynomial_ring(x)
+                self._element = parent._implementation_ring()[2](self)
             else:
                 raise NotImplementedError("initialization from %s"%(x))
         else:
@@ -107,6 +118,13 @@ cdef class pAdicGeneralElement(pAdicExtElement):
 
     cpdef _cache_key_(self):
         return self._element._cache_key_()
+
+    def polynomial(self):
+        if self.__polynomial is None:
+            tmp = self.parent()._implementation_ring()[1](self._element)
+            assert tmp.__polynomial is not None, "error determining polynomial for %s in %s"%(self._element, self._element.parent())
+            self.__polynomial = tmp.__polynomial
+        return self.__polynomial
 
     def precision_absolute(self):
         """
@@ -457,15 +475,7 @@ cdef class pAdicGeneralElement(pAdicExtElement):
         return self._element.is_equal_to(right._element, absprec)
 
     def _repr_(self):
-        return repr(self._element)
-        polynomial = self.parent()._from_implementation_ring(self)
-        if self.parent().degree() == 1:
-            assert polynomial.degree()<=0
-            ret = repr(polynomial[0])
-        else:
-            ret = " + ".join(['('+repr(c)+')'+("*"+polynomial.variable_name()+'^'+str(i) if i else '') for i,c in enumerate(polynomial.coeffs())])
-
-        return "%s [approximate]\n %s [exact]"%(ret,repr(self._element))
+        return "~ "+repr(self.polynomial())
 
     cdef long valuation_c(self):
         return (<pAdicGenericElement>self._element).valuation_c()

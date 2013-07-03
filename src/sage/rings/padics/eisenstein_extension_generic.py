@@ -306,4 +306,12 @@ class EisensteinExtensionGeneric(pAdicExtensionGeneric):
 #         raise NotImplementedError
 
     def is_eisenstein_over_unramified(self):
-        return True
+        return False
+
+    def make_basic_or_eisenstein_over_unramified(self):
+        from sage.rings.all import PolynomialRing
+        R = PolynomialRing(self.base(),names=('u',))
+        unramified_part = self.base().extension(R.gen()-1, names=('u',))
+        R = PolynomialRing(unramified_part,names=self.variable_names())
+        eisenstein_part = unramified_part.extension(self.modulus().change_ring(R), names=self.variable_names())
+        return eisenstein_part, lambda f:f.polynomial()(self.gen()), lambda f:f.polynomial()(eisenstein_part.gen())

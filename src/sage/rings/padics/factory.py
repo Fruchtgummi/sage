@@ -1369,7 +1369,7 @@ class GenericExtensionFactory(AbstractFactory):
 
         if check:
             if not modulus.is_irreducible():
-                raise ValueError("modulus must be irreducible")
+                raise ValueError("modulus must be irreducible but %s is not irreducible over %s"%(modulus,base))
             if modulus.is_constant():
                 raise ValueError("modulus must not be constant")
             if len(modulus.list()) > modulus.degree()+1:

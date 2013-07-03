@@ -39,9 +39,18 @@ class pAdicBaseGeneric(pAdicGeneric):
             raise RuntimeError
         self._populate_coercion_lists_(coerce_list=coerce_list, convert_list=convert_list, element_constructor=element_class)
 
-    def hom(self, im_gens):
+    def hom(self, im_gens, base=None):
+        if base is not None:
+            raise ValueError("base must be None")
+
+        if im_gens in self.category():
+            # is there an embedding from self into im_gens?
+            if not im_gens.has_coerce_map_from(self):
+                raise ValueError("no coercion from %s to %s"%(self,im_gens))
+            return im_gens.coerce_map_from(self)
+
         if len(im_gens)!=0:
-            raise ValueError
+            raise ValueError("im_gens must be an empty iterable or a ring/field into which this ring embeds")
         from sage.categories.homset import Hom
         return Hom(self,self).identity()
 

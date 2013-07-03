@@ -95,8 +95,8 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         return 1
 
-    def hom(self, im_gens):
-        raise NotImplementedError("for %s"%self)
+    def hom(self, im_gens, base=None):
+        raise NotImplementedError("morphism from %s"%self)
 
     def gens(self):
         """

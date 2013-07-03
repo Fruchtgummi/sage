@@ -471,7 +471,7 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
                     None if self._list is None else [self.base_ring()(0)]
                     * start + self._list[start:stop]), construct = True)
         else:
-            if n >= len(self._relprecs):
+            if n >= len(self._relprecs) or n<0:
                 return self.base_ring()(0)
             if not self._list is None:
                 return self._list[n]
