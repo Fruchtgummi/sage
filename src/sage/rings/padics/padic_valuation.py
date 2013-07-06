@@ -262,6 +262,49 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
         if self(c) >= -v: ret = self.domain()(ret)
         return ret
 
+    def is_unramified(self, G, include_steps=False, assume_squarefree=False):
+        """
+        Return whether ``G`` defines an unramified extension.
+
+        NOTE: It is not enough to check whether ``G`` is irreducible in
+        reduction for this.
+
+        """
+        R = G.parent()
+        if R.base_ring() is not self.domain():
+            raise ValueError("G must be defined over the domain of this valuation")
+        if not assume_squarefree and not G.is_squarefree():
+            raise ValueError("G must be squarefree")
+
+        from sage.rings.all import infinity
+        from gauss_valuation import GaussValuation
+
+        steps = [ GaussValuation(R, self) ]
+        while True:
+            v = steps[-1]
+            if v.E() > 1:
+                ret = False
+                break
+            if v.F() == G.degree():
+                ret = True
+                break
+
+            assert v(G) is not infinity
+            if v.is_key(G):
+                ret = True
+                break
+
+            next = v.mac_lane_step(G, assume_squarefree=True)
+            if len(next)>1:
+                ret = False
+                break
+            steps.append(next[0])
+
+        if include_steps:
+            return ret, steps
+        else:
+            return ret
+
     def is_totally_ramified(self, G, include_steps=False, assume_squarefree=False):
         """
         Return whether ``G`` defines a totally ramified extension.
@@ -326,30 +369,11 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
                 ret = False
                 break
 
-            F = v.equivalence_decomposition(G)
-            if len(F) > 1:
+            next = v.mac_lane_step(G, assume_squarefree=True)
+            if len(next)>1:
                 ret = False
                 break
-
-            phi = F[0][0]
-            w = v.extension(phi, v(phi), check=False)
-            NP = w.newton_polygon(G).principal_part()
-            assert len(NP)
-            if len(NP.slopes()) > 1:
-                ret = False
-                break
-            slope = NP.slopes()[0]
-            side = NP.sides()[0]
-            new_mu = v(phi) - slope
-            base = v
-            if phi.degree() == base.phi().degree():
-                assert new_mu > v(phi)
-                if not isinstance(base, GaussValuation):
-                    base = base._base_valuation
-
-            new_leaf = base.extension(phi, new_mu)
-            assert slope is -infinity or 0 in new_leaf.newton_polygon(G).slopes()
-            steps.append(new_leaf)
+            steps.append(next[0])
 
         if include_steps:
             return ret, steps
@@ -539,7 +563,7 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
                     leaves.append(v.extension(G,infinity))
                 else:
                     F = v.equivalence_decomposition(G)
-                    F = [g for g,e in F]
+                    F = [g for g,e in F if g != v.phi() or isinstance(v,GaussValuation)] # ML1936 2.42
                     assert F, expandables
                     for phi in F:
                         w = v.extension(phi, v(phi), check=False)

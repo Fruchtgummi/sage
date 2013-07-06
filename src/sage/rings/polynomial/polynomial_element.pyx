@@ -5422,6 +5422,8 @@ cdef class Polynomial(CommutativeAlgebraElement):
             ...       f = R.random_element(degree=4)
             ...       assert f(f.any_root(K)) == 0
         """
+        if hasattr(self.base_ring(),"_any_root_univariate_polynomial"):
+            return self.base_ring()._any_root_univariate_polynomial(self)
         if self.base_ring().is_finite() and self.base_ring().is_field():
             if self.degree() < 0:
                 return ring(0)
@@ -5853,6 +5855,9 @@ cdef class Polynomial(CommutativeAlgebraElement):
             return False
         if self.degree() == 0:
             return self.base_ring()(self).is_irreducible()
+
+        if hasattr(self.base_ring(),"_is_irreducible_univariate_polynomial"):
+            return self.base_ring()._is_irreducible_univariate_polynomial(self)
 
         F = self.factor()
         if len(F) > 1 or F[0][1] > 1:

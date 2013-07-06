@@ -25,7 +25,7 @@ from padic_base_generic import pAdicBaseGeneric
 from sage.rings.padics.precision_error import PrecisionError
 
 class pAdicExtensionGeneric(pAdicGeneric):
-    def __init__(self, poly, prec, print_mode, names, element_class):
+    def __init__(self, base, poly, prec, print_mode, names, element_class):
         """
         Initialization
 
@@ -38,13 +38,8 @@ class pAdicExtensionGeneric(pAdicGeneric):
         """
         #type checking done in factory
         self._given_poly = poly
-        if isinstance(poly,tuple):
-            R = poly[0].base_ring()
-        else:
-            R = poly.base_ring()
-        names = names[0]
-        pAdicGeneric.__init__(self, R, R.prime(), prec, print_mode, names, element_class)
-        self._populate_coercion_lists_(coerce_list=[R], element_constructor=element_class)
+        pAdicGeneric.__init__(self, base, base.prime(), prec, print_mode, names, element_class)
+        self._populate_coercion_lists_(coerce_list=[base], element_constructor=element_class)
 
 #     def __reduce__(self):
 #         """
@@ -329,6 +324,29 @@ class pAdicExtensionGeneric(pAdicGeneric):
                           [self.gen()**i for i in \
                            range(self.modulus().degree())]),
                       0)
+
+    def hom(self, im_gens, base=None):
+        from sage.categories.rings import Rings
+        if im_gens in Rings():
+            if base is not None:
+                raise ValueError("base must be None if im_gens is a ring")
+            if not im_gens.has_coerce_map_from(self):
+                raise ValueError("%s does not define a coercion to %s"%(self,im_gens))
+            return im_gens.coerce_map_from(self)
+
+        if len(im_gens) != 1:
+            raise ValueError("im_gens must be a list of length 1")
+
+        codomain = im_gens[0].parent()
+
+        if base is None:
+            hom = lambda f: f.polynomial()(im_gens[0])
+        else:
+            hom = lambda f: f.polynomial().map_coefficients(base)(im_gens[0])
+
+        from sage.categories.morphism import SetMorphism
+        from sage.categories.homset import Hom
+        return SetMorphism(Hom(self, codomain, Rings()), hom)
 
     #def unit_group(self):
     #    raise NotImplementedError

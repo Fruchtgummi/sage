@@ -418,8 +418,8 @@ class DevelopingValuation(DiscreteValuation):
             # use the characterization of Theorem 13.1 in [ML1936]
             if not f.is_monic():
                 raise NotImplementedError("is_equivalence_irreducible() only implemented for monic polynomials")
-            F = self.equivalence_decomposition(f, lift_to_keys=False)
-            return len(F)==1 and F[0][1]==1
+            F = self.equivalence_decomposition(f, lift_to_keys=True) # OUCH: do something smarter here - there has to be a way to make this work with lift_to_keys=False
+            return len(F)==1 and F[0][1]==1 and F.unit().degree()==0
 
         raise NotImplementedError("is_equivalence_irreducible() only implemented for inductive values")
 
@@ -445,7 +445,7 @@ class DevelopingValuation(DiscreteValuation):
         removing all factors `\phi` from a polynomial `f`, there is an
         equivalence unit `R` such that `Rf` has valuation zero. Now `Rf` can be
         factored as `\prod_i \alpha_i` over the :meth:`residue_field`. Lifting
-        all `\alpha_i` to key polynomials `\phi_i` gives `Rf=\prod_i R_if_i`
+        all `\alpha_i` to key polynomials `\phi_i` gives `Rf=\prod_i R_i f_i`
         for suitable equivalence units `R_i` (see :meth:`lift_to_key`). Taking
         `R'` an :meth:`equivalence_reciprocal` of `R`, we have `f` equivalent
         to `(R'\prod_i R_i)\prod_i\phi_i`.
@@ -523,17 +523,17 @@ class DevelopingValuation(DiscreteValuation):
 
         f0 = f # used to check correctness of the output
 
-        unit = f.parent().one()
-
         phi_divides = 0
-        while self.phi().divides(f):
-            phi_divides += 1
+        while self.valuations(f)[0] > self(f):
+            f = f-self.coefficients(f)[0]
+            assert self.phi().divides(f)
             f,_ = f.quo_rem(self.phi())
+            phi_divides += 1
 
         R = self.equivalence_unit(-self(f))
         F = self.reduce(f*R)
         F = F.factor()
-        unit = self.lift( self.residue_ring()(F.unit()) )
+        unit = F.unit()
         F = list(F)
 
         # used to speed up is_equivalence_irreducible()
@@ -545,6 +545,8 @@ class DevelopingValuation(DiscreteValuation):
             else:
                 F.append((self.residue_ring().gen(), phi_divides))
             return Factorization(F)
+
+        unit = self.lift( self.residue_ring()(unit) )
 
         from sage.misc.all import prod
         unit *= self.lift(self.residue_ring()(prod([ psi.leading_coefficient()**e for psi,e in F ])))
@@ -830,3 +832,44 @@ class DevelopingValuation(DiscreteValuation):
         """
         return self.domain().change_ring(self.residue_field())
 
+    def mac_lane_step(self, G, assume_squarefree=False):
+        assert not G.is_constant()
+        R = G.parent()
+        if R is not self.domain():
+            raise ValueError("G must be defined over the domain of this valuation")
+        if not assume_squarefree and not G.is_squarefree():
+            raise ValueError("G must be squarefree")
+
+        from sage.rings.all import infinity
+
+        if self(G) is infinity:
+            raise ValueError("G must not have valuation infinity")
+
+        if self.is_key(G):
+            return [self.extension(G, infinity)]
+
+        F = self.equivalence_decomposition(G)
+
+        ret = []
+        for phi,e in F:
+            if G == phi: continue
+            w = self.extension(phi, self(phi), check=False)
+            NP = w.newton_polygon(G).principal_part()
+            assert len(NP)
+            for i in range(len(NP.slopes())):
+                slope = NP.slopes()[i]
+                side = NP.sides()[i]
+                new_mu = self(phi) - slope
+                base = self
+                if phi.degree() == base.phi().degree():
+                    assert new_mu > self(phi)
+                    from gauss_valuation import GaussValuation
+                    if not isinstance(base, GaussValuation):
+                        base = base._base_valuation
+
+                new_leaf = base.extension(phi, new_mu)
+                assert slope is -infinity or 0 in new_leaf.newton_polygon(G).slopes()
+                ret.append(new_leaf)
+
+        assert ret
+        return ret

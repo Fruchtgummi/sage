@@ -47,7 +47,8 @@ class LocalGeneric(CommutativeRing):
         """
         self._prec = prec
         self.Element = element_class
-        Parent.__init__(self, base, names=(names,), normalize=False, category=getattr(self,'_default_category',None))
+        if not isinstance(names, tuple): names = (names,)
+        Parent.__init__(self, base, names=names, normalize=False, category=getattr(self,'_default_category',None))
 
     def is_capped_relative(self):
         """

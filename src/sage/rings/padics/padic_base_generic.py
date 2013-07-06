@@ -43,7 +43,8 @@ class pAdicBaseGeneric(pAdicGeneric):
         if base is not None:
             raise ValueError("base must be None")
 
-        if im_gens in self.category():
+        from sage.categories.rings import Rings
+        if im_gens in Rings():
             # is there an embedding from self into im_gens?
             if not im_gens.has_coerce_map_from(self):
                 raise ValueError("no coercion from %s to %s"%(self,im_gens))

@@ -36,23 +36,11 @@ class EisensteinExtensionGeneric(pAdicExtensionGeneric):
             sage: S.<x> = A[]
             sage: B.<t> = A.ext(x^2+7) #indirect doctest
         """
-        pAdicExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
+        pAdicExtensionGeneric.__init__(self, poly.base_ring(), poly, prec, print_mode, names, element_class)
         #self._precompute()
 
-    def hom(self, im_gens):
-        if len(im_gens)!=1:
-            raise ValueError
-        from sage.categories.morphism import SetMorphism
-        from sage.categories.rings import Rings
-        from sage.categories.homset import Hom
-        from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-        R = PolynomialRing(self.base_ring(),names=('T',))
-        def list(x):
-            ret = x.matrix()[0].list()
-            while ret and ret[-1].is_zero(): ret.pop()
-            return ret
-
-        return SetMorphism(Hom(self,im_gens[0].parent(),Rings()), lambda x:R(list(x))(im_gens[0]))
+    def eisenstein_polynomial(self):
+        return self.modulus()
 
     def _compute_shift_seed(self, premodulus, base):
         from sage.symbolic.expression import is_Expression
@@ -299,19 +287,12 @@ class EisensteinExtensionGeneric(pAdicExtensionGeneric):
         """
         return self.variable_name()
 
+    def _isomorphic_ring(self):
+        from sage.categories.homset import Hom
+        return self, Hom(self,self).identity(), Hom(self,self).identity()
+
 #     def has_pth_root(self):
 #         raise NotImplementedError
 
 #     def has_root_of_unity(self, n):
 #         raise NotImplementedError
-
-    def is_eisenstein_over_unramified(self):
-        return False
-
-    def make_basic_or_eisenstein_over_unramified(self):
-        from sage.rings.all import PolynomialRing
-        R = PolynomialRing(self.base(),names=('u',))
-        unramified_part = self.base().extension(R.gen()-1, names=('u',))
-        R = PolynomialRing(unramified_part,names=self.variable_names())
-        eisenstein_part = unramified_part.extension(self.modulus().change_ring(R), names=self.variable_names())
-        return eisenstein_part, lambda f:f.polynomial()(self.gen()), lambda f:f.polynomial()(eisenstein_part.gen())

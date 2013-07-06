@@ -62,6 +62,24 @@ A totally ramified extension not defined by an Eisenstein polynomial::
     sage: L.<a> = K.extension(a^2 + 125*a + 125); L
     Totally ramified extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23))
 
+An iterated Eisenstein extension::
+
+    sage: K = Qp(5)
+    sage: R.<a> = K[]
+    sage: L.<a> = K.extension(a^2 + 5)
+    sage: R.<b> = L[]
+    sage: M.<b> = L.extension(b^2 + a); M
+    Eisenstein extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in b defined by (1 + O(a^40))*b^2 + a + O(a^41)
+    sage: R.<c> = M[]
+    sage: N.<c> = M.extension(c^2 + b); N
+
+An unramified extension not defined by a polynomial with irreducible
+reduction::
+
+    sage: K = Qp(5)
+    sage: R.<u> = K[]
+    sage: L.<u> = K.extension(u^2 + 5*u + 25); L
+
 .. _padic_precision
 
 Precision
@@ -599,6 +617,7 @@ To create an extension ring, the modulus can be given in a number of ways:
 
 from sage.rings.integer_ring import ZZ
 from sage.structure.factory import UniqueFactory
+import padic_printing
 
 class AbstractFactory(UniqueFactory):
     r"""
@@ -1069,6 +1088,7 @@ def create_unramified_factory(base_factory):
 
         if modulus is None:
             from sage.rings.finite_rings.constructor import FiniteField as GF
+            from sage.rings.all import PolynomialRing
             modulus = PolynomialRing(base, 'x')(GF(q, res_name).modulus().change_ring(ZZ))
 
         return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=check)
@@ -1138,15 +1158,23 @@ class GenericExtensionFactory(AbstractFactory):
 
     """
     @staticmethod
-    def krasner_check(poly):
+    def krasner_check(poly, names=None):
         """
         Check whether the Eisenstein polynomial ``poly`` uniquely defines an
         extension by Krasner's lemma.
 
+        INPUT:
+
+        - ``poly`` -- a Eisenstein polynomial over a `p`-adic ring
+
+        - ``names`` -- a tuple of strings or ``None`` (default: ``None``), used
+          internally to create an extension; a good choice can lead to speedups
+          due to caching of `p`-adic extensions
+
         OUTPUT:
 
-        Raise a ValueError if ``poly`` does not uniquely determine an extension
-        or if its precision is insufficient to apply the algorithm.
+        Raise a ``ValueError`` if ``poly`` does not uniquely determine an
+        extension or if its precision is insufficient to apply the algorithm.
 
         ALGORITHM:
 
@@ -1196,12 +1224,15 @@ class GenericExtensionFactory(AbstractFactory):
         K = poly.base_ring()
         n = ZZ(poly.degree())
 
+        if names is None:
+            names = poly.parent().variable_names()
+
         # a_i-a are the roots of f(x+a)
         # the valuation of a_i-a is therefore given by the slopes of the Newton
         # polygon of f(x+a)/x which can be determined from its Taylor expansion
 
         # to compute the Taylor expansion, we have to work in the quotient L = K[x]/(f)
-        L = K.extension(poly, names="a", check=False)
+        L = K.extension(poly, names=names, check=False)
         coeffs = [(poly.derivative(i)(L.gen()),L(ZZ(i).factorial())) for i in range(1,n+1)]
         vals = [a.valuation() - b.valuation() for a,b in coeffs]
 
@@ -1356,6 +1387,7 @@ class GenericExtensionFactory(AbstractFactory):
 
     def _normalize_modulus(self, base, premodulus, check):
         from sage.symbolic.expression import is_Expression
+        from sage.rings.polynomial.polynomial_element import is_Polynomial
         if is_Expression(premodulus):
             if len(premodulus.variables()) != 1:
                 raise ValueError("modulus must be in one variable")
@@ -1389,7 +1421,7 @@ class GenericExtensionFactory(AbstractFactory):
         assert modulus.is_monic()
         return modulus
 
-    def create_key(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check=True):
+    def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check=True):
         r"""
         Create a key which can be used to cache the `p`-adic ring specified by
         the parameters.
@@ -1481,7 +1513,19 @@ class GenericExtensionFactory(AbstractFactory):
         if ext == "e":
             prec *= modulus.degree()
 
-        return ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms
+        return (ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms), {"check":check}
+
+    def get_object(self, version, key, extra_args):
+        check = True
+        if "check" in extra_args:
+            check = extra_args["check"]
+            extra_args.pop("check")
+        assert len(extra_args)==0
+        ret = AbstractFactory.get_object(self,version,key,extra_args)
+        if check and hasattr(ret,"_check"):
+            ret._check()
+            assert ret.modulus()(ret.gen()).is_zero()
+        return ret
 
     def _decode_key(self, key):
         r"""
@@ -1520,7 +1564,7 @@ class GenericExtensionFactory(AbstractFactory):
         print_mode = { "mode":print_mode, "pos":print_pos, "sep":print_sep, "alphabet":print_alphabet, "max_ram_terms":print_max_ram_terms, "max_unram_terms":print_max_unram_terms, "max_terse_terms":print_max_terse_terms }
         return (ext, precision_type), {"prepoly":premodulus, "poly":modulus, "names":names, "prec":prec, "halt":halt, "print_mode":print_mode}
 
-from padic_extension_leaves import EisensteinExtensionFieldCappedRelative, UnramifiedExtensionFieldCappedRelative, GeneralExtensionFieldCappedRelative, EisensteinExtensionRingCappedRelative, EisensteinExtensionRingCappedAbsolute, EisensteinExtensionRingFixedMod, UnramifiedExtensionRingCappedRelative, UnramifiedExtensionRingCappedAbsolute, UnramifiedExtensionRingFixedMod, GeneralExtensionRingCappedRelative, GeneralExtensionRingCappedAbsolute, GeneralExtensionRingFixedMod
+from padic_extension_leaves import EisensteinExtensionFieldCappedRelative, UnramifiedExtensionFieldCappedRelative, GeneralExtensionFieldCappedRelative, EisensteinExtensionRingCappedRelative, EisensteinExtensionRingCappedAbsolute, EisensteinExtensionRingFixedMod, UnramifiedExtensionRingCappedRelative, UnramifiedExtensionRingCappedAbsolute, UnramifiedExtensionRingFixedMod, GeneralExtensionRingCappedRelative, GeneralExtensionRingCappedAbsolute, GeneralExtensionRingFixedMod, TwoStepExtensionFieldCappedRelative, TwoStepExtensionRingCappedRelative, TwoStepExtensionRingCappedAbsolute, TwoStepExtensionRingFixedMod
 
 QpExtensionFactory = GenericExtensionFactory("Qp_ext", { ("e", "capped-rel") : EisensteinExtensionFieldCappedRelative,
                                                          ("u", "capped-rel") : UnramifiedExtensionFieldCappedRelative,
@@ -1550,6 +1594,14 @@ ZpIteratedExtensionFactory = GenericExtensionFactory("Zp_ext", { ("e", "capped-r
                                                                  ("?", "capped-rel") : GeneralExtensionRingCappedRelative,
                                                                  ("?", "capped-abs") : GeneralExtensionRingCappedAbsolute,
                                                                  ("?", "fixed-mod") : GeneralExtensionRingFixedMod,
+                                                               })
+
+QpTwoStepExtensionFactory = GenericExtensionFactory("Qp_ext2", { ("e", "capped-rel") : TwoStepExtensionFieldCappedRelative,
+                                                               })
+
+ZpTwoStepExtensionFactory = GenericExtensionFactory("Zp_ext2", { ("e", "capped-rel") : TwoStepExtensionRingCappedRelative,
+                                                                 ("e", "capped-abs") : TwoStepExtensionRingCappedAbsolute,
+                                                                 ("e", "fixed-mod") : TwoStepExtensionRingFixedMod,
                                                                })
 
 def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True):
@@ -1634,943 +1686,27 @@ def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = No
 
 pAdicExtension = ExtensionFactory
 
-### TODO ### everything below this line ###
-from sage.rings.integer import Integer
-from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.rings.polynomial.polynomial_element import is_Polynomial
-from padic_base_leaves import pAdicRingCappedRelative, \
-                              pAdicRingCappedAbsolute, \
-                              pAdicRingFixedMod, \
-                              pAdicFieldCappedRelative
-from padic_valuation import pAdicValuation
+def TwoStepExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True):
+    """
+    Create an extension that is an Eisenstein extension of an unramified
+    extension of a `p`-adic base ring.
 
-import padic_printing
-padic_field_cache = {}
+    This is a helper function for :class:`GeneralExtensionGeneric` and its
+    subclasses.
 
-#######################################################################################################
-#
-#  The Extension Factory -- creates extensions of p-adic rings and fields
-#
-#######################################################################################################
+    The input parameters are the same as for :meth:`ExtensionFactory`, except
+    for ``base`` which must be a simple unramified extension of a `p`-adic base
+    ring.
 
-# class pAdicExtension_class(UniqueFactory):
-#     """
-#     A class for creating extensions of `p`-adic rings and fields.
-# 
-#     EXAMPLES::
-# 
-#         sage: R = Zp(5,3)
-#         sage: S.<x> = ZZ[]
-#         sage: W.<w> = pAdicExtension(R, x^4-15)
-#         sage: W
-#         Eisenstein Extension of 5-adic Ring with capped relative precision 3 in w defined by (1 + O(5^3))*x^4 + (O(5^4))*x^3 + (O(5^4))*x^2 + (O(5^4))*x + (2*5 + 4*5^2 + 4*5^3 + O(5^4))
-#         sage: W.precision_cap()
-#         12
-# 
-# ###        TODO: Stefan's example
-# ###        sage: k=Qp(2,10)
-# ###        sage: R.<T>=k[]
-# ###        sage: F=T^4-T^2+1
-# ###        sage: k1.<t>=pAdicExtension(k,F); k1
-# ###        General extension of 2-adic Field with capped relative precision 10 in t defined by (1 + O(2^10))*T^4 + (1 + 2 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + O(2^10))*T^2 + (1 + O(2^10))
-# ###
-# ###        sage: k=Qp(2,10)
-# ###        sage: R.<x>=k[]
-# ###        sage: f=x^4+2*x^3+2*x^2-2*x+2
-# ###        sage: f.is_irreducible()
-# ###        True
-# ###        sage: k1.<alpha>=k.extension(f)
-# ###        sage: f=f.base_extend(k1)
-# ###        sage: F=f.factor()
-# ###        sage: g=F[1][0]
-# ###        sage: k2.<beta>=k1.extension(g)
-# ###        sage: g(beta)
-# ###        O(pi^115)
-# 
-#     """
-#     def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True, unram = False):
-#         """
-#         Creates a key from input parameters for pAdicExtension.
-# 
-#         See the documentation for ``Qq`` for more information.
-# 
-#         TESTS::
-# 
-#             sage: R = Zp(5,3)
-#             sage: S.<x> = ZZ[]
-#             sage: pAdicExtension.create_key_and_extra_args(R, x^4-15,names='w')
-#             (('e', 5-adic Ring with capped relative precision 3, x^4 - 15, (1 + O(5^3))*x^4 + (O(5^4))*x^3 + (O(5^4))*x^2 + (O(5^4))*x + (2*5 + 4*5^2 + 4*5^3 + O(5^4)), ('w', None, None, 'w'), 12, None, 'series', True, '|', (), -1, -1, -1), {'shift_seed': (3 + O(5^3))})
-# 
-#         Check that :trac:`?` has been resolved::
-# 
-#             sage: R = Qp(3,10)
-#             sage: S.<x> = R[]
-#             sage: S.<a> = R.ext(3*x^2 - 9); S
-#             Eisenstein Extension of 3-adic Field with capped relative precision 10 in a defined by (1 + O(3^10))*x^2 + (O(3^11))*x + (2*3 + 2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + O(3^11))
-# 
-#         """
-#         if print_mode is None:
-#             print_mode = base.print_mode()
-#         if print_pos is None:
-#             print_pos = base._printer._pos()
-#         if print_sep is None:
-#             print_sep = base._printer._sep()
-#         if print_alphabet is None:
-#             print_alphabet = base._printer._alphabet()
-#         if print_max_ram_terms is None:
-#             print_max_ram_terms = base._printer._max_ram_terms()
-#         if print_max_unram_terms is None:
-#             print_max_unram_terms = base._printer._max_unram_terms()
-#         if print_max_terse_terms is None:
-#             print_max_terse_terms = base._printer._max_terse_terms()
-#         from sage.symbolic.expression import is_Expression
-#         if check:
-#             if is_Expression(premodulus):
-#                 if len(premodulus.variables()) != 1:
-#                     raise ValueError, "symbolic expression must be in only one variable"
-#                 modulus = premodulus.polynomial(base)
-#             elif is_Polynomial(premodulus):
-#                 if premodulus.parent().ngens() != 1:
-#                     raise ValueError, "must use univariate polynomial"
-#                 modulus = premodulus.change_ring(base)
-#                 if not modulus.is_irreducible():
-#                     raise ValueError, "poly must be irreducible"
-#             elif isinstance(premodulus, tuple):
-#                 if len(premodulus) != 2:
-#                     raise ValueError, "modulus must be a polynomial or a tuple of two polynomials"
-#                 if not is_Polynomial(premodulus[0]) or not is_Polynomial(premodulus[1]):
-#                     raise ValueError, "entries of modulus must be polynomials"
-#                 if premodulus[0].parent().ngens() != 1 or premodulus[1].parent().ngens() != 1:
-#                     raise ValueError, "must use univariate polynomials"
-#                 modulus = (premodulus[0].change_ring(base), premodulus[1].change_ring(premodulus[0].parent()))
-#             else:
-#                 raise ValueError, "modulus must be a polynomial or a tuple of two polynomials"
-# 
-#             if isinstance(modulus, tuple):
-#                 if any([modul.degree() <= 1 for modul in modulus]):
-#                     raise NotImplementedError, "degree of moduli must be at least 2"
-#             elif modulus.degree() <= 0:
-#                 raise NotImplementedError, "degree of modulus must be at least 1"
-#             # need to add more checking here.
-#             if not isinstance(modulus,tuple) and not unram: #this is not quite the condition we want for not checking these things; deal with fixed-mod sanely
-#                 if not modulus.is_monic():
-#                     if base.is_field():
-#                         modulus = modulus / modulus.leading_coefficient()
-#                     elif modulus.leading_coefficient().valuation() <= min(c.valuation() for c in modulus.list()):
-#                         modulus = modulus.parent()(modulus / modulus.leading_coefficient())
-#                     else:
-#                         modulus = modulus / modulus.leading_coefficient()
-#                         base = base.fraction_field()
-#                 #Now modulus is monic
-#                 if not krasner_check(modulus, prec):
-#                     raise ValueError, "polynomial does not determine a unique extension.  Please specify more precision or use parameter check=False."
-#             if names is None:
-#                 if var_name is not None:
-#                     names = var_name
-#                 else:
-#                     raise ValueError, "must specify name of generator of extension"
-#             if not isinstance(premodulus, tuple):
-#                 if isinstance(names, tuple):
-#                     names = names[0]
-#                 if not isinstance(names, str):
-#                     names = str(names)
-#         else:
-#             modulus = premodulus
-#         #print type(base)
-#         # We now decide on the extension class: unramified, Eisenstein, two-step or general
-#         if isinstance(modulus, tuple):
-#             if unram_name is None:
-#                 unram_name = names[0]
-#             if res_name is None:
-#                 res_name = unram_name + '0'
-#             if ram_name is None:
-#                 ram_name = names[1]
-#             names = (names, res_name, unram_name, ram_name)
-#             polytype = '2'
-#             halt = None
-#             e = modulus[1].degree()
-#             if prec is None:
-#                 from sage.rings.infinity import infinity
-#                 prec = infinity
-#             prec = min(prec, min([c.precision_absolute() for c in modulus[0].list()] + [c.precision_absolute() for d in modulus[1].list() for c in d.list()] + [base.precision_cap()]) * e)
-#             shift_seed = None
-#             upoly,epoly = modulus = (truncate_to_prec( modulus[0], prec), truncate_to_prec( modulus[1], prec))
-#         elif unram or (modulus.degree() > 1 and is_unramified(modulus)) and base is base.ground_ring_of_tower():
-#             if unram_name is None:
-#                 unram_name = names
-#             if res_name is None:
-#                 res_name = unram_name + '0'
-#             if ram_name is None:
-#                 ram_name = base._printer._uniformizer_name()
-#             names = (names, res_name, unram_name, ram_name)
-#             polytype = 'u'
-#             #if halt is None and isinstance(base.ground_ring_of_tower(), (pAdicRingLazy, pAdicFieldLazy)):
-#             #    halt = base.halting_paramter()
-#             #elif not isinstance(base.ground_ring_of_tower(), (pAdicRingLazy, pAdicFieldLazy)):
-#             #    halt = None
-#             halt = None
-#             if prec is None:
-#                 prec = min([c.precision_absolute() for c in modulus.list()] + [base.precision_cap()])
-#             else:
-#                 prec = min([c.precision_absolute() for c in modulus.list()] + [base.precision_cap()] + [prec])
-#             shift_seed = None
-#             modulus = truncate_to_prec(modulus, prec)
-#         elif modulus.degree() > 1 and is_eisenstein(modulus) and base is base.ground_ring_of_tower():
-#             unram_name = None
-#             res_name = None
-#             if ram_name is None:
-#                 ram_name = names
-#             names = (names, res_name, unram_name, ram_name)
-#             polytype = 'e'
-#             e = modulus.degree()
-#             #if halt is None and isinstance(base.ground_ring_of_tower(), (pAdicRingLazy, pAdicFieldLazy)):
-#             #    halt = base.halting_paramter() * e
-#             #elif not isinstance(base.ground_ring_of_tower(), (pAdicRingLazy, pAdicFieldLazy)):
-#             #    halt = None
-#             halt = None
-#             # The precision of an eisenstein extension is governed both by the absolute precision of the polynomial,
-#             # and also by the precision of polynomial with the leading term removed (for shifting).
-#             # The code below is to determine the correct prec for the extension, and possibly to obtain
-#             # the information needed to shift right with full precision from the premodulus.
-#             if is_Expression(premodulus):
-#                 # Here we assume that the output of coeffs is sorted in increasing order by exponent:
-#                 coeffs = premodulus.coeffs()
-#                 preseed = premodulus / coeffs[-1][0]
-#                 preseed -= preseed.variables()[0]**coeffs[-1][1]
-#                 preseed /= base.prime() # here we assume that the base is unramified over Qp
-#                 shift_seed = -preseed.polynomial(base)
-#             else: # a polynomial
-#                 if not premodulus.is_monic():
-#                     preseed = premodulus / premodulus.leading_coefficient()
-#                 else:
-#                     preseed = premodulus
-#                 preseed = preseed[:preseed.degree()]
-#                 if base.is_fixed_mod():
-#                     shift_seed = -preseed.change_ring(base)
-#                     shift_seed = shift_seed.parent()([a >> 1 for a in shift_seed.list()])
-#                 else:
-#                     if base.e() == 1:
-#                         try:
-#                             preseed *= 1/base.prime()
-#                             shift_seed = -preseed.change_ring(base)
-#                         except TypeError:
-#                             # give up on getting more precision
-#                             shift_seed = -preseed.change_ring(base)
-#                             shift_seed /= base.uniformizer()
-#                     else:
-#                         # give up on getting more precision
-#                         shift_seed = -preseed.change_ring(base)
-#                         shift_seed /= base.uniformizer()
-#             if prec is None:
-#                 prec = min([c.precision_absolute() for c in shift_seed.list() if not c._is_exact_zero()] + [modulus.leading_coefficient().precision_absolute()] + [base.precision_cap()]) * e
-#             else:
-#                 prec = min([c.precision_absolute() * e for c in shift_seed.list() if not c._is_exact_zero()] + [modulus.leading_coefficient().precision_absolute() * e] + [base.precision_cap() * e] + [prec])
-#             modulus = truncate_to_prec(modulus, (prec/e).ceil() + 1)
-#         else:
-#             if unram_name is None:
-#                 unram_name = names + '_u'
-#             if res_name is None:
-#                 res_name = names + '0'
-#             if ram_name is None:
-#                 ram_name = names + '_p'
-#             if var_name is None:
-#                 var_name = names
-#             names = (var_name, res_name, unram_name, ram_name)
-# 
-#             polytype = 'p'
-#         if polytype == 'u' or polytype == 'e':
-#             key = (polytype, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, tuple(print_alphabet), print_max_ram_terms, print_max_unram_terms, print_max_terse_terms)
-#         elif polytype == '2':
-#             key = (polytype, base, premodulus, upoly, epoly, names, prec, halt, print_mode, print_pos, print_sep, tuple(print_alphabet), print_max_ram_terms, print_max_unram_terms, print_max_terse_terms)
-#         else:
-#             polytype = 'p'
-# 
-#             shift_seed = None
-#             key = polytype, base, modulus, names, prec, halt, print_mode, print_pos, print_sep, tuple(print_alphabet), print_max_ram_terms, print_max_unram_terms, print_max_terse_terms
-# 
-#         return key, {'shift_seed': shift_seed}
-# 
-#     def create_object(self, version, key, shift_seed):
-#         """
-#         Creates an object using a given key.
-# 
-#         See the documentation for pAdicExtension for more information.
-# 
-#         TESTS::
-# 
-#             sage: R = Zp(5,3)
-#             sage: S.<x> = R[]
-#             sage: pAdicExtension.create_object(version = (3,4,2), key = ('e', R, x^4 - 15, x^4 - 15, ('w', None, None, 'w'), 12, None, 'series', True, '|', (),-1,-1,-1), shift_seed = S(3 + O(5^3)))
-#             Eisenstein Extension of 5-adic Ring with capped relative precision 3 in w defined by (1 + O(5^3))*x^4 + (2*5 + 4*5^2 + 4*5^3 + O(5^4))
-#         """
-#         polytype = key[0]
-#         if polytype == 'u' or polytype == 'e':
-#             polytype, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms = key
-#             return ext_table[polytype, type(base.ground_ring_of_tower()).__base__](premodulus, modulus, prec, halt, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet, 'max_ram_terms': print_max_ram_terms, 'max_unram_terms': print_max_unram_terms, 'max_terse_terms': print_max_terse_terms}, shift_seed, names)
-#         elif polytype == '2':
-#             polytype, base, premodulus, upoly, epoly, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms = key
-#             return ext_table['2', type(base.ground_ring_of_tower()).__base__](premodulus, upoly, epoly, prec, halt, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet, 'max_ram_terms': print_max_ram_terms, 'max_unram_terms': print_max_unram_terms, 'max_terse_terms': print_max_terse_terms}, names)
-#         elif polytype == 'p':
-#             polytype, base, modulus, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms = key
-# 
-#             from sage.categories.homset import Hom
-#             # first, we reduce to the case with base being two-step/Eisenstein/unramified/no-extension over base.ground_ring_of_tower()
-#             #from sage.rings.padics.eisenstein_extension_generic import EisensteinExtensionGeneric
-#             if base is base.ground_ring_of_tower() or isinstance(base, UnramifiedExtensionGeneric) or isinstance(base, EisensteinExtensionGeneric):
-#                 abs_base = base
-#                 abs_base_primitive = abs_base.gen()
-#                 to_abs_base = Hom(base,base).identity()
-#                 from_abs_base = Hom(base,base).identity()
-#             elif isinstance(base, GeneralExtensionGeneric) or isinstance(base, TwoStepExtensionGeneric):
-#                 if isinstance(base, GeneralExtensionGeneric):
-#                     abs_base = base._implementation_ring
-#                     to_abs_base = base.to_implementation_ring
-#                     from_abs_base = base.from_implementation_ring
-#                 else:
-#                     abs_base = base
-#                     to_abs_base = Hom(base,base).identity()
-#                     from_abs_base = Hom(base,base).identity()
-#                 if isinstance(abs_base, TwoStepExtensionGeneric):
-#                     ## TODO: fix the number of iterations
-#                     for i in range(10):
-#                         abs_base_primitive = abs_base.gen(1) + i*abs_base.gen(0)
-#                         if abs_base_primitive.valuation():
-#                             continue
-#                         if abs_base_primitive.matrix(base=base.ground_ring_of_tower()).minpoly().degree() == abs_base.degree():
-#                             break
-#                     else:
-#                         raise NotImplementedError("primitive element theorem failed")
-#                 else:
-#                     abs_base_primitive = abs_base.gen()
-#             else:
-#                 raise NotImplementedError,"%s"%type(base)
-# 
-#             modulus_over_abs_base = modulus.map_coefficients(lambda c:to_abs_base(c), abs_base)
-# 
-#             # find a primitive element and its modulus for the absolute
-#             # extension ring over the padic base ring (this may not yet be in
-#             # Eisenstein/unramified/... form)
-#             if abs_base is abs_base.ground_ring_of_tower():
-#                 abs_modulus = modulus_over_abs_base
-#                 to_abs_ring = [abs_modulus.parent().gen()]
-#                 from_abs_ring = modulus_over_abs_base.parent().gen()
-#             else:
-#                 # abs_base is a direct extension of a p-adic ground ring
-#                 assert abs_base.base_ring() is abs_base.ground_ring_of_tower()
-# 
-#                 # TODO: how many attempts do we need?
-#                 for i in range(100):
-#                     # a number of bad things can happen if we choose our
-#                     # primitive element and its minpoly unwisely:
-#                     # 1) a coefficient with low absolute precision could
-#                     # eliminate most information when we reduce mod the minpoly
-#                     # [can we do anything about this?]
-#                     # 2) a constant with high valuation makes the polynomial
-#                     # almost not irreducible; in particular, powers of the
-#                     # minpoly will see additional factors. However, for a
-#                     # ramified extension, the constant must have non-zero
-#                     # valuation.
-#                     # [can we do anything about this?]
-# 
-#                     # guess a primitive element
-#                     primitive_element = modulus_over_abs_base.parent().gen() + i*abs_base_primitive
-# 
-#                     formal_quotient = modulus_over_abs_base.parent().quo(modulus_over_abs_base)
-#                     primitive_element = formal_quotient(primitive_element)
-# 
-#                     # compute the minpoly of primitive_element
-#                     # what is the minpoly over an inexact ring?
-#                     # 1) if there is a lift of primitive_element which is not
-#                     # primitive, then the minpoly should have smaller degree
-#                     # than the extension's degree
-#                     # 2) if not, then for every lift of primitive_element a
-#                     # lift of the minpoly must be its minpoly
-#                     # 3) every lift of the polynomial must be irreducible
-# 
-#                     total_degree = modulus_over_abs_base.degree()*abs_base.degree()
-#                     try:
-#                         minpoly = _mod_minpoly(primitive_element, total_degree, abs_base.ground_ring_of_tower())
-#                     except ValueError as e:
-#                         # matrix equation has no solutions
-#                         continue
-# 
-#                     # primitive_element is primitive if its minpoly has the degree of the full extension
-#                     if not minpoly.is_irreducible():
-#                         continue
-#                     from sage.rings.polynomial.padics.factor.factoring import pfactortree
-#                     # ugly hack - is_irreducible often misses factors
-#                     if len(pfactortree(minpoly)) > 1:
-#                         continue
-#                     assert minpoly(primitive_element).is_zero(), minpoly(primitive_element)
-# 
-#                     # when we used change_ring(ZZ) we made a choice. This is
-#                     # the minimial polynomial of some lift of primitive_element
-#                     # to infinite precision but probably primitive_element has
-#                     # a minpoly of lower degree? Furthermore, this polynomial
-#                     # might show some special behaviour which another minimal
-#                     # polynomial might not have?
-#                     # TODO: How do we make sure that we got "the right one"?
-# 
-#                     break
-#                 else:
-#                     raise NotImplementedError("primitive element theorem failed")
-# 
-#                 abs_modulus = minpoly
-# 
-#                 from_abs_ring = modulus_over_abs_base.parent().gen() + i*abs_base_primitive
-#                 # write a basis of abs_ring in abs_base[T]/(modulus_over_abs_base)
-#                 abs_ring_basis = [formal_quotient(from_abs_ring)**i for i in range(total_degree)]
-#                 abs_ring_basis = [b.lift() for b in abs_ring_basis]
-#                 abs_ring_basis = [b.list() for b in abs_ring_basis]
-#                 abs_ring_basis = [b[:modulus_over_abs_base.degree()] for b in abs_ring_basis]
-#                 abs_ring_basis = [b + [abs_base.zero()]*(modulus_over_abs_base.degree()-len(b)) for b in abs_ring_basis]
-#                 from sage.misc.flatten import flatten
-#                 abs_ring_basis = [flatten([c.vector(base=base.ground_ring_of_tower()) for c in b]) for b in abs_ring_basis]
-#                 from sage.matrix.constructor import matrix
-#                 A = matrix(abs_ring_basis)
-# 
-#                 # express the generators in the basis of abs_ring
-#                 to_abs_ring = []
-# 
-#                 if modulus_over_abs_base.degree() > 1:
-#                     b = [0]*total_degree
-#                     b[abs_base.degree()] = 1
-#                 else:
-#                     b = (-modulus_over_abs_base[0]).vector(base=base.ground_ring_of_tower())
-#                 b = A.matrix_space().row_space()(b)
-#                 x = A.solve_left(b)
-#                 assert x*A == b
-#                 x = x.change_ring(base.ground_ring_of_tower())
-#                 x = x.list()
-#                 while x[-1].is_zero(): x.pop()
-#                 to_abs_ring.append(minpoly.parent()(x))
-# 
-#                 for gen in abs_base.gens():
-#                     b = gen.vector(base=base.ground_ring_of_tower()) + [0]*(total_degree - abs_base.degree())
-#                     b = A.matrix_space().row_space()(b)
-#                     x = A.solve_left(b)
-#                     assert x*A == b
-#                     x = x.list()
-#                     while x[-1].is_zero(): x.pop()
-#                     to_abs_ring.append(minpoly.parent()(x))
-# 
-#             # reduce the absolute extension to an absolute extension that we
-#             # can handle (two-step, Eisenstein, unramified, or trivial)
-#             if abs_modulus.degree() == 1:
-#                 implementation_ring = abs_base
-#                 to_implementation_ring = -abs_modulus[0]
-#                 from_implementation_ring = ()
-#                 prec = modulus.base_ring().precision_cap()
-#             else:
-#                 # TODO: prec
-#                 upoly, epoly, prec = split(abs_modulus, prec)
-#                 if upoly.degree() >= 2 and epoly.degree() >= 2:
-#                     implementation_ring = pAdicExtension(abs_base.base_ring(), (upoly, epoly), names=('u','pi'))
-#                 elif upoly.degree() >= 2:
-#                     implementation_ring = pAdicExtension(abs_base.base_ring(), upoly, names=('u'))
-#                 else:
-#                     implementation_ring = pAdicExtension(abs_base.base_ring(), epoly, names=('pi'))
-#                 prec = implementation_ring.precision_cap()
-# 
-#                 to_implementation_ring = implementation_ring._any_root_univariate_polynomial(abs_modulus.change_ring(implementation_ring))
-# 
-#                 # a base of the abs_ring in the implementation_ring
-#                 from itertools import product
-#                 abs_basis = [to_implementation_ring**i for i in range(abs_modulus.degree())]
-#                 # as a matrix over base
-#                 from sage.matrix.constructor import matrix
-#                 A = matrix(implementation_ring.ground_ring_of_tower(),[b.vector(base.ground_ring_of_tower()) for b in abs_basis])
-# 
-#                 from_implementation_ring = []
-#                 # solve for the generators of the implementation_ring
-#                 u_or_pi = [0]*abs_modulus.degree()
-#                 u_or_pi[1]=1
-#                 b = A.matrix_space().row_space()(u_or_pi)
-#                 x = A.solve_left(b)
-#                 assert x*A == b
-#                 x = x.list()
-#                 assert any(x), "The basis %s of %s permits non non-trivial solutions -- only found %s"%(abs_basis, implementation_ring, x)
-#                 while x[-1].is_zero(): x.pop()
-#                 from_implementation_ring.append(abs_modulus.parent()(x).change_variable_name(names[0]))
-# 
-#                 if upoly.degree() > 1 and epoly.degree() > 1:
-#                     pi = [0]*abs_modulus.degree()
-#                     pi[upoly.degree()] = 1
-#                     b = A.matrix_space().row_space()(pi)
-#                     x = A.solve_left(b)
-#                     assert x*A == b
-#                     x = x.list()
-#                     while x[-1].is_zero(): x.pop()
-#                     from_implementation_ring.append(abs_modulus.parent()(x).change_variable_name(names[0]))
-# 
-#             to_implementation_ring_base = abs_base.hom([to(to_implementation_ring) for to in to_abs_ring[1:]]) * to_abs_base
-#             to_implementation_ring = to_abs_ring[0](to_implementation_ring)
-#             from_implementation_ring = [ image_of_implementation_ring_generator_in_abs_ring(from_abs_ring).map_coefficients(lambda c: from_abs_base(c), base) for image_of_implementation_ring_generator_in_abs_ring in from_implementation_ring ]
-# 
-#             return ext_table['p', type(base.ground_ring_of_tower()).__base__](modulus, implementation_ring, to_implementation_ring, to_implementation_ring_base, from_implementation_ring, prec, halt, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet, 'max_ram_terms': print_max_ram_terms, 'max_unram_terms': print_max_unram_terms, 'max_terse_terms': print_max_terse_terms}, names)
-# 
-# ExtensionFactory = pAdicExtension = pAdicExtension_class("pAdicExtension")
+    EXAMPLES::
 
-######################################################
-# Helper functions for the Extension Factory
-######################################################
+        TODO
+    """
+    args = base, premodulus, prec, print_mode, halt, names, res_name, unram_name, ram_name, print_pos, print_sep, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, check
+    if base.maximal_unramified_subextension() is not base or base.base() is not base.ground_ring_of_tower():
+        raise ValueError("base must be a simple unramified extension")
 
-#def split(poly, prec, y=None, pi=None, unram_name='u', res_name='u0'):
-#    r"""
-#    Given a polynomial ``poly`` and a desired precision ``prec``, computes
-#    ``upoly`` and ``epoly`` so that the extension defined by ``poly`` is
-#    isomorphic to the extension defined by first taking an extension by the
-#    unramified polynomial ``upoly``, and then an extension by the Eisenstein
-#    polynomial ``epoly``.
-#
-#    INPUT:
-#
-#        - ``poly`` -- a polynomial defined over a p-adic base ring.
-#
-#        - ``prec`` -- a positive integer, the coefficients of ``poly`` will
-#          only be considered to that absolute precision ---- I guess that was not the intention of the original author: this should be: the resulting polynomials should support a precision of prec
-#
-#    OUTPUT:
-#
-#    A tuple ``(upoly,epoly)`` of polynomials. ``upoly`` is a univariate
-#    polynomial over the p-adic base ring. ``epoly`` is a univariate polynomial
-#    over a univariate polynomial ring over the p-adic base ring.
-#
-#    ALGORITHM:
-#
-#    Let `\mathcal{o}` be the ring of integers of the p-adic base ring and let
-#    `\matcal{O}` be the ring of integers of the extension defined by ``poly``.
-#
-#    The algorithm relies on the following observation: If `y` is a unit in
-#    `\matcal{O}` and `\pi` is a non-unit in `\mathcal{O}` such that
-#    `\mathrm{Frac}(\mathcal{o}[y]) = \mathrm{Frac}(\mathcal{o}[\pi]) =
-#    \mathrm{Frac}(\mathcal{O})` but `\mathcal{o}[\pi,y] \neq \mathcal{O}`, then
-#    `\mathcal{o}[\pi,y]` is not integrally closed, and so is not regular; in
-#    particular, `(\pi)` is not its maximal ideal.
-#
-#    Therefore not both of the following can be true:
-#
-#        - `p\in(\pi)\subseteq\mathcal{o}[\pi,y]`
-#
-#        - `G(y)\in(\pi)\subseteq\mathcal{o}[\pi,y]` where `G(y)` is a lift of
-#          the minimal polynomial of `\overline{y}`
-#
-#    because otherwise `\mathcal{o}[y,\pi]/(\pi)` would be a field.
-#
-#    The idea of this algorithm is to develop `p` and `G(y)` in `(\pi)` to find
-#    a new `\pi` and `y` with `\mathcal{o}[\pi,y]=\mathcal{O}`.
-#
-#    One can show that if `\mathcal{o}[y,\pi]=\mathcal{O}`, then
-#    the valuation of `\pi` and `p` are coprime; so as soon as one has such `y`
-#    and `\pi`, they can be used to find a uniformizer `\pi'` of `\mathcal{O}`.
-#
-#    Then `G(y)` is a minimal polynomial of the unramified extension and the
-#    minimal polynomial of `\pi'` over that unramified extension will be an
-#    Eisenstein polynomial.
-#
-#    AUTHORS:
-#
-#        - Julian Rueth (2012-10-28): initial version
-#
-#    EXAMPLES::
-#
-#        sage: R.<x> = Qp(13)[]
-#        sage: sage.rings.padics.factory.split(x^2 - 13^2, 20)
-#        Traceback (most recent call last):
-#        ...
-#        ValueError: poly must be irreducible
-#
-#    A totally ramified extension with a polynomial which is not an Eisenstein
-#    polynomial::
-#
-#        sage: K = Qp(3,10)
-#        sage: R.<x> = K[]
-#        sage: f = 8/3*x^2 + 267*x + 693
-#        sage: f *= 3/8
-#        sage: upoly, epoly, _ = sage.rings.padics.factory.split(f, 10)
-#        sage: upoly.degree(),epoly.degree()
-#        (1, 2)
-#        sage: L.<a> = K.extension(epoly)
-#        sage: f.change_ring(L).is_irreducible() #TODO: bug in the way we use pari's factorization
-#        False
-#
-#    An extension with an unramified and an Eisenstein part::
-#
-#        sage: K = Qp(3,10)
-#        sage: R.<x> = K[]
-#        sage: f = 53713/3*x^4 + 905*x^3 + 116728358445*x^2 + 263907*x + 81849
-#        sage: f *= 3/53713
-#        sage: upoly, epoly, _ = sage.rings.padics.factory.split(f,10)
-#        sage: upoly.degree(), epoly.degree()
-#        (2, 2)
-#
-#    TESTS:
-#
-#    This checks that ticket #6186 is still fixed:
-#
-#        sage: K = Qp(13)
-#        sage: R.<x> = K[]
-#        sage: L.<a> = K.extension(x^2 + 1)
-#        Traceback (most recent call last):
-#        ...
-#        ValueError: poly must be irreducible
-#
-#    """
-#    assert poly.base_ring() is poly.base_ring().ground_ring_of_tower()
-#
-#    from sage.rings.polynomial.padics.factor.factoring import pfactortree
-#    prec = poly.parent().base_ring().precision_cap()
-#
-#    if not poly.leading_coefficient().is_one():
-#        raise NotImplementedError
-#    if any([c.valuation() < 0 for c in poly.coeffs()]):
-#        raise NotImplementedError
-#
-#    frame = pfactortree(poly)
-#    if len(frame) != 1:
-#        raise ValueError("poly must be irreducible")
-#    frame = frame[0]
-#
-#    from sage.rings.finite_rings.constructor import FiniteField
-#    F = frame.F
-#    assert not frame.phi_divides_Phi(), "%s is irreducible but %s divides it"%(poly, frame.phi)
-#    if hasattr(frame.polygon[0],'factors'):
-#        F*=frame.polygon[0].factors[0].Fplus
-#    E = poly.degree() // F
-#
-#    upoly = FiniteField(poly.base_ring().prime()**F,names=unram_name).polynomial().change_ring(poly.base_ring()).map_coefficients(lambda c:c.lift_to_precision(prec))
-#    assert upoly.degree() == F
-#    if F != 1:
-#        L = poly.base_ring().extension(upoly,names=unram_name)
-#    else:
-#        L = poly.base_ring()
-#    epoly = poly.change_ring(L)
-#    assert epoly.is_squarefree()
-#    from padic_valuation import pAdicValuation
-#    from gauss_valuation import GaussValuation
-#    epoly = pAdicValuation(L).montes_factorization(epoly)
-#
-#    assert epoly.prod().degree() == poly.degree(), (epoly, poly)
-#    assert epoly.prod() == poly
-#    assert all([g.degree() == E for g,e in epoly]), "all factors in %s should have degree %s"%(epoly,E)
-#    epoly = epoly[0][0]
-#    assert epoly.degree() == E, "%s should have degree %s"%(epoly,E)
-#
-#    v = pAdicValuation(L)
-#    M = epoly.parent().quo(epoly)
-#    if epoly.degree() != 1:
-#        is_totally_ramified, ramification_steps = v.is_totally_ramified(epoly, include_steps=True, assume_squarefree=True)
-#        assert is_totally_ramified
-#        assert any([v(v.phi()).denominator() == epoly.degree() for v in ramification_steps])
-#        slopes = [v(v.phi()) for v in ramification_steps]
-#        keys = [v.phi() for v in ramification_steps]
-#        numerators = [(slope.numerator()*epoly.degree()//slope.denominator(), key) for slope,key in zip(slopes,keys)]
-#        numerators.append((-epoly.degree(),L(L.prime())**-1))
-#        bfs = {0:[]}
-#        while not 1 in bfs:
-#            for onum in bfs.keys():
-#                for num, key in numerators:
-#                    nnum = onum+num
-#                    if nnum not in bfs or len(bfs[onum])+1 < len(bfs[nnum]):
-#                        bfs[nnum] = bfs[onum]+[key]
-#        uniformizer = M.one()
-#        for key in bfs[1]:
-#            uniformizer*=key
-#        epoly = _mod_minpoly(uniformizer, E, L)
-#    else:
-#        slope,epoly = ZZ(1),epoly.parent().gen() - epoly.parent().base_ring().uniformizer()
-#    assert epoly.degree() == E, epoly
-#    assert epoly[0].valuation() == 1, "%s is not Eisenstein"%epoly
-#
-#    if epoly.base_ring() is poly.base_ring():
-#        return upoly, epoly, upoly.base_ring().precision_cap()*epoly.degree()
-#
-#    uring = upoly.parent()
-#    ering = uring.change_ring(uring)
-#    if poly.base_ring().is_capped_relative():
-#        coeffs = [[[]]*min(c.valuation(),c.parent().precision_cap())+c.list() for c in epoly.list()]
-#    else:
-#        coeffs = [c.list() for c in epoly.list()]
-#    coeffs = [[c + [0]*(upoly.degree()-len(c)) for c in l] for l in coeffs]
-#    coeffs = [[uring(d) for d in c] for c in coeffs]
-#    #coeffs = [uring(ering(c)(poly.base_ring().uniformizer())).map_coefficients(lambda d:d.add_bigoh(e.precision_absolute())) for c,e in zip(coeffs,epoly.coeffs())]
-#    coeffs = [uring(ering(c)(poly.base_ring().uniformizer())) for c,e in zip(coeffs,epoly.coeffs())]
-#    epoly = ering(coeffs)
-#
-#    if upoly.degree()*epoly.degree() != poly.degree():
-#        from sage.rings.padics.precision_error import PrecisionError
-#        raise PrecisionError("Insufficient precision to split poly into its unramified and Eisenstein part")
-#
-#    return upoly, epoly, upoly.base_ring().precision_cap()*epoly.degree() #TODO: do something about prec
-#
-#    from sage.rings.arith import gcd,xgcd
-#
-#    if poly.degree() < 2:
-#        raise ValueError
-#
-#    #TODO: do something sensible here
-#    prec = poly.parent().base_ring().precision_cap()
-#
-#    #if prec is None:
-#    #    raise ValueError("prec must not be None")
-#
-#    R = poly.parent()
-#    K = R.base_ring()
-#    if R.base_ring() is not R.base_ring().ground_ring_of_tower():
-#        raise ValueError("poly must be defined over a p-adic base field")
-#    if len(R.gens()) != 1:
-#        raise ValueError("poly must be defined over a univariate polynomial ring")
-#    F = poly.factor()
-#    if len(F) != 1 or F[0][1] != 1:
-#        raise ValueError("poly must be irreducible")
-#
-#    n = poly.degree()
-#
-#    if is_unramified(poly):
-#        upoly, epoly = poly, R.gen()
-#    if is_eisenstein(poly):
-#        upoly, epoly = R.gen(), poly
-#    else:
-#        # since F is irreduible, L is an integral domain
-#        L = R.quo(poly)
-#        p = L(R.base_ring().prime())
-#
-#        # elements in L might have leading zero coefficients, this function strips them away.
-#        normalize = lambda f: f.parent()(f.lift().list()[:f.lift().degree()+1])
-#
-#        # compute the valuation of f, normalized such that p has valuation n
-#        def valuation(f):
-#            assert f.parent() is L
-#            return normalize(f).charpoly('T')[0].valuation()
-#
-#        # returns the minimal positive valuation that can be obtained when multiplying powers of f and g
-#        def crunch_valuation(f,g):
-#            valf = valuation(f)
-#            assert valf>0
-#            valg = valuation(g)
-#            assert valg>0
-#            if valf % valg == 0: # f is a power of g (up to units)
-#                assert valg <= valf
-#                return valg, g
-#            if valg % valf == 0: # g is a power of f (up to units)
-#                assert valf <= valg
-#                return valf, f
-#            v,s,t = xgcd(valf,valg)
-#            assert v != 0
-#            assert v <= valf and v <= valg
-#            return v, normalize(f**s*g**t)
-#
-#        # compute the "current" ramification index, i.e., the valuation of p divided by the valuation of pi
-#        def e(pi):
-#            val = valuation(pi)
-#            assert n % val == 0
-#            return n//val
-#
-#        # compute the minpoly of the reduction of f
-#        def residue_minpoly(f):
-#            F = f.charpoly(poly.variable_name()).map_coefficients(lambda c:c.residue(), K.residue_field()).factor()
-#            assert len(F)==1
-#            return F[0][0]
-#
-#        # compute the "current" degree of the residue field extension, i.e., the
-#        # degree of y over the residue field of the padic base ring
-#        def f(y):
-#            return residue_minpoly(y).degree()
-#
-#        # try to find an element of smaller valuation than pi using f
-#        def update_pi(f,piy):
-#            pi,y = piy
-#            f = normalize(f)
-#            assert valuation(f)>0
-#            new_val, new_pi = crunch_valuation(f,pi)
-#            if new_val == valuation(pi):
-#                return
-#            assert new_val < valuation(pi)
-#            assert y.minpoly().degree() == n
-#            while new_pi.minpoly().degree() != n:
-#                new_pi = normalize(new_pi*y)
-#            assert new_val == valuation(new_pi)
-#            piy[0] = new_pi
-#            raise RestartException("found new uniformizer with valuation %s"%new_val)
-#
-#        # try to find an element which generates a bigger residue field extension than y using f
-#        def update_y(f, piy):
-#            pi,y = piy
-#            f = normalize(f)
-#            assert valuation(f)==0
-#
-#            # l is the residue field of K[y]
-#            G = residue_minpoly(y)
-#            assert G.base_ring().is_prime_field()
-#            if G.degree() == 1:
-#                l = K.residue_field()
-#            else:
-#                from sage.rings.finite_rings.constructor import FiniteField
-#                l = FiniteField(order=G.base_ring().order()**G.degree(),name="ybar",modulus=G)
-#
-#            # the residue field of K[f] is K[T]/(F)
-#            F = residue_minpoly(f).change_ring(l).factor()
-#            for FF,d in F:
-#                if FF.degree() == 1:
-#                    continue
-#                else:
-#                    if G.degree() == 1:
-#                        piy[1] = f
-#                        raise RestartException("extended residue field by %s"%FF)
-#                    else:
-#                        raise NotImplementedError("product of finite fields")
-#
-#        def residue_lift(f, piy):
-#            pi, y = piy
-#            f = normalize(f)
-#            assert valuation(f)==0
-#            G = residue_minpoly(y)
-#            if G.degree() == 1:
-#                l = K.residue_field()
-#            else:
-#                from sage.rings.finite_rings.constructor import FiniteField
-#                l = FiniteField(order=G.base_ring().order()**G.degree(),name="ybar",modulus=G)
-#
-#            F = residue_minpoly(f).change_ring(l).factor()
-#            # F might factor - one of the conjugate roots is our desired lift
-#            assert all([h.degree() == 1 for h,e in F])
-#            for h,e in F:
-#                lift = (-h[0]).polynomial().map_coefficients(lambda c:K(c).lift_to_precision(prec), K)(y)
-#                assert valuation(lift)==0
-#                if valuation(lift-f):
-#                    return lift
-#            assert False
-#
-#        # we need a random element pi of positive valuation which generates the field extension
-#        if pi is None:
-#            while True:
-#                pi = L.random_element()
-#                if valuation(pi)>0 and pi.minpoly().degree()==n: break
-#        pi = L(pi)
-#        assert pi.minpoly().degree()==n
-#
-#        # we need a random element y of valuation zero which generates the field extension
-#        if y is None:
-#            while True:
-#                y = L.random_element()
-#                if valuation(y) % n == 0:
-#                    y /= p**(valuation(y)//n)
-#                if valuation(y)==0 and y.minpoly().degree()==n: break
-#        y = L(y)
-#        assert y.minpoly().degree()==n
-#
-#        pi /= p**(((valuation(pi)-1)/valuation(p)).floor())
-#        piy = [pi,y]
-#
-#        # now we develop p and G(y) in (pi) until we have found a uniformizer and a
-#        # generator of the residue field extension we want to restart this process
-#        # as soon as we have found a new candidate for a uniformizer of a generator
-#        # of the residue field extension; the following exception will be used to
-#        # trigger this
-#
-#        class RestartException(Exception):pass
-#
-#        # develop target in (pi)
-#        def develop(target, piy):
-#            #print "Now developing",target
-#            assert valuation(target),"target has zero valuation"
-#            pi,y = piy
-#            update_pi(target, piy)
-#            target /= pi**(valuation(target)/valuation(pi))
-#            target = normalize(target)
-#            #print "target is",target,"after normalization"
-#            #print "Minpoly has degree",target.minpoly().degree(),"after normalization"
-#            #this is total nonsense
-#            #if target.minpoly().degree() == 1: # development was successful: target is in (pi)
-#            #    return None
-#            if target.is_zero():
-#                return None
-#            update_y(target, piy)
-#            target -= residue_lift(target, piy)
-#            #print "Taking a way a lift of its residue we are left with",target
-#            #print "Which has positive valuation",valuation(target)
-#            target = normalize(target)
-#            assert valuation(target) > 0, "%s does not have positive valuation, its minpoly is %s"%(target,target.minpoly())
-#            if target.minpoly().degree() == 1: # development was successful: target is in (pi)
-#                return None
-#            return target
-#
-#        while e(piy[0])*f(piy[1]) != n:
-#            try:
-#                targets = [normalize(residue_minpoly(y).map_coefficients(lambda c:K(c).lift_to_precision(prec),K)(y)), p]
-#                while True:
-#                    #print "Developing",targets
-#                    #print [target.minpoly().degree() for target in targets if target is not None]
-#                    assert len(targets)
-#                    targets = [develop(target, piy) for target in targets if target is not None]
-#            except RestartException as re:
-#                pass
-#
-#        pi,y = piy
-#        upoly = residue_minpoly(y).map_coefficients(lambda c:c.lift(),K)
-#
-#        L = K.extension(upoly, names=(unram_name,), res_name=res_name) if upoly.degree() > 1 else K # probably we don't need these parameters if epoly is a polynomial over a polynomial ring now TODO
-#
-#        pim = pi.minpoly()
-#        assert pim(pi).is_zero()
-#        F = pim.change_ring(L).factor()
-#        epoly = F[0][0]
-#
-#        # TODO: assert is_unram, is_Eisenstein
-#
-#    assert upoly.degree()*epoly.degree() == n
-#
-#    upoly = upoly.map_coefficients(lambda c:c.add_bigoh(prec))
-#    epoly = epoly.map_coefficients(lambda c:c.add_bigoh(prec))
-#
-#    # turn epoly into a polynomial over a polynomial ring over the base ring
-#    #print "before",epoly
-#    uring = upoly.parent()
-#    ering = uring.change_ring(uring)
-#    coeffs = [[[]]*c.valuation()+c.list() for c in epoly.coeffs()]
-#    coeffs = [[c + [0]*(upoly.degree()-len(c)) for c in l] for l in coeffs]
-#    coeffs = [[uring(d) for d in c] for c in coeffs]
-#    coeffs = [ering(c)(K.uniformizer()).map_coefficients(lambda d:d.add_bigoh(e.precision_absolute())) for c,e in zip(coeffs,epoly.coeffs())]
-#    epoly = ering(coeffs)
-#    #print "after",epoly
-#
-#    if upoly.degree()*epoly.degree() != n:
-#        from sage.rings.padics.precision_error import PrecisionError
-#        raise PrecisionError("Insufficient precision to split poly into its unramified and Eisenstein part")
-#
-#    return upoly, epoly, y, pi, prec #TODO: do something about prec
-#
-#def truncate_to_prec(poly, absprec):
-#    """
-#    Truncates the unused precision off of a polynomial.
-#
-#    EXAMPLES::
-#
-#        sage: R = Zp(5)
-#        sage: S.<x> = R[]
-#        sage: from sage.rings.padics.factory import truncate_to_prec
-#        sage: f = x^4 + (3+O(5^6))*x^3 + O(5^4)
-#        sage: truncate_to_prec(f, 5)
-#        (1 + O(5^5))*x^4 + (3 + O(5^5))*x^3 + (O(5^5))*x^2 + (O(5^5))*x + (O(5^4))
-#    """
-#    R = poly.base_ring()
-#    return poly.parent()([R(a, absprec=absprec) for a in poly.list()]) # Is this quite right?  We don't want flat necessarily...
-#
-#def krasner_check(poly, prec):
-#    """
-#    Returns True iff poly determines a unique isomorphism class of
-#    extensions at precision prec.
-#
-#    Currently just returns True (thus allowing extensions that are not
-#    defined to high enough precision in order to specify them up to
-#    isomorphism).  This will change in the future.
-#
-#    EXAMPLES::
-#
-#        sage: from sage.rings.padics.factory import krasner_check
-#        sage: krasner_check(1,2) #this is a stupid example.
-#        True
-#    """
-#    return True #This needs to be implemented
-#
+    if base.is_field():
+        return QpTwoStepExtensionFactory(*args)
+    else:
+        return ZpTwoStepExtensionFactory(*args)

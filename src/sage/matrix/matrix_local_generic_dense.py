@@ -3,7 +3,7 @@ import matrix_generic_dense
 from sage.misc.cachefunc import cached_method
 
 class Matrix_local_generic_dense(matrix_generic_dense.Matrix_generic_dense):
-    def echelonize(self):
+    def echelonize(self, *args, **kwargs):
         raise NotImplementedError("echelonization not supported for matrices over inexact local rings")
 
     def _solve_right_nonsingular_square(self, B, check_rank=True):

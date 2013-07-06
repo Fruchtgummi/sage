@@ -343,6 +343,8 @@ cdef class LocalGenericElement(PrincipalIdealDomainElement):
         # construct the return value
         ans = self.parent().zero()
         for c in self.list()[start:stop:k]:
+            if isinstance(c, list):
+                c = sum([cc * self.parent().gen()**i for i,cc in enumerate(c)])
             ans += ppow * c
             ppow *= pk
 

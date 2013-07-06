@@ -131,20 +131,41 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         from sage.structure.factorization import Factorization
         F = f.squarefree_decomposition()
+        if len(F)==1 and F[0][1] == 1:
+            F = [(f,1)] # squarefree decomposition sometimes introduces precision problems in trivial factorizations
         ret = []
         for g,e in F:
             ret.extend(self.valuation().montes_factorization(g))
 
         return Factorization(ret)
 
+    def _is_irreducible_univariate_polynomial(self, f):
+        return f.is_squarefree() and len(self.valuation().mac_lane_approximants(f))==1
+
+    def _roots_univariate_polynomial(self, f, multiplicities=True, ring=None, algorithm=None):
+        if ring is not None:
+            raise NotImplementedError
+        if multiplicities:
+            raise NotImplementedError
+        if algorithm is not None:
+            raise NotImplementedError
+        # one can do better than this by using Panayi to compute all roots at once
+        ret = []
+        while f.degree():
+            r = self._any_root_univariate_polynomial_impl(f)
+            if r is None:
+                break
+            ret.append(r)
+            f = f//(f.parent().gen()-r)
+        return ret
+
     def _any_root_univariate_polynomial_normalize(self, poly):
         min_val = min([c.valuation() for c in poly.list()])
-        return poly.map_coefficients(lambda c:c>>min_val)
+        return poly.map_coefficients(lambda c:c>>min_val), min_val
 
     def _any_root_hensel_lift(self, poly, iterations):
         x = self.zero()
         for i in range(iterations):
-            print poly(x)
             x -= poly(x)/poly.derivative()(x)
         return x
 
@@ -164,31 +185,42 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
                 x = x.lift_to_precision(min(error,self.precision_cap()))
                 x -= poly.map_coefficients(lambda c:c.add_bigoh(error))(x)/D(x).add_bigoh(error)
             return root + (x<<prec)
-        if poly[0].valuation():
-            pass # Speed up this case
+
+        #if all([c.valuation() for c in poly.list()]):
+        #    pow = min([c.valuation() for c in poly.list()])
+        #    new_poly = poly(poly.parent().gen()*self.uniformizer_pow(pow))
+        #    new_poly = new_poly.map_coefficients(lambda c:c>>pow)
+        #    return self._any_root_univariate_polynomial_improve(root, new_poly, prec+pow)
 
         res_poly = poly.map_coefficients(lambda c:c.residue(), self.residue_field())
         for residue_root in res_poly.roots(multiplicities=False):
+            assert res_poly.degree()
             residue_root = self(residue_root).lift_to_precision(self.precision_cap())
-            poly = self._any_root_univariate_polynomial_normalize(poly(poly.parent().gen()*self.uniformizer() + residue_root))
-            root = root + (residue_root<<prec)
-            ret = self._any_root_univariate_polynomial_improve(root, poly, prec+1)
+            new_poly = poly(poly.parent().gen()*self.uniformizer() + residue_root)
+            assert all([c.valuation() for c in new_poly.list()])
+            shift = min([c.valuation() for c in new_poly.list()])
+            new_poly = new_poly.map_coefficients(lambda c:c>>shift)
+            new_root = root + (residue_root<<prec)
+            ret = self._any_root_univariate_polynomial_improve(new_root, new_poly, prec+1)
             if ret != None:
                 return ret
 
     def _any_root_univariate_polynomial(self, poly):
+        ret = self._any_root_univariate_polynomial_impl(poly)
+        if ret is None:
+            raise ValueError("polynomial has no roots")
+        return ret
+
+    def _any_root_univariate_polynomial_impl(self, poly):
         if poly.is_zero():
             raise ValueError
         if poly.degree() == 0:
-            return []
+            raise ValueError
 
-        ret = self._any_root_univariate_polynomial_improve(self.zero(), self._any_root_univariate_polynomial_normalize(poly), 0)
-        if ret is None:
-            raise ValueError("polynomial has no roots")
-        if poly(ret).is_zero():
-            return ret
-        else:
-            raise NotImplementedError()
+        ret = self._any_root_univariate_polynomial_improve(self.zero(), self._any_root_univariate_polynomial_normalize(poly)[0], 0)
+        if ret is not None:
+            assert poly(ret).is_zero()
+        return ret
 
     def _gcd_univariate_polynomial_fixed(self, f, g):
         """
@@ -1418,7 +1450,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
 #         """
 #         raise NotImplementedError
 
-    def extension(self, modulus, prec = None, names = None, print_mode = None, halt = None, res_name = None, **kwds):
+    def extension(self, modulus, prec = None, names = None, print_mode = None, halt = None, res_name = None, check = True, **kwds):
         """
         Create an extension of this p-adic ring.
 
@@ -1457,7 +1489,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
                         print_mode[option] = kwds[option]
                     else:
                         print_mode[option] = self._printer.dict()[option]
-        return ExtensionFactory(base=self, premodulus=modulus, prec=prec, halt=halt, names=names, check = True, res_name = res_name, **print_mode)
+        return ExtensionFactory(base=self, premodulus=modulus, prec=prec, halt=halt, names=names, check = check, res_name = res_name, **print_mode)
 
     @cached_method
     def _log_unit_part_p(self):

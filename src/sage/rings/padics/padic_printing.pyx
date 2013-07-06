@@ -749,7 +749,7 @@ cdef class pAdicPrinter_class(SageObject):
         value.
 
         If pos is True, these integers will be in the range
-        [0,... p-1]; if po is False, they will be in the range
+        [0,... p-1]; if pos is False, they will be in the range
         [(1-p)/2,..., p/2].
 
         The first entry will be the coefficient of p^0, etc.

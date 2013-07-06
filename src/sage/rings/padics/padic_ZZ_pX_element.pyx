@@ -341,6 +341,9 @@ cdef class pAdicZZpXElement(pAdicExtElement):
                 break
         return ans
 
+    def polynomial(self):
+        return self.parent().modulus().parent()(self.vector())
+
     def matrix(self, base = None):
         """
         If ``base`` is ``None``, return the matrix of right multiplication by
@@ -444,6 +447,9 @@ cdef class pAdicZZpXElement(pAdicExtElement):
                 return ret
         else:
             raise NotImplementedError
+
+    def _vector_impl(self):
+        return self.matrix().row(0).list()
 
     def norm(self, base = None):
         """

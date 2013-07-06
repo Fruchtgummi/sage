@@ -183,7 +183,7 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         """
         from sage.rings.laurent_series_ring import LaurentSeriesRing
-        return LaurentSeriesRing(self.parent()._inertia_subring, name=self.parent().variable_names()[0][1])
+        return LaurentSeriesRing(self.parent()._inertia_subring, name=self.parent().variable_names()[1])
 
     cpdef bint _is_inexact_zero(self) except -1:
         """
@@ -267,6 +267,8 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             return int(ret)
 
     def vector(self, base=None):
+        if base is None:
+            base = self.parent().base()
         if base is self.parent().inertia_subring():
             ret = [base.zero()]*self._series_compressed().valuation()+self._series_compressed().list()
             assert all([c.is_zero() for c in ret[self.parent().ramification_index():]])
@@ -280,6 +282,14 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             return list(chain(*[c.vector(base=base) for c in self.vector(base=self.parent().inertia_subring())]))
         else:
             raise ValueError
+
+    def polynomial(self):
+        from sage.rings.all import PolynomialRing
+        D = {}
+        for e in range(self.parent().ramification_index()):
+            for u in range(self.parent().inertia_subring().degree()):
+                D[(u,e)] = self._series_compressed()[e].polynomial()[u]
+        return PolynomialRing(self.parent().base(), names=self.parent().variable_names())(D)
 
     def matrix(self, base=None):
         """
@@ -623,7 +633,7 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         # we can use it to expand the Laurent series
         R = self.__series_ring()
         replacement = R(self.parent()._epoly.map_coefficients(lambda c:self.parent()._inertia_subring(c).lift_to_precision(),self.parent()._inertia_subring))
-        replacement *= replacement[0].unit_part().inverse_of_unit().lift_to_precision(parent_precision_cap)
+        replacement *= replacement[0].unit_part().inverse_of_unit().lift_to_precision()
         replacement *= -1
         replacement = replacement.power_series()
         # this dict tells us how to realize p in terms of the uniformizer
@@ -659,8 +669,8 @@ cdef class pAdicLaurentElement(pAdicExtElement):
                 continue
             # split every coefficient in its valuation zero part and its part
             # of positive valuation
-            zero = c[0:1].lift_to_precision(parent_precision_cap)
-            pos = (c[1:]>>1).lift_to_precision(parent_precision_cap)
+            zero = c[0:1].lift_to_precision()
+            pos = (c[1:]>>1).lift_to_precision()
             C[d] = zero
             if not pos.is_zero():
                 # expand the positive part
@@ -703,7 +713,7 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         R = self.__series_ring()
         replacement = self.parent()._epoly.map_coefficients(lambda c:self.parent()._inertia_subring(c).lift_to_precision(),self.parent()._inertia_subring)
         assert replacement.leading_coefficient().is_unit()
-        replacement *= replacement.leading_coefficient().inverse_of_unit().lift_to_precision(parent_precision_cap)
+        replacement *= replacement.leading_coefficient().inverse_of_unit().lift_to_precision()
         replacement *= -1
         replacement = R(replacement)
         replacement = replacement.power_series()
@@ -1254,7 +1264,7 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             raise ValueError("element has no unit part")
         return self>>self.valuation()
 
-    def lift_to_precision(self, absprec):
+    def lift_to_precision(self, absprec=None):
         """
         Returns a lift of this element which is defined at least to precision
         ``absprec``.
@@ -1301,6 +1311,12 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             a + O(a^30)
 
         """
+        if absprec is None:
+            if self.precision_relative() == 0:
+                absprec = infinity
+            else:
+                absprec = self.valuation() + self.parent().precision_cap()
+
         if absprec is infinity:
             if not self.parent().is_capped_relative():
                 raise ValueError("cannot lift element to the requested precision in this ring")
@@ -1372,3 +1388,6 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             return self.parent().residue_field().zero()
         else:
             return self._series_valuation()[0].residue()
+
+    cpdef _cache_key_(self):
+        return tuple([c._cache_key_() for c in self.vector()])

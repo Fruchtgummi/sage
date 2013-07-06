@@ -25,9 +25,6 @@ from sage.rings.integer import Integer
 from sage.libs.ntl.ntl_ZZ_p cimport ntl_ZZ_p
 
 cdef class pAdicExtElement(pAdicGenericElement):
-    def polynomial(self):
-        return self.parent().polynomial_ring()(self.vector())
-
     cdef int _set_from_list(self, L) except -1:
         """
         Sets self from a list.
@@ -470,6 +467,6 @@ cdef class pAdicExtElement(pAdicGenericElement):
             from sage.rings.finite_rings.integer_mod import Mod
             return Mod(0,1)
         elif absprec == 1:
-            return self[0]
+            return self.parent().residue_field()(self[0])
         else:
             raise NotImplementedError("residue() not implemented in extensions for absprec larger than one.")

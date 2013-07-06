@@ -3,6 +3,9 @@ Two step extensions of `\mathbb{Q}_p` and `\mathbb{Z}_p`
 
 This file implements the shared functionality for two step extensions, i.e., Eisenstein extensions of unramified extensions.
 
+TODO: talk about this being like a GeneralExtensionGeneric but considered as
+single extension, i.e., self.base() is the actual padic ground ring.
+
 AUTHORS:
 
 - Julian Rueth (2012-10-22): initial version
@@ -24,30 +27,22 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
     """
     An Eisenstein extension of an unramified extension of `\mathbb{Q}_p` or `\mathbb{Z}_p`.
     """
-    def __init__(self, poly, upoly, epoly, prec, print_mode, names, element_class):
+    def __init__(self, poly, prec, print_mode, names, element_class):
         """
         Initializes ``self``.
 
         INPUT:
 
-            - ``poly`` -- a tuple of ``upoly`` and ``epoly`` used to define ``self``
-
-            - ``upoly`` -- a polynomial over the `p`-adic base ring which
-              defines the unramified step of the extension
-
-            - ``epoly`` -- a polynomial over a polynomial ring in the variable
-              of the unramified step of the extension which defines the
-              Eisenstein step of the extension
+            - ``epoly`` -- an Eisenstein polynomial over an unramified simple
+              extension of a `p`-adic base ring.
 
             - ``prec`` -- a positive integer, the precision to use when
               representing elements in ``self``
 
             - ``print_mode`` -- a dictionary of print options
 
-            - ``names`` -- a tuple ``((u,a),ubar,u,a)`` where ``u`` is the
-              variable of the unramified step of the extension, ``a`` is the
-              variable of the Eisenstein step of the extension, and ``u0`` is
-              the variable of the residue field extension.
+            - ``names`` -- a tuple ``(a)`` where ``a`` is the variable of the
+              Eisenstein step of the extension
 
             - ``element_class`` -- the class which implements the elements of
               ``self``
@@ -63,39 +58,34 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
             sage: M = TwoStepExtensionRingFixedMod((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a')) # indirect doctest
 
         """
-        # do we need this?
-        #fixed_prec = min([min([c.precision_absolute() for c in upoly.coeffs() if not c.is_zero()]),min([min([c.precision_absolute() for c in d]) for d in epoly.coeffs() if not c.is_zero()])])
-        #if fixed_prec != upoly.base_ring().precision_cap():
-        #    print "WARNING: dropping precision of base ring from %s to %s"%(upoly.base_ring().precision_cap(),fixed_prec)
-        #    functor,param = upoly.base_ring().construction()
-        #    functor.prec = fixed_prec
-        #    upoly = upoly.change_ring(functor(param))
-        #    epoly = epoly.change_ring(upoly.parent())
-        #    prec = fixed_prec*epoly.degree()
-        #    poly = (upoly,epoly)
+        self.prime_pow = None
 
-        pAdicExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
-        self._upoly = upoly
-        from sage.rings.padics.factory import is_unramified
-        assert is_unramified(upoly),"%s is not unramified"%upoly
-        self._epoly = epoly
-        self._prime = upoly.base_ring().prime()
-        self._inertia_subring = upoly.base_ring().extension(upoly,names=(names[2],),res_name=names[1])
-        from sage.rings.padics.factory import is_eisenstein
-        assert is_eisenstein(epoly.change_ring(self._inertia_subring)),"%s is not Eisenstein"%epoly.change_ring(self._inertia_subring)
-        self._res_field = GF(self.prime()**upoly.degree(), name = names[1], modulus = upoly.change_ring(upoly.base_ring().residue_field()))
+        self._inertia_subring = poly.base_ring()
+        pAdicExtensionGeneric.__init__(self, poly.base_ring().base(), poly, prec, print_mode, (poly.base_ring().variable_name(),names[0]), element_class)
+        self._epoly = poly
+        self._prime = poly.base_ring().prime()
+        self._res_field = self._inertia_subring.residue_field()
         self._populate_coercion_lists_(coerce_list=[self._inertia_subring],element_constructor=element_class)
 
-    def hom(self, im_gens):
-        if len(im_gens)!=2:
-            raise ValueError
-        from sage.categories.morphism import SetMorphism
+    def hom(self, im_gens, base=None):
         from sage.categories.rings import Rings
+        if im_gens in Rings():
+            if base is not None:
+                raise ValueError("base must be None if im_gens is a ring")
+            if not im_gens.has_coerce_map_from(self):
+                raise ValueError("must coerce into im_gens")
+            return im_gens.coerce_map_from(self)
+
+        if len(im_gens)!=2:
+            raise ValueError("must specify image of the two generators")
+
+        from sage.structure.element import get_coercion_model
+        codomain = get_coercion_model().common_parent(*im_gens)
+
+        from sage.categories.morphism import SetMorphism
         from sage.categories.homset import Hom
         from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-        R = PolynomialRing(self.base_ring(),names=('T',))
-        S = PolynomialRing(im_gens[0].parent(),names=('S',))
-        return SetMorphism(Hom(self,im_gens[0].parent(),Rings()), lambda x:S([R(c.vector(base=self.base_ring()))(im_gens[0]) for c in  x.vector(base=self.inertia_subring())])(im_gens[1]))
+        return SetMorphism(Hom(self, codomain, Rings()), lambda f:f.polynomial()(im_gens))
 
     def _repr_(self):
         """
@@ -111,7 +101,7 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
             Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
         """
-        return "Eisenstein extension of unramified extension of %s in %s defined by %s"%(self.ground_ring(), self.variable_name(), self.defining_polynomial())
+        return "Two step extension in %s defined by %s over %s"%(self.variable_name(), self._epoly, self._inertia_subring)
 
     def ramification_index(self):
         """
@@ -129,6 +119,12 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
 
         """
         return self._epoly.degree()
+
+    def _uniformizer_print(self):
+        return self.variable_names()[1]
+
+    def _unram_print(self):
+        return self.inertia_subring().variable_name()
 
     def degree(self):
         """
@@ -149,7 +145,7 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
             6
 
         """
-        return self._epoly.degree() * self._upoly.degree()
+        return self._epoly.degree() * self._inertia_subring.degree()
 
     def gen(self, n=0):
         """
@@ -243,7 +239,7 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
         return self._prime
 
     def uniformizer(self):
-        return self.gens()[1]
+        return self.gen(1)
 
     def uniformizer_pow(self, n):
         return self.uniformizer()**n

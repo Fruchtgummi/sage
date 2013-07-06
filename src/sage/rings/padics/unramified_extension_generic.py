@@ -48,7 +48,7 @@ class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
         #    self._PQR = pqr.PolynomialQuotientRing_field(poly.parent(), poly, name = names)
         #else:
         #    self._PQR = pqr.PolynomialQuotientRing_domain(poly.parent(), poly, name = names)
-        pAdicExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
+        pAdicExtensionGeneric.__init__(self, poly.base_ring(), poly, prec, print_mode, names, element_class)
         self._res_field = GF(self.prime_pow.pow_Integer_Integer(poly.degree()), name = names[1], modulus = poly.change_ring(poly.base_ring().residue_field()))
 
     def _repr_(self, do_latex = False):
@@ -72,16 +72,6 @@ class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
                 raise NotImplementedError
         return "Unramified Extension of %s in %s defined by %s"%(
             self.ground_ring(), self.variable_name(), self.modulus())
-
-    def hom(self, im_gens):
-        if len(im_gens)!=1:
-            raise ValueError
-        from sage.categories.morphism import SetMorphism
-        from sage.categories.rings import Rings
-        from sage.categories.homset import Hom
-        from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-        R = PolynomialRing(self.base_ring(),names=('T',))
-        return SetMorphism(Hom(self,im_gens[0].parent(),Rings()), lambda x:R(x.matrix()[0].list())(im_gens[0]))
 
     def ramification_index(self, K = None):
         """

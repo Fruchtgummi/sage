@@ -84,32 +84,23 @@ cdef class pAdicGeneralElement(pAdicExtElement):
         pAdicExtElement.__init__(self, parent)
 
         self._element = None
-        self.__polynomial = None
 
         if x is None:
             self._element = parent.implementation_ring().zero()
         elif is_Element(x) and x.parent() is parent:
             self._element = x._element
-            self.__polynomial = x.__polynomial
         elif is_Element(x) and x.parent() is parent.base_ring():
-            if absprec is not None:
-                raise NotImplementedError
-            self.__polynomial = parent._polynomial_ring(x)
-            self._element = parent._implementation_ring()[2](self)
+            self._element = parent._to_implementation_ring()(parent._polynomial_ring(x))
         elif is_Element(x) and x.parent() is parent.implementation_ring():
             self._element = x
         elif is_Element(x) and x.parent() is parent.residue_field():
             self._element = parent.implementation_ring()(x)
         elif isinstance(x,list):
             if all([c in self.parent().base_ring() for c in x]):
-                if absprec is not None:
-                    raise NotImplementedError
-                self.__polynomial = parent._polynomial_ring(x)
-                self._element = parent._implementation_ring()[2](self)
-            else:
-                raise NotImplementedError("initialization from %s"%(x))
-        else:
-            raise NotImplementedError("initialization to %s from %s (%s)"%(self.parent(),x,x.parent()))
+                self._element = parent._to_implementation_ring()(parent._polynomial_ring(x))
+
+        if self._element is None:
+            raise NotImplementedError("initialization from %s"%(x))
 
         assert self._element.parent() is parent.implementation_ring()
 
@@ -119,12 +110,17 @@ cdef class pAdicGeneralElement(pAdicExtElement):
     cpdef _cache_key_(self):
         return self._element._cache_key_()
 
+    @cached_method
     def polynomial(self):
-        if self.__polynomial is None:
-            tmp = self.parent()._implementation_ring()[1](self._element)
-            assert tmp.__polynomial is not None, "error determining polynomial for %s in %s"%(self._element, self._element.parent())
-            self.__polynomial = tmp.__polynomial
-        return self.__polynomial
+        ret = self.parent()._from_implementation_ring()(self._element)
+        assert ret.parent() is self.parent()._polynomial_ring, (ret.parent(), self.parent())
+        return ret
+
+    def _vector_impl(self):
+        ret = self.polynomial().list()
+        ret.extend([self.parent().base().zero()]*(self.parent().degree()-len(ret)))
+        assert all([c in self.parent().base() for c in ret]), ret
+        return ret
 
     def precision_absolute(self):
         """

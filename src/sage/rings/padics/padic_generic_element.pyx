@@ -46,7 +46,17 @@ cdef long maxordp = (1L << (sizeof(long) * 8 - 2)) - 1
 
 cdef class pAdicGenericElement(LocalGenericElement):
     def vector(self, base = None):
-        return self.matrix(base).row(0).list()
+        if base is None:
+            base = self.parent().base()
+        if base is self.parent():
+            return [self]
+        else:
+            ret = self._vector_impl()
+            from sage.misc.flatten import flatten
+            return flatten([c.vector() for c in ret])
+
+    def _vector_impl(self):
+        raise NotImplementedError
 
     def __richcmp__(left, right, int op):
         """

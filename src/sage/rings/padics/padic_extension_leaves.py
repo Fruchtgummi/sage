@@ -468,11 +468,12 @@ class TwoStepExtensionRingCappedRelative(TwoStepExtensionGeneric, pAdicCappedRel
             Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
         """
+        raise NotImplementedError
         self.prime_pow = None # general extension do not use the pow_computer yet
         TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionFieldCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeFieldGeneric):
-    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         r"""
         TESTS::
 
@@ -487,8 +488,7 @@ class TwoStepExtensionFieldCappedRelative(TwoStepExtensionGeneric, pAdicCappedRe
             Eisenstein extension of unramified extension of 3-adic Field with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
         """
-        self.prime_pow = None # general extensions do not use the pow_computer yet
-        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCRElement)
+        TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionRingCappedAbsolute(TwoStepExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
     def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
@@ -506,6 +506,7 @@ class TwoStepExtensionRingCappedAbsolute(TwoStepExtensionGeneric, pAdicCappedAbs
             Eisenstein extension of unramified extension of 3-adic Ring with capped absolute precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
 
         """
+        raise NotImplementedError
         self.prime_pow = None # general extensions do not use the pow_computer yet
         TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCAElement)
 
@@ -525,6 +526,7 @@ class TwoStepExtensionRingFixedMod(TwoStepExtensionGeneric, pAdicFixedModRingGen
             Eisenstein extension of unramified extension of 3-adic Ring of fixed modulus 3^10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
 
         """
+        raise NotImplementedError
         self.prime_pow = None # general extension do not use the pow_computer yet
         TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentFMElement)
 
