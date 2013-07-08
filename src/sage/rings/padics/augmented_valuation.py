@@ -744,3 +744,6 @@ class AugmentedValuation(DevelopingValuation):
 
         """
         return self.residue_field().degree() * self._base_valuation.F()
+
+    def change_ring(self, base_ring):
+        return AugmentedValuation(self._base_valuation.change_ring(base_ring), self.phi().change_ring(base_ring), self._mu)

@@ -274,7 +274,7 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
-        raise NotImplementedError("TODO")
+        shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         if unram_prec <= 30:
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), unram_prec, unram_prec, prec, False, ntl_poly, "small", "e", shift_poly)
@@ -387,7 +387,7 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
-        raise NotImplementedError("TODO")
+        shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
         if unram_prec <= 30:
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), unram_prec, unram_prec, prec, False, ntl_poly, "small", "e", shift_poly)
@@ -405,7 +405,7 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, shift_seed):
         """
         A fixed modulus representation of an eisenstein extension of Zp.
 
@@ -430,7 +430,7 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         EXAMPLES::
 
             sage: R = ZpFM(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
-            sage: W.<w> = R.ext(f); W #indirect doctest
+            sage: W.<w> = R.ext(f, check=False); W #indirect doctest
             Eisenstein Extension of 3-adic Ring of fixed modulus 3^10000 in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + 3^10000 + O(3^10000))
             sage: W.precision_cap()
             30000
@@ -443,9 +443,8 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
-        raise NotImplementedError("TODO")
+        shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
         shift_poly = ntl_ZZ_pX([a.lift() for a in shift_seed.list()], shift_seed.base_ring().prime()**unram_prec)
-        #print poly.base_ring().prime(), prec, poly.degree(), ntl_poly
         # deal with prec not a multiple of e better.
         self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), max(min(unram_prec - 1, 30), 1), unram_prec, prec, False, ntl_poly, "FM", "e", shift_poly)
         self._shift_seed = shift_seed
@@ -453,82 +452,20 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXFMElement)
 
 class TwoStepExtensionRingCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeRingGeneric):
-    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
-        r"""
-        TESTS::
-
-            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingCappedRelative
-            sage: K = ZpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: upoly = u^2 + 3*u + 4
-            sage: Ra.<a> = Ru[]
-            sage: epoly = a^3 - 9*u*a^2 + 3*u
-            sage: M = TwoStepExtensionRingCappedRelative((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
-            sage: M
-            Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
-
-        """
-        raise NotImplementedError
-        self.prime_pow = None # general extension do not use the pow_computer yet
-        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCRElement)
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+        TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionFieldCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeFieldGeneric):
     def __init__(self, prepoly, poly, prec, halt, print_mode, names):
-        r"""
-        TESTS::
-
-            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionFieldCappedRelative
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: upoly = u^2 + 3*u + 4
-            sage: Ra.<a> = Ru[]
-            sage: epoly = a^3 - 9*u*a^2 + 3*u
-            sage: M = TwoStepExtensionFieldCappedRelative((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
-            sage: M
-            Eisenstein extension of unramified extension of 3-adic Field with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
-
-        """
         TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionRingCappedAbsolute(TwoStepExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
-    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
-        r"""
-        TESTS::
-
-            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingCappedAbsolute
-            sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: upoly = u^2 + 3*u + 4
-            sage: Ra.<a> = Ru[]
-            sage: epoly = a^3 - 9*u*a^2 + 3*u
-            sage: M = TwoStepExtensionRingCappedAbsolute((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
-            sage: M
-            Eisenstein extension of unramified extension of 3-adic Ring with capped absolute precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
-
-        """
-        raise NotImplementedError
-        self.prime_pow = None # general extensions do not use the pow_computer yet
-        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentCAElement)
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+        TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCAElement)
 
 class TwoStepExtensionRingFixedMod(TwoStepExtensionGeneric, pAdicFixedModRingGeneric):
-    def __init__(self, poly, upoly, epoly, prec, halt, print_mode, names):
-        r"""
-        TESTS::
-
-            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingFixedMod
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: upoly = u^2 + 3*u + 4
-            sage: Ra.<a> = Ru[]
-            sage: epoly = a^3 - 9*u*a^2 + 3*u
-            sage: M = TwoStepExtensionRingFixedMod((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a'))
-            sage: M
-            Eisenstein extension of unramified extension of 3-adic Ring of fixed modulus 3^10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + O(3^10))*u)*a^2 + (3 + O(3^10))*u)
-
-        """
-        raise NotImplementedError
-        self.prime_pow = None # general extension do not use the pow_computer yet
-        TwoStepExtensionGeneric.__init__(self, poly, upoly, epoly, prec, print_mode, names, pAdicLaurentFMElement)
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+        TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentFMElement)
 
 class GeneralExtensionFieldCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeFieldGeneric):
     def __init__(self, prepoly, poly, prec, halt, print_mode, names):

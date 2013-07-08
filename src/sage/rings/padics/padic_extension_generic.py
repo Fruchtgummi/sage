@@ -91,13 +91,20 @@ class pAdicExtensionGeneric(pAdicGeneric):
         groundcmp = self.ground_ring().__cmp__(other.ground_ring())
         if groundcmp != 0:
             return groundcmp
-        c = cmp(self.defining_polynomial(), other.defining_polynomial())
+        c = cmp(self.defining_polynomial(), other.defining_polynomial()) #TODO: this is not correct
         if c != 0:
             return c
         c = cmp(self.precision_cap(), other.precision_cap())
         if c != 0:
             return c
         return self._printer.cmp_modes(other._printer)
+
+    def __hash__(self):
+        # TODO: define good hash functions for all padic rings & make cmp actually work
+        try:
+            return hash(self.defining_polynomial())
+        except TypeError:
+            return hash(self.defining_polynomial()._cache_key_())
 
     #def absolute_discriminant(self):
     #    raise NotImplementedError

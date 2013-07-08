@@ -1244,7 +1244,7 @@ cdef class pAdicFixedModElement(pAdicBaseGenericElement):
         else:
             return self
 
-    def valuation(self):
+    def valuation(self, prime=None):
         """
         Returns the valuation of self.
 

@@ -19,6 +19,7 @@ AUTHORS:
 from sage.rings.padics.padic_ext_element cimport pAdicExtElement
 from sage.rings.padics.padic_generic_element cimport pAdicGenericElement
 from sage.rings.integer import Integer
+from sage.rings.integer cimport Integer
 from sage.structure.element import is_Element
 from sage.structure.element cimport RingElement, ModuleElement, CommutativeRingElement, Element
 from sage.rings.padics.precision_error import PrecisionError
@@ -109,6 +110,22 @@ cdef class pAdicGeneralElement(pAdicExtElement):
 
     cpdef _cache_key_(self):
         return self._element._cache_key_()
+
+    def _ext_p_list(self, pos):
+        if self.parent().implementation_ring().ground_ring_of_tower() is self.parent().implementation_ring():
+            return self.parent().implementation_ring()._printer._base_p_list(self._element, pos)
+        else:
+            return self._element._ext_p_list(pos)
+
+    def _repr_(self, mode=None, do_latex=False):
+        printer = self.parent()._printer
+        ram_name = printer._ram_name()
+        if ram_name is None:
+            ram_name = self.parent()._ram_name()
+        unram_name = printer._unram_name()
+        if unram_name is None:
+            unram_name = self.parent()._unram_name()
+        return printer.repr_gen(self, do_latex, mode=mode, ram_name=ram_name, unram_name=unram_name)
 
     @cached_method
     def polynomial(self):
@@ -469,9 +486,6 @@ cdef class pAdicGeneralElement(pAdicExtElement):
 
         """
         return self._element.is_equal_to(right._element, absprec)
-
-    def _repr_(self):
-        return "~ "+repr(self.polynomial())
 
     cdef long valuation_c(self):
         return (<pAdicGenericElement>self._element).valuation_c()

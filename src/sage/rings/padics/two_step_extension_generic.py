@@ -101,7 +101,7 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
             Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
 
         """
-        return "Two step extension in %s defined by %s over %s"%(self.variable_name(), self._epoly, self._inertia_subring)
+        return "Two step extension in %s defined by %s of %s"%(self.variable_name(), self._epoly, self._inertia_subring)
 
     def ramification_index(self):
         """

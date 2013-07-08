@@ -42,19 +42,6 @@ Trivial extensions::
     sage: L.<t> = K.extension(t + u); L
     Trivial extension of Unramified Extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) in t defined by (1 + O(5^20))*t + u + O(5^20)
 
-    sage: K = Qp(5)
-    sage: R.<a> = K[]
-    sage: L.<a> = K.extension(a^2 + 5)
-    sage: R.<t> = K[]
-    sage: M.<t> = L.extension(t + a); M
-    Trivial extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in t defined by (1 + O(a^40))*t + a + O(a^41)
-
-An iterated trivial extension::
-
-    sage: R.<s> = M[]
-    sage: N.<s> = M.extension(s + t); N
-    Trivial extension of Trivial extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in t defined by (1 + O(a^40))*t + a + O(a^41) in s defined by (1 + O(a^40))*s + 4*a + a^3 + O(a^41)
-
 A totally ramified extension not defined by an Eisenstein polynomial::
 
     sage: K = Qp(5)
@@ -72,6 +59,7 @@ An iterated Eisenstein extension::
     Eisenstein extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in b defined by (1 + O(a^40))*b^2 + a + O(a^41)
     sage: R.<c> = M[]
     sage: N.<c> = M.extension(c^2 + b); N
+    Eisenstein extension of Eisenstein extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in b defined by (1 + O(a^40))*b^2 + a + O(a^41) in c defined by (~ 1 + O(a^40))*c^2 + ~ (1 + O(a^40))*b
 
 An unramified extension not defined by a polynomial with irreducible
 reduction::
@@ -79,6 +67,37 @@ reduction::
     sage: K = Qp(5)
     sage: R.<u> = K[]
     sage: L.<u> = K.extension(u^2 + 5*u + 25); L
+    Unramified extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*u^2 + (5 + O(5^21))*u + (5^2 + O(5^22))
+
+Unramified extension over Eisenstein extension::
+
+    sage: K = Qp(5)
+    sage: R.<a> = K[]
+    sage: L.<a> = K.extension(a^2 + 125*a + 125)
+    sage: R.<u> = L[]
+    sage: M.<u> = L.extension(u^2 + u + 1); M
+    Unramified extension of Totally ramified extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23)) in u defined by (~ (1 + O(5^10)))*u^2 + (~ (1 + O(5^10)))*u + ~ (1 + O(5^10))
+
+A splitting field::
+
+    sage: K = Qp(2, 3)
+    sage: R.<x> = K[]
+    sage: f = x^4+2*x^3+2*x^2-2*x+2
+    sage: f.is_irreducible()
+    True
+    sage: L.<a> = K.extension(f)
+    sage: g = f.change_ring(L)//(x-a)
+    sage: g.is_irreducible()
+    True
+    sage: M.<b> = L.extension(g)
+    sage: h = g.change_ring(M)//(x-b)
+    sage: h.is_irreducible()
+    True
+    sage: N.<c> = M.extension(h)
+    sage: len(f.change_ring(N).roots(multiplicities=False))
+    4
+    sage: len(f.change_ring(N).factor()) # long time
+    4
 
 .. _padic_precision
 
@@ -1091,7 +1110,7 @@ def create_unramified_factory(base_factory):
             from sage.rings.all import PolynomialRing
             modulus = PolynomialRing(base, 'x')(GF(q, res_name).modulus().change_ring(ZZ))
 
-        return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=check)
+        return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=False) # no need to check irreducibility of the modulus
 
     return create_unramified_ring
 
@@ -1333,12 +1352,6 @@ class GenericExtensionFactory(AbstractFactory):
             sage: ZpExtensionFactory.is_totally_ramified(f)
             False
 
-        This method does not check whether ``poly`` is irreducible::
-
-            sage: f = x^2 + 10*x + 25 # not an irreducible polynomial
-            sage: ZpExtensionFactory.is_totally_ramified(f)
-            True
-
         """
         if not poly.is_monic():
             raise ValueError("poly must be monic")
@@ -1367,12 +1380,12 @@ class GenericExtensionFactory(AbstractFactory):
 
         TESTS:
 
-            sage: K = QpCR(3,20)
+            sage: K = Qp(3)
             sage: S.<x> = K[]
             sage: L.<x> = K.extension(209/3*x^2 + 309*x + 47/9) # indirect doctest
             Traceback (most recent call last):
             ...
-            NotImplementedError: minimal polynomial is not integral after normalization
+            NotImplementedError: modulus not integral after normalization
 
         """
         if not poly.is_monic():
@@ -1399,14 +1412,6 @@ class GenericExtensionFactory(AbstractFactory):
         else:
             raise ValueError("modulus must be a univariate polynomial or symbolic expression")
 
-        if check:
-            if not modulus.is_irreducible():
-                raise ValueError("modulus must be irreducible but %s is not irreducible over %s"%(modulus,base))
-            if modulus.is_constant():
-                raise ValueError("modulus must not be constant")
-            if len(modulus.list()) > modulus.degree()+1:
-                raise ValueError("modulus must not have leading zero coefficients")
-
         if not modulus.is_monic():
             if base.is_field():
                 # TODO: modulus /= modulus.leading_coefficient() does not work. There is a bug in (padic?) polynomials: /= will coerce the rhs into the lhs parent and then do the division which puts this into the fraction field of the polynomial ring
@@ -1417,6 +1422,17 @@ class GenericExtensionFactory(AbstractFactory):
                     modulus = modulus.map_coefficients(lambda c:c>>modulus.leading_coefficient().valuation())
                 else:
                     raise NotImplementedError("modulus with leading coefficient with high valuation")
+
+        if any([c.valuation()<0 for c in modulus.list()]):
+            raise NotImplementedError("modulus not integral after normalization")
+
+        if check:
+            if not modulus.is_irreducible():
+                raise ValueError("modulus must be irreducible but %s is not irreducible over %s"%(modulus,base))
+            if modulus.is_constant():
+                raise ValueError("modulus must not be constant")
+            if len(modulus.list()) > modulus.degree()+1:
+                raise ValueError("modulus must not have leading zero coefficients")
 
         assert modulus.is_monic()
         return modulus
@@ -1436,8 +1452,8 @@ class GenericExtensionFactory(AbstractFactory):
             sage: from sage.rings.padics.factory import QpExtensionFactory
             sage: K = Qp(2)
             sage: R.<x> = K[]
-            sage: QpExtensionFactory.create_key(base=K, premodulus=x^2+x+1, unram_name="u")
-            ('u', 2-adic Field with capped relative precision 20, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, None)
+            sage: QpExtensionFactory.create_key_and_extra_args(base=K, premodulus=x^2+x+1, unram_name="u")
+            (('u', 2-adic Field with capped relative precision 20, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, None), {'check': True})
 
         """
         # a univariate polynomial over base, the actual modulus to use for the extension

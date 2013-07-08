@@ -70,8 +70,8 @@ class UnramifiedExtensionGeneric(pAdicExtensionGeneric):
                     return "\\mathbf{Z}_{%s^{%s}}" % (self.prime(), self.degree())
             else:
                 raise NotImplementedError
-        return "Unramified Extension of %s in %s defined by %s"%(
-            self.ground_ring(), self.variable_name(), self.modulus())
+        return "Unramified Extension in %s defined by %s of %s"%(
+            self.variable_name(), self.modulus(), self.ground_ring())
 
     def ramification_index(self, K = None):
         """

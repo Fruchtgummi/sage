@@ -479,3 +479,7 @@ class GaussValuation(DevelopingValuation):
         """
         from sage.rings.all import ZZ
         return ZZ.one()
+
+    def change_ring(self, base_ring):
+        base_valuation = self._base_valuation.change_ring(base_ring)
+        return GaussValuation(self.domain().change_ring(base_ring), base_valuation)

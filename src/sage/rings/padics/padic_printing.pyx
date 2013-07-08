@@ -701,6 +701,9 @@ cdef class pAdicPrinter_class(SageObject):
         """
         return self.ram_name
 
+    def _unram_name(self):
+        return self.unram_name
+
     def _print_mode(self):
         """
         Accesses self.mode.
@@ -803,7 +806,7 @@ cdef class pAdicPrinter_class(SageObject):
         mpz_clear(tmp)
         return ans
 
-    def repr_gen(self, elt, do_latex, pos = None, mode = None, ram_name = None):
+    def repr_gen(self, elt, do_latex, pos = None, mode = None, ram_name = None, unram_name = None):
         """
         The entry point for printing an element.
 
@@ -844,12 +847,16 @@ cdef class pAdicPrinter_class(SageObject):
         else:
             _pos = pos
         if ram_name is None:
-            pprint = self.ram_name
+            ram_name = self.ram_name
         else:
-            pprint = str(ram_name)
-        return self._repr_gen(elt, do_latex, _pos, _mode, pprint)
+            ram_name = str(ram_name)
+        if unram_name is None:
+            unram_name = self.unram_name
+        else:
+            unram_name = str(unram_name)
+        return self._repr_gen(elt, do_latex, _pos, _mode, ram_name, unram_name)
 
-    cdef _repr_gen(self, pAdicGenericElement elt, bint do_latex, bint pos, int mode, ram_name):
+    cdef _repr_gen(self, pAdicGenericElement elt, bint do_latex, bint pos, int mode, ram_name, unram_name):
         r"""
         Prints a string representation of the element.  See __init__ for more details on print modes.
 
@@ -888,18 +895,18 @@ cdef class pAdicPrinter_class(SageObject):
         elif mode == val_unit:
             if do_latex:
                 if elt.valuation() == 0:
-                    s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, terse, 0, ram_name), ram_name)
+                    s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, terse, 0, ram_name, unram_name), ram_name)
                 elif elt.valuation() == 1:
-                    s = "%s \\cdot %s + O(%s"%(ram_name, self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name), ram_name)
+                    s = "%s \\cdot %s + O(%s"%(ram_name, self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name, unram_name), ram_name)
                 else:
-                    s = "%s^{%s} \\cdot %s + O(%s"%(ram_name, elt.valuation(), self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name), ram_name)
+                    s = "%s^{%s} \\cdot %s + O(%s"%(ram_name, elt.valuation(), self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name, unram_name), ram_name)
             else:
                 if elt.valuation() == 0:
-                    s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, terse, 0, ram_name), ram_name)
+                    s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, terse, 0, ram_name, unram_name), ram_name)
                 elif elt.valuation() == 1:
-                    s = "%s * %s + O(%s"%(ram_name, self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name), ram_name)
+                    s = "%s * %s + O(%s"%(ram_name, self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name, unram_name), ram_name)
                 else:
-                    s = "%s^%s * %s + O(%s"%(ram_name, elt.valuation(), self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name), ram_name)
+                    s = "%s^%s * %s + O(%s"%(ram_name, elt.valuation(), self._repr_spec(elt.unit_part(), do_latex, pos, terse, 1, ram_name, unram_name), ram_name)
         elif mode == digits:
             n = elt.valuation()
             if self.base:
@@ -951,7 +958,7 @@ cdef class pAdicPrinter_class(SageObject):
             else:
                 s = "..." + self.sep.join(L)
         else: # mode == terse or series
-            s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, mode, 0, ram_name), ram_name)
+            s = "%s + O(%s"%(self._repr_spec(elt, do_latex, pos, mode, 0, ram_name, unram_name), ram_name)
         if mode != bars and mode != digits:
             if elt.precision_absolute() == 1:
                 s += ")"
@@ -962,7 +969,7 @@ cdef class pAdicPrinter_class(SageObject):
                     s += "^%s)"%(elt.precision_absolute())
         return s
 
-    cdef _repr_spec(self, pAdicGenericElement elt, bint do_latex, bint pos, int mode, bint paren, ram_name):
+    cdef _repr_spec(self, pAdicGenericElement elt, bint do_latex, bint pos, int mode, bint paren, ram_name, unram_name):
         """
         A function used by repr_gen for terse and series printing.
 
@@ -1093,11 +1100,11 @@ cdef class pAdicPrinter_class(SageObject):
                 if len(L) == 0:
                     raise RuntimeError, "repr_spec called on zero"
                 if isinstance(L[0], list): # unramified part to the extension
-                    if self.unram_name is None:
+                    if unram_name is None:
                         raise RuntimeError, "need to have specified a name for the unramified variable"
                     L, ellipsis = self._truncate_list(L, self.max_ram_terms, [])
                     for i from 0 <= i < len(L):
-                        term = self._print_unram_term(L[i], do_latex, self.unram_name, self.max_unram_terms, 0, 0)
+                        term = self._print_unram_term(L[i], do_latex, unram_name, self.max_unram_terms, 0, 0)
                         #L[i], ellipsis_unram = self._truncate_list(L[i], self.max_unram_terms, 0)
                         #term = self._print_list_as_poly(L[i], do_latex, self.unram_name, 0, 0)
                         if len(term) > 0:

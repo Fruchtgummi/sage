@@ -510,11 +510,15 @@ class DevelopingValuation(DiscreteValuation):
             raise ValueError("f must be in the domain of the valuation")
         if f.is_zero():
             raise ValueError("equivalence decomposition of zero is not defined")
-
-        if not self.domain().base_ring().is_field():
-            raise NotImplementedError("equivalence decomposition only implemented over fields")
+        if any([c.valuation()<0 for c in f.list()]):
+            raise ValueError("f must be integral")
 
         from sage.structure.factorization import Factorization
+        if not self.domain().base_ring().is_field():
+            v = self.change_ring(self.domain().base_ring().fraction_field())
+            ret = v.equivalence_decomposition(v.domain()(f))
+            return Factorization([(g.change_ring(self.domain().base_ring()),e) for g,e in ret], unit=ret.unit().change_ring(self.domain().base_ring()))
+
         if self.is_equivalence_unit(f):
             return Factorization([],unit=f)
 
@@ -849,10 +853,30 @@ class DevelopingValuation(DiscreteValuation):
             return [self.extension(G, infinity)]
 
         F = self.equivalence_decomposition(G)
+        assert len(F), "%s factored as a unit %s"%(G,F)
 
         ret = []
         for phi,e in F:
-            if G == phi: continue
+            if G == phi:
+                # something strange happened here:
+                # G is not a key (we checked that before) but phi==G is; so phi must have less precision than G
+                # this can happen if not all coefficients of G have the same precision
+                # if we drop some precision of G then it will be a key
+                prec = min([c.precision_absolute() for c in phi.list()])
+                g = G.map_coefficients(lambda c:c.add_bigoh(prec))
+                assert self.is_key(g)
+                return [self.extension(g, infinity)]
+
+            if phi == self.phi():
+                # self.phi() always is a key over self but it will not lead to an extension of this valuation
+                from gauss_valuation import GaussValuation
+                if isinstance(self,GaussValuation): # unless in the first step
+                    pass
+                elif len(F)==1: # unless this is the only factor, a terminating case which should give a valuation with v(phi)=infinity
+                    pass
+                else:
+                    continue
+
             w = self.extension(phi, self(phi), check=False)
             NP = w.newton_polygon(G).principal_part()
             assert len(NP)
@@ -871,5 +895,8 @@ class DevelopingValuation(DiscreteValuation):
                 assert slope is -infinity or 0 in new_leaf.newton_polygon(G).slopes()
                 ret.append(new_leaf)
 
+        # something strange can happen if we do not work over fixed-mod rings:
+        # G might not be a key over self, however, 
+        # if len(ret)==0:
         assert ret
         return ret

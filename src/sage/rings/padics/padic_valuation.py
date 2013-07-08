@@ -559,27 +559,10 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
                 return leaves
 
             for v in expandables:
-                if v.is_key(G):
-                    leaves.append(v.extension(G,infinity))
-                else:
-                    F = v.equivalence_decomposition(G)
-                    F = [g for g,e in F if g != v.phi() or isinstance(v,GaussValuation)] # ML1936 2.42
-                    assert F, expandables
-                    for phi in F:
-                        w = v.extension(phi, v(phi), check=False)
-                        NP = w.newton_polygon(G).principal_part()
-                        assert len(NP)
-                        for slope,side in zip(NP.slopes(),NP.sides()):
-                            new_mu = v(phi) - slope
-                            base = v
-                            if phi.degree() == base.phi().degree():
-                                assert new_mu > v(phi)
-                                if not isinstance(base, GaussValuation):
-                                    base = base._base_valuation
+                leaves.extend(v.mac_lane_step(G))
 
-                            new_leaf = base.extension(phi, new_mu)
-                            assert slope is -infinity or 0 in new_leaf.newton_polygon(G).slopes()
-                            leaves.append(new_leaf)
+    def change_ring(self, base_ring):
+        return pAdicValuation(base_ring)
 
 class pAdicValuation_padic(pAdicValuation_base):
     """
