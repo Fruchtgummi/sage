@@ -1562,6 +1562,66 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             p = 4
         return self(p)._exp(self.precision_cap())
 
+    def splitting_field(self, f, simplify=True):
+        """
+
+            sage: K = Qp(2, 3)
+            sage: R.<x> = K[]
+            sage: f = x^4+2*x^3+2*x^2-2*x+2
+            sage: L = K.splitting_field(f); L
+            Two step extension in ('x', 'x') defined by (1 + O(2^3))*x^12 + (2 + O(2^4))*x^11 + (2^2 + O(2^4))*x^10 + (2^3 + O(2^4))*x^9 + (2^2 + O(2^4))*x^8 + (2 + 2^2 + O(2^4))*x^7 + (2^2 + 2^3 + O(2^4))*x^4 + (2 + O(2^4))*x^3 + (2^2 + 2^3 + O(2^4))*x^2 + (2^2 + O(2^4))*x + 2 + O(2^4) and (1 + O(2^3))*x^2 + (1 + O(2^3))*x + (1 + O(2^3)) of 2-adic Field with capped relative precision 3
+            sage: roots = f.change_ring(L).roots(multiplicities=False)
+            sage: [f(r) for r in roots]
+            [O(x^45), O(x^43), O(x^42), O(x^42)]
+
+            sage: L = K.splitting_field(f, simplify=False); L
+            Unramified extension in a2 defined by (1 + O(pi^36))*x^2 + (pi^4 + pi^7 + pi^8 + pi^10 + O(pi^12))*x + pi^6 + pi^7 + pi^8 + pi^13 + O(pi^15) of Totally ramified extension in a3 defined by (1 + O(a4^12))*x^3 + (a4 + a4^4 + a4^5 + a4^9 + a4^10 + a4^11 + O(a4^12))*x^2 + (a4^2 + a4^4 + a4^6 + a4^10 + O(a4^13))*x + a4^3 + a4^4 + a4^7 + a4^8 + a4^10 + a4^13 + O(a4^14) of Eisenstein Extension in a4 defined by (1 + O(2^3))*x^4 + (2 + O(2^4))*x^3 + (2 + O(2^4))*x^2 + (2 + 2^2 + 2^3 + O(2^4))*x + (2 + O(2^4)) of 2-adic Field with capped relative precision 3
+            sage: roots = f.change_ring(L).roots(multiplicities=False)
+            sage: [f(r) for r in roots]
+            [O(pi^21), O(pi^19), O(pi^18), O(pi^18)]
+
+        """
+        f = f.change_ring(self)
+        if f.is_constant():
+           raise ValueError
+        if f.degree() == 1:
+            return self
+        roots = f.roots(multiplicities=False)
+        if roots:
+            for root in roots:
+                d = f.parent().gen() - root
+                assert d.divides(f)
+                f = f//d
+            if f.is_constant():
+                return self
+            else:
+                return self.splitting_field(f, simplify)
+
+        ret = self
+        if f.is_irreducible():
+            ret = self.extension(f,names=("a%s"%f.degree())).splitting_field(f, simplify)
+            if simplify:
+                while True:
+                    if not hasattr(ret,"implementation_ring"):
+                        return ret
+                    new_ret = ret.implementation_ring()
+                    base = new_ret
+                    while True:
+                        if base is self:
+                            ret = new_ret
+                            break
+                        elif base is not base.ground_ring_of_tower():
+                            base = base.base()
+                        else:
+                            return ret
+            else:
+                return ret
+        else:
+            F = f.factor()
+            for g,e in F:
+                ret = ret.splitting_field(g, simplify)
+            return ret
+
 def local_print_mode(obj, print_options, pos = None, ram_name = None):
     r"""
     Context manager for safely temporarily changing the print_mode
