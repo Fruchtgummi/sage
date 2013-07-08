@@ -47,16 +47,6 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
             - ``element_class`` -- the class which implements the elements of
               ``self``
 
-        EXAMPLES::
-
-            sage: from sage.rings.padics.padic_extension_leaves import TwoStepExtensionRingFixedMod
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: upoly = u^2 + 3*u + 4
-            sage: Ra.<a> = Ru[]
-            sage: epoly = a^3 - 9*u*a^2 + 3*u
-            sage: M = TwoStepExtensionRingFixedMod((upoly, epoly), upoly, epoly, 30, None, {}, (('u','a'),'u0','u','a')) # indirect doctest
-
         """
         self.prime_pow = None
 
@@ -91,17 +81,8 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
         """
         Returns a print representation of this extension.
 
-        EXAMPLES::
-
-            sage: K = ZpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: M
-            Eisenstein extension of unramified extension of 3-adic Ring with capped relative precision 10 in ('u', 'a') defined by ((1 + O(3^10))*u^2 + (3 + O(3^11))*u + (1 + 3 + O(3^10)), ((1 + O(3^10)))*a^3 + ((2*3^2 + 2*3^3 + 2*3^4 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + 2*3^9 + 2*3^10 + 2*3^11 + O(3^12))*u)*a^2 + (3 + O(3^11))*u)
-
         """
-        return "Two step extension in %s defined by %s of %s"%(self.variable_name(), self._epoly, self._inertia_subring)
+        return "Two step extension in %s defined by %s and %s of %s"%(self.variable_names(), self._epoly,  self._inertia_subring.modulus(), self.base())
 
     def ramification_index(self):
         """
@@ -111,9 +92,10 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
         EXAMPLES::
 
             sage: K = ZpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.ramification_index()
             3
 
@@ -138,9 +120,10 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
         EXAMPLES::
 
             sage: K = ZpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.degree()
             6
 
@@ -154,9 +137,10 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
         EXAMPLES::
 
             sage: K = ZpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.gen()
             u + O(a^30)
             sage: M.gen(1)
@@ -180,10 +164,11 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
 
         EXAMPLES::
 
-            sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = ZpCR(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.gens()
             [u + O(a^30), a + O(a^31)]
 
@@ -196,12 +181,13 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
 
         EXAMPLES::
 
-            sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = ZpCR(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.inertia_subring()
-            Unramified Extension of 3-adic Field with capped relative precision 10 in u defined by (1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10))
+            Unramified Extension in u defined by (1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)) of 3-adic Ring with capped relative precision 10
 
         """
         return self._inertia_subring
@@ -212,10 +198,11 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
 
         EXAMPLES::
 
-            sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = ZpCR(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.residue_class_field()
             Finite Field in u0 of size 3^2
 
@@ -228,10 +215,11 @@ class TwoStepExtensionGeneric(pAdicExtensionGeneric):
 
         EXAMPLES::
 
-            sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = ZpCR(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M.prime()
             3
 

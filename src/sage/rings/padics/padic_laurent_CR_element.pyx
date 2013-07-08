@@ -28,9 +28,10 @@ cdef class pAdicLaurentCRElement(pAdicLaurentElement):
     EXAMPLES::
 
         sage: K = Qp(3,10)
-        sage: Ru.<u> = K[]
-        sage: Ra.<a> = Ru[]
-        sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+        sage: R.<u> = K[]
+        sage: L.<u> = K.extension(u^2 + 3*u + 4)
+        sage: R.<a> = L[]
+        sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
         sage: a
         a + O(a^31)
         sage: u

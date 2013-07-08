@@ -32,6 +32,7 @@ from sage.rings.integer import Integer
 from sage.rings.padics.padic_printing import pAdicPrinter
 from sage.misc.cachefunc import cached_method
 from sage.categories.principal_ideal_domains import PrincipalIdealDomains
+from precision_error import PrecisionError
 
 class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
     def __init__(self, base, p, prec, print_mode, names, element_class, category=PrincipalIdealDomains()):
@@ -140,6 +141,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         return Factorization(ret)
 
     def _is_irreducible_univariate_polynomial(self, f):
+        from factory import GenericExtensionFactory
+        if GenericExtensionFactory.is_eisenstein(f):
+            return True
+        if GenericExtensionFactory.is_unramified(f):
+            return True
         return f.is_squarefree() and len(self.valuation().mac_lane_approximants(f))==1
 
     def _roots_univariate_polynomial(self, f, multiplicities=True, ring=None, algorithm=None):
@@ -1459,12 +1465,12 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             sage: k = Qp(5)
             sage: R.<x> = k[]
             sage: l.<w> = k.extension(x^2-5); l
-            Eisenstein Extension of 5-adic Field with capped relative precision 20 in w defined by (1 + O(5^20))*x^2 + (O(5^21))*x + (4*5 + 4*5^2 + 4*5^3 + 4*5^4 + 4*5^5 + 4*5^6 + 4*5^7 + 4*5^8 + 4*5^9 + 4*5^10 + 4*5^11 + 4*5^12 + 4*5^13 + 4*5^14 + 4*5^15 + 4*5^16 + 4*5^17 + 4*5^18 + 4*5^19 + 4*5^20 + O(5^21))
+            Eisenstein Extension in w defined by (1 + O(5^20))*x^2 + (O(5^21))*x + (4*5 + 4*5^2 + 4*5^3 + 4*5^4 + 4*5^5 + 4*5^6 + 4*5^7 + 4*5^8 + 4*5^9 + 4*5^10 + 4*5^11 + 4*5^12 + 4*5^13 + 4*5^14 + 4*5^15 + 4*5^16 + 4*5^17 + 4*5^18 + 4*5^19 + 4*5^20 + O(5^21)) of 5-adic Field with capped relative precision 20
 
             sage: F = list(Qp(19)['x'](cyclotomic_polynomial(5)).factor())[0][0]
             sage: L = Qp(19).extension(F, names='a')
             sage: L
-            Unramified Extension of 19-adic Field with capped relative precision 20 in a defined by (1 + O(19^20))*x^2 + (5 + 2*19 + 10*19^2 + 14*19^3 + 7*19^4 + 13*19^5 + 5*19^6 + 12*19^7 + 8*19^8 + 4*19^9 + 14*19^10 + 6*19^11 + 5*19^12 + 13*19^13 + 16*19^14 + 4*19^15 + 17*19^16 + 8*19^18 + 4*19^19 + O(19^20))*x + (1 + O(19^20))
+            Unramified Extension in a defined by (1 + O(19^20))*x^2 + (5 + 2*19 + 10*19^2 + 14*19^3 + 7*19^4 + 13*19^5 + 5*19^6 + 12*19^7 + 8*19^8 + 4*19^9 + 14*19^10 + 6*19^11 + 5*19^12 + 13*19^13 + 16*19^14 + 4*19^15 + 17*19^16 + 8*19^18 + 4*19^19 + O(19^20))*x + (1 + O(19^20)) of 19-adic Field with capped relative precision 20
         """
         from sage.rings.padics.factory import ExtensionFactory
         if print_mode is None:

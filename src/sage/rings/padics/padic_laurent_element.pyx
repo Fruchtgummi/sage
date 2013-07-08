@@ -36,9 +36,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
     EXAMPLES::
 
         sage: K = Qp(3,10)
-        sage: Ru.<u> = K[]
-        sage: Ra.<a> = Ru[]
-        sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+        sage: R.<u> = K[]
+        sage: L.<u> = K.extension(u^2 + 3*u + 4)
+        sage: R.<a> = L[]
+        sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
         sage: a
         a + O(a^31)
         sage: u
@@ -84,9 +85,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: M(None)
             0
             sage: M(None,3)
@@ -152,9 +154,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: x = M(None)
             sage: x.__set_from_laurent_series(x.__series_ring().one().add_bigoh(3))
             sage: x
@@ -175,11 +178,12 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: M.gen().__series_ring()
-            Laurent Series Ring in a over Unramified Extension of 3-adic Field with capped relative precision 10 in u defined by (1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10))
+            Laurent Series Ring in a over Unramified Extension in u defined by (1 + O(3^10))*u^2 + (3 + O(3^10))*u + (1 + 3 + O(3^10)) of 3-adic Field with capped relative precision 10
 
         """
         from sage.rings.laurent_series_ring import LaurentSeriesRing
@@ -193,9 +197,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: u._is_inexact_zero()
             False
             sage: a._is_inexact_zero()
@@ -215,9 +220,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: u._is_exact_zero()
             False
             sage: a._is_exact_zero()
@@ -237,9 +243,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.valuation() # indirect doctest
             1
             sage: u.valuation()
@@ -307,20 +314,21 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = Qp(3,4)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a.matrix()
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
+            sage: a.matrix() # known bug - too much precision
             [a + O(a^13)]
-            sage: a.matrix(base=K)
+            sage: a.matrix(base=K) # known bug - too much precision
             [                              O(3^4)                               O(3^4)                           1 + O(3^4)                               O(3^4)                               O(3^4)                               O(3^4)]
             [                              O(3^4)                               O(3^4)                               O(3^4)                           1 + O(3^4)                               O(3^4)                               O(3^4)]
             [                              O(3^4)                               O(3^4)                               O(3^4)                               O(3^4)                           1 + O(3^4)                               O(3^4)]
             [                              O(3^4)                               O(3^4)                               O(3^4)                               O(3^4)                               O(3^4)                           1 + O(3^4)]
             [                              O(3^5) 2*3 + 2*3^2 + 2*3^3 + 2*3^4 + O(3^5)                               O(3^5)                               O(3^5)                               O(3^5)                         3^2 + O(3^5)]
             [                    3 + 3^2 + O(3^5)                         3^2 + O(3^5)                               O(3^5)                               O(3^5)         2*3^2 + 3^3 + 2*3^4 + O(3^5)               2*3^3 + 2*3^4 + O(3^5)]
-            sage: a.matrix(base=M.inertia_subring())
+            sage: a.matrix(base=M.inertia_subring()) # known bug - too much precision
             [                                      O(3^4)                                   1 + O(3^4)                                       O(3^4)]
             [                                      O(3^4)                                       O(3^4)                                   1 + O(3^4)]
             [2*u*3 + 2*u*3^2 + 2*u*3^3 + 2*u*3^4 + O(3^5)                                       O(3^5)                               u*3^2 + O(3^5)]
@@ -364,9 +372,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a._ext_p_list(False) #indirect doctest
             [[1], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
             sage: u._ext_p_list(False)
@@ -400,9 +409,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.precision_absolute()
             31
             sage: u.precision_absolute()
@@ -439,9 +449,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a._series_raw()
             (1 + O(3^10))*a + O(a^31)
             sage: u._series_raw()
@@ -480,9 +491,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a._series_valuation()
             (1 + O(3^10))*a + O(a^31)
             sage: u._series_valuation()
@@ -537,9 +549,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a._series_developed()
             (1 + O(3^10))*a + O(a^31)
             sage: u._series_developed()
@@ -600,14 +613,15 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = Qp(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: L = M.gen().__series_ring()
             sage: ls = L(3).add_bigoh(20); ls
             (3 + O(3^11)) + O(a^20)
             sage: a.__develop(ls,valuation_only=True)
-            ((u + O(3^10))*a^3 + (3^3 + O(3^13))*a^4 + (u*3 + (u + 2)*3^2 + (u + 1)*3^3 + (u + 1)*3^4 + (u + 1)*3^5 + (u + 1)*3^6 + (u + 1)*3^7 + (u + 1)*3^8 + (u + 1)*3^9 + (u + 1)*3^10 + O(3^11))*a^5 + ((u + 1) + u*3 + (2*u + 2)*3^2 + (2*u + 1)*3^3 + u*3^5 + (2*u + 2)*3^6 + (2*u + 1)*3^7 + 2*u*3^9 + O(3^10))*a^6 + O(a^20), 1)
+            ((u + O(3^10))*a^3 + (3^3 + 3^12 + O(3^13))*a^4 + (u*3 + (u + 2)*3^2 + (u + 1)*3^3 + (u + 1)*3^4 + (u + 1)*3^5 + (u + 1)*3^6 + (u + 1)*3^7 + (u + 1)*3^8 + (u + 1)*3^9 + 3^10 + O(3^11))*a^5 + ((u + 1) + u*3 + (2*u + 2)*3^2 + (2*u + 1)*3^3 + u*3^5 + (2*u + 2)*3^6 + (2*u + 1)*3^7 + 2*u*3^9 + O(3^10))*a^6 + O(a^20), 1)
             sage: a.__develop(ls)
             ((u + O(3^10))*a^3 + ((u + 1) + O(3^10))*a^6 + (2 + O(3^10))*a^8 + (2 + O(3^10))*a^9 + ((u + 1) + O(3^10))*a^11 + (1 + O(3^10))*a^12 + (u + O(3^10))*a^13 + (1 + O(3^10))*a^14 + (1 + O(3^10))*a^15 + ((2*u + 1) + O(3^10))*a^16 + (2 + O(3^10))*a^17 + (1 + O(3^10))*a^18 + ((u + 2) + O(3^10))*a^19 + O(a^20), 19)
 
@@ -766,42 +780,17 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a + u
             u + a + O(a^30)
             sage: a + a
             2*a + O(a^31)
             sage: a + a + a
             u*a^4 + (u + 1)*a^7 + 2*a^9 + 2*a^10 + (u + 1)*a^12 + a^13 + u*a^14 + a^15 + a^16 + (2*u + 1)*a^17 + 2*a^18 + a^19 + (u + 2)*a^20 + u*a^21 + (2*u + 2)*a^22 + (u + 1)*a^23 + 2*a^24 + 2*a^25 + (2*u + 1)*a^26 + a^27 + (u + 2)*a^29 + (u + 1)*a^30 + O(a^31)
-
-        TESTS:
-
-        We test that this also works for other base rings::
-
-            sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a + u
-            u + a + O(a^30)
-            sage: a + a
-            2*a + O(a^30)
-            sage: a + a + a
-            u*a^4 + (u + 1)*a^7 + 2*a^9 + 2*a^10 + (u + 1)*a^12 + a^13 + u*a^14 + a^15 + a^16 + (2*u + 1)*a^17 + 2*a^18 + a^19 + (u + 2)*a^20 + u*a^21 + (2*u + 2)*a^22 + (u + 1)*a^23 + 2*a^24 + 2*a^25 + (2*u + 1)*a^26 + a^27 + (u + 2)*a^29 + O(a^30)
-
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a + u
-            u + a + O(a^30)
-            sage: a + a
-            2*a + O(a^30)
-            sage: a + a + a
-            u*a^4 + (u + 1)*a^7 + 2*a^9 + 2*a^10 + (u + 1)*a^12 + a^13 + u*a^14 + a^15 + a^16 + (2*u + 1)*a^17 + 2*a^18 + a^19 + (u + 2)*a^20 + u*a^21 + (2*u + 2)*a^22 + (u + 1)*a^23 + 2*a^24 + 2*a^25 + (2*u + 1)*a^26 + a^27 + (u + 2)*a^29 + O(a^30)
 
         """
         ret = self.parent()(None)
@@ -818,36 +807,15 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a - u
             2*u + a + a^3 + u*a^8 + (u + 1)*a^11 + a^13 + 2*a^14 + 2*u*a^16 + a^17 + u*a^18 + 2*a^19 + a^20 + (u + 1)*a^21 + 2*a^22 + a^23 + (u + 2)*a^25 + (u + 1)*a^26 + (2*u + 2)*a^27 + 2*a^28 + (u + 2)*a^29 + O(a^30)
             sage: a - a
             O(a^31)
-
-        TESTS:
-
-        We test that this also works for other base rings::
-
-            sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a - u
-            2*u + a + a^3 + u*a^8 + (u + 1)*a^11 + a^13 + 2*a^14 + 2*u*a^16 + a^17 + u*a^18 + 2*a^19 + a^20 + (u + 1)*a^21 + 2*a^22 + a^23 + (u + 2)*a^25 + (u + 1)*a^26 + (2*u + 2)*a^27 + 2*a^28 + (u + 2)*a^29 + O(a^30)
-            sage: a - a
-            O(a^30)
-
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a - u
-            2*u + a + a^3 + u*a^8 + (u + 1)*a^11 + a^13 + 2*a^14 + 2*u*a^16 + a^17 + u*a^18 + 2*a^19 + a^20 + (u + 1)*a^21 + 2*a^22 + a^23 + (u + 2)*a^25 + (u + 1)*a^26 + (2*u + 2)*a^27 + 2*a^28 + (u + 2)*a^29 + O(a^30)
-            sage: a - a
-            O(a^30)
 
         """
         ret = self.parent()(None)
@@ -860,10 +828,11 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.is_unit()
             True
             sage: u.is_unit()
@@ -872,28 +841,6 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             False
             sage: M(0,3).is_unit()
             False
-
-        TESTS:
-
-        We test that this also works for other base rings::
-
-            sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a.is_unit()
-            False
-            sage: u.is_unit()
-            True
-
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a.is_unit()
-            False
-            sage: u.is_unit()
-            True
 
         """
         return (self.parent().is_field() and not self.is_zero()) or self.valuation()==0
@@ -909,10 +856,11 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: ~a
             a^-1 + O(a^29)
             sage: ~a*a
@@ -933,9 +881,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         We test that this also works for other base rings::
 
             sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: ~a
             Traceback (most recent call last):
             ...
@@ -944,9 +893,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             2*u + 2*u*a^3 + 2*a^6 + a^8 + (2*u + 2)*a^9 + (u + 2)*a^12 + 2*u*a^13 + 2*a^14 + (u + 2)*a^15 + (2*u + 1)*a^16 + 2*a^17 + 2*a^18 + u*a^19 + 2*u*a^20 + 2*u*a^21 + (2*u + 2)*a^22 + u*a^23 + a^24 + (u + 2)*a^26 + 2*u*a^27 + a^28 + 2*a^29 + O(a^30)
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: ~a
             Traceback (most recent call last):
             ...
@@ -977,10 +927,11 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a/a
             1 + O(a^30)
             sage: a/u/a*u
@@ -991,9 +942,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         We test that this also works for other base rings::
 
             sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a/a
             Traceback (most recent call last):
             ...
@@ -1002,9 +954,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             1 + O(a^30)
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a/a
             Traceback (most recent call last):
             ...
@@ -1026,10 +979,11 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.is_zero() # indirect doctest
             False
             sage: M.zero().is_zero()
@@ -1050,10 +1004,11 @@ cdef class pAdicLaurentElement(pAdicExtElement):
 
         EXAMPLES::
 
-            sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: K = Qp(3,10)
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a*a
             a^2 + O(a^32)
             sage: M(3)^10 - M(3^10) # indirect doctest
@@ -1064,18 +1019,20 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         We test that this also works for other base rings::
 
             sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a*a
             a^2 + O(a^30)
             sage: M(3)^10 - M(3^10) # indirect doctest
             O(a^30)
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a*a
             a^2 + O(a^30)
             sage: M(3)^10 - M(3^10) # indirect doctest
@@ -1106,9 +1063,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a<<2
             a^3 + O(a^33)
             sage: a<<-2
@@ -1119,9 +1077,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         We test that this also works for other base rings::
 
             sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a<<2
             a^3 + O(a^30)
             sage: a<<-2
@@ -1134,9 +1093,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             O(a^30)
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a<<2
             a^3 + O(a^30)
             sage: a<<-2
@@ -1176,9 +1136,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a>>-2
             a^3 + O(a^33)
             sage: a>>2
@@ -1207,9 +1168,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.is_zero()
             False
             sage: a.is_zero(1)
@@ -1237,25 +1199,28 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name="a"); a = M.uniformizer(); u = M(u)
             sage: a.unit_part()
             1 + O(a^30)
 
         We test that this also works for other base rings::
 
             sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer()
             sage: a.unit_part()
             1 + O(a^29)
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer()
             sage: a.unit_part()
             1 + O(a^30)
 
@@ -1276,9 +1241,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer()
             sage: a.lift_to_precision(3)
             a + O(a^31)
             sage: M(a,2).lift_to_precision(3)
@@ -1287,28 +1253,6 @@ cdef class pAdicLaurentElement(pAdicExtElement):
             Traceback (most recent call last):
             ...
             ValueError: cannot lift element to the requested precision in this ring
-
-        We test that this also works for other base rings::
-
-            sage: K = ZpCA(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: M(a,2).lift_to_precision(3)
-            a + O(a^3)
-            sage: a.lift_to_precision(31)
-            Traceback (most recent call last):
-            ...
-            ValueError: cannot lift element to the requested precision in this ring
-
-            sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
-            sage: a.lift_to_precision(25)
-            a + O(a^30)
-            sage: a.lift_to_precision(100)
-            a + O(a^30)
 
         """
         if absprec is None:
@@ -1357,9 +1301,10 @@ cdef class pAdicLaurentElement(pAdicExtElement):
         EXAMPLES::
 
             sage: K = QpCR(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = QpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer()
             sage: (a^3).is_equal_to(9*u*a^2 - 3*u)
             True
             sage: a.is_equal_to(a, absprec=infinity)

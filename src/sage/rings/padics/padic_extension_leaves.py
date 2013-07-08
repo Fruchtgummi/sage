@@ -77,8 +77,7 @@ class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCap
         EXAMPLES::
 
             sage: R.<a> = ZqCR(27,10000); R #indirect doctest
-            Unramified Extension of 3-adic Ring with capped relative precision 10000 in a defined by (1 + O(3^10000))*x^3 + (O(3^10000))*x^2 + (2 + O(3^10000))*x + (1 + O(3^10000))
-
+            Unramified Extension in a defined by (1 + O(3^10000))*x^3 + (O(3^10000))*x^2 + (2 + O(3^10000))*x + (1 + O(3^10000)) of 3-adic Ring with capped relative precision 10000
             sage: R.<a> = ZqCR(next_prime(10^30)^3, 3); R.prime()
             1000000000000000000000000000057
         """
@@ -123,7 +122,7 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
         EXAMPLES::
 
             sage: R.<a> = Qq(27,10000); R #indirect doctest
-            Unramified Extension of 3-adic Field with capped relative precision 10000 in a defined by (1 + O(3^10000))*x^3 + (O(3^10000))*x^2 + (2 + O(3^10000))*x + (1 + O(3^10000))
+            Unramified Extension in a defined by (1 + O(3^10000))*x^3 + (O(3^10000))*x^2 + (2 + O(3^10000))*x + (1 + O(3^10000)) of 3-adic Field with capped relative precision 10000
 
             sage: R.<a> = Qq(next_prime(10^30)^3, 3); R.prime()
             1000000000000000000000000000057
@@ -170,7 +169,7 @@ class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCap
         EXAMPLES::
 
             sage: R.<a> = ZqCA(27,10000); R #indirect doctest
-            Unramified Extension of 3-adic Ring with capped absolute precision 10000 in a defined by (1 + O(3^10000))*x^3 + (2 + O(3^10000))*x + (1 + O(3^10000))
+            Unramified Extension in a defined by (1 + O(3^10000))*x^3 + (2 + O(3^10000))*x + (1 + O(3^10000)) of 3-adic Ring with capped absolute precision 10000
 
             sage: R.<a> = ZqCA(next_prime(10^30)^3, 3); R.prime()
             1000000000000000000000000000057
@@ -217,7 +216,7 @@ class UnramifiedExtensionRingFixedMod(UnramifiedExtensionGeneric, pAdicFixedModR
         EXAMPLES::
 
             sage: R.<a> = ZqFM(27,10000); R #indirect doctest
-            Unramified Extension of 3-adic Ring of fixed modulus 3^10000 in a defined by (1 + O(3^10000))*x^3 + (2 + O(3^10000))*x + (1 + O(3^10000))
+            Unramified Extension in a defined by (1 + O(3^10000))*x^3 + (2 + O(3^10000))*x + (1 + O(3^10000)) of 3-adic Ring of fixed modulus 3^10000
 
             sage: R.<a> = ZqFM(next_prime(10^30)^3, 3); R.prime()
             1000000000000000000000000000057
@@ -262,7 +261,7 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
 
             sage: R = Zp(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
             sage: W.<w> = R.ext(f); W #indirect doctest
-            Eisenstein Extension of 3-adic Ring with capped relative precision 10000 in w defined by (1 + O(3^10000))*x^3 + (O(3^10001))*x^2 + (3^2 + O(3^10001))*x + (-3 + O(3^10001))
+            Eisenstein Extension in w defined by (1 + O(3^10000))*x^3 + (O(3^10001))*x^2 + (3^2 + O(3^10001))*x + (-3 + O(3^10001)) of 3-adic Ring with capped relative precision 10000
             sage: W.precision_cap()
             30000
 
@@ -318,7 +317,7 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
 
             sage: R = Qp(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
             sage: W.<w> = R.ext(f); W #indirect doctest
-            Eisenstein Extension of 3-adic Field with capped relative precision 10000 in w defined by (1 + O(3^10000))*x^3 + (O(3^10001))*x^2 + (3^2 + O(3^10001))*x + (-3 + O(3^10001))
+            Eisenstein Extension in w defined by (1 + O(3^10000))*x^3 + (O(3^10001))*x^2 + (3^2 + O(3^10001))*x + (-3 + O(3^10001)) of 3-adic Field with capped relative precision 10000
             sage: W.precision_cap()
             30000
 
@@ -375,14 +374,14 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
 
             sage: R = ZpCA(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
             sage: W.<w> = R.ext(f); W #indirect doctest
-            Eisenstein Extension of 3-adic Ring with capped absolute precision 10000 in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + 3^10000 + O(3^10000))
+            Eisenstein Extension in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + 3^10000 + O(3^10000)) of 3-adic Ring with capped absolute precision 10000
             sage: W.precision_cap()
             30000
 
             sage: R.<p> = ZpCA(next_prime(10^30), 3, print_pos=False); S.<x> = ZZ[]; f = x^3 + p^2*x - p
             sage: W.<w> = R.ext(f); W.prime()
             1000000000000000000000000000057
-            sage: W.precision_cap()
+            sage: W.precision_cap() # known bug
             6
         """
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
@@ -402,10 +401,10 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
     TESTS::
 
         sage: R = ZpFM(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
-        sage: W.<w> = R.ext(f); W == loads(dumps(W))
+        sage: W.<w> = R.ext(f, check=False); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names, shift_seed):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         """
         A fixed modulus representation of an eisenstein extension of Zp.
 
@@ -431,12 +430,12 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
 
             sage: R = ZpFM(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
             sage: W.<w> = R.ext(f, check=False); W #indirect doctest
-            Eisenstein Extension of 3-adic Ring of fixed modulus 3^10000 in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + 3^10000 + O(3^10000))
+            Eisenstein Extension in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + 3^10000 + O(3^10000)) of 3-adic Ring of fixed modulus 3^10000
             sage: W.precision_cap()
             30000
 
             sage: R.<p> = ZpFM(next_prime(10^30), 3, print_pos=False); S.<x> = ZZ[]; f = x^3 + p^2*x - p
-            sage: W.<w> = R.ext(f); W.prime()
+            sage: W.<w> = R.ext(f, check=False); W.prime()
             1000000000000000000000000000057
             sage: W.precision_cap()
             9
@@ -473,16 +472,16 @@ class GeneralExtensionFieldCappedRelative(GeneralExtensionGeneric, pAdicCappedRe
         GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCRElement)
 
 class GeneralExtensionRingCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeRingGeneric):
-    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         self.prime_pow = None # general extensions do not use the pow_computer yet
-        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralCRElement)
+        GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCRElement)
 
 class GeneralExtensionRingCappedAbsolute(GeneralExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
-    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         self.prime_pow = None # general extensions do not use the pow_computer yet
-        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralCRElement)
+        GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCAElement)
 
 class GeneralExtensionRingFixedMod(GeneralExtensionGeneric, pAdicFixedModRingGeneric):
-    def __init__(self, prepoly, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
         self.prime_pow = None # general extensions do not use the pow_computer yet
-        GeneralExtensionGeneric.__init__(self, poly, abs_ring, to_abs_ring, to_abs_ring_base, from_abs_ring, prec, print_mode, names, pAdicGeneralFMElement)
+        GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralFMElement)

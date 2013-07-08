@@ -110,18 +110,19 @@ class NewtonPolygon(SageObject):
 
             sage: NP = NewtonPolygon([infinity,infinity,4,0,infinity,-8/3,-4,-4,infinity])
             sage: NP.ordinates()
-            [+Infinity, +Infinity, 4, 0, -4/3, -8/3, -4, +Infinity]
+            [+Infinity, +Infinity, 4, 0, -4/3, -8/3, -4, -4, +Infinity]
 
         """
         ret = []
         for side in self.sides():
             l = side[1][0]-side[0][0]
             if side[0][1] is infinity or side[1][1] is infinity:
-                ret.extend([infinity]*l)
+                ret.append(side[0][1])
+                ret.extend([infinity]*(l-1))
             else:
-
                 ret.extend([side[0][1]+i*(side[1][1]-side[0][1])/l for i in range(l)])
         ret.append(self._points[-1][1])
+        assert len(ret) == len(self) + 1
         return ret
 
     @cached_method

@@ -510,7 +510,7 @@ class DevelopingValuation(DiscreteValuation):
             raise ValueError("f must be in the domain of the valuation")
         if f.is_zero():
             raise ValueError("equivalence decomposition of zero is not defined")
-        if any([c.valuation()<0 for c in f.list()]):
+        if any([self.constant_valuation()(c)<0 for c in f.list()]):
             raise ValueError("f must be integral")
 
         from sage.structure.factorization import Factorization
@@ -690,10 +690,12 @@ class DevelopingValuation(DiscreteValuation):
 
         """
         if len(f.list()) > f.degree()+1:
+            from sage.rings.all import infinity
             # f has leading zero coefficients
+            m = min([self.constant_valuation()(c) for c in f.list()[f.degree()+1:]])
             if f.is_zero():
                 f= f.parent().zero()
-            elif min([self.constant_valuation()(c) for c in f.list()[f.degree()+1:]]) > max([self.constant_valuation()(c) for c in f.list()[:f.degree()+1]]):
+            elif m is infinity or m > max([self.constant_valuation()(c) for c in f.list()[:f.degree()+1]]):
                 f= self.domain()(f.list()[:f.degree()+1])
             else:
                 raise ValueError("f must not have leading zero coefficients")

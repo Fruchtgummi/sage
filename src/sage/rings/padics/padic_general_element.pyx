@@ -113,7 +113,7 @@ cdef class pAdicGeneralElement(pAdicExtElement):
 
     def _ext_p_list(self, pos):
         if self.parent().implementation_ring().ground_ring_of_tower() is self.parent().implementation_ring():
-            return self.parent().implementation_ring()._printer._base_p_list(self._element, pos)
+            return self.parent().implementation_ring()._printer._base_p_list(self._element, pos)[self.valuation():]
         else:
             return self._element._ext_p_list(pos)
 

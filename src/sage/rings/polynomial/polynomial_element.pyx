@@ -2523,12 +2523,15 @@ cdef class Polynomial(CommutativeAlgebraElement):
             sage: f = x^3 + -1/7*x + 13
             sage: f.dict()
             {0: 13, 1: -1/7, 3: 1}
+
+        # doctest for is_exact(): map_coefficients of a padic polynomial drops inexact zeros
+
         """
         X = {}
         Y = self.list()
         for i in xrange(len(Y)):
             c = Y[i]
-            if c:
+            if c or not self.base_ring().is_exact():
                 X[i] = c
         return X
 

@@ -20,34 +20,35 @@ EXAMPLES::
 Unramified extensions::
 
     sage: K.<u> = Qq(25); K
-    Unramified Extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20))
+    Unramified Extension in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) of 5-adic Field with capped relative precision 20
     sage: R.<u> = Zq(25); R
-    Unramified Extension of 5-adic Ring with capped relative precision 20 in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20))
+    Unramified Extension in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) of 5-adic Ring with capped relative precision 20
 
 Eisenstein extensions::
 
     sage: K = Qp(5)
     sage: R.<a> = K[]
     sage: L.<a> = K.extension(a^2 + 5); L
-    Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21))
+    Eisenstein Extension in a defined by (1 + O(5^20))*a^2 + (O(5^21))*a + (5 + O(5^21)) of 5-adic Field with capped relative precision 20
 
 Trivial extensions::
 
+    sage: K = Qp(5)
     sage: R.<t> = K[]
     sage: L.<t> = K.extension(t + 1); L
-    Trivial extension of 5-adic Field with capped relative precision 20 in t defined by (1 + O(5^20))*t + (1 + O(5^20))
+    Trivial extension in t defined by (1 + O(5^20))*t + (1 + O(5^20)) of 5-adic Field with capped relative precision 20
 
     sage: K.<u> = Qq(25)
     sage: R.<t> = K[]
     sage: L.<t> = K.extension(t + u); L
-    Trivial extension of Unramified Extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) in t defined by (1 + O(5^20))*t + u + O(5^20)
+    Trivial extension in t defined by (1 + O(5^20))*t + u + O(5^20) of Unramified Extension in u defined by (1 + O(5^20))*x^2 + (4 + O(5^20))*x + (2 + O(5^20)) of 5-adic Field with capped relative precision 20
 
 A totally ramified extension not defined by an Eisenstein polynomial::
 
     sage: K = Qp(5)
     sage: R.<a> = K[]
     sage: L.<a> = K.extension(a^2 + 125*a + 125); L
-    Totally ramified extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23))
+    Totally ramified extension in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23)) of 5-adic Field with capped relative precision 20
 
 An iterated Eisenstein extension::
 
@@ -56,10 +57,10 @@ An iterated Eisenstein extension::
     sage: L.<a> = K.extension(a^2 + 5)
     sage: R.<b> = L[]
     sage: M.<b> = L.extension(b^2 + a); M
-    Eisenstein extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in b defined by (1 + O(a^40))*b^2 + a + O(a^41)
+    Eisenstein extension in b defined by (1 + O(a^40))*b^2 + a + O(a^41) of Eisenstein Extension in a defined by (1 + O(5^20))*a^2 + (O(5^21))*a + (5 + O(5^21)) of 5-adic Field with capped relative precision 20
     sage: R.<c> = M[]
     sage: N.<c> = M.extension(c^2 + b); N
-    Eisenstein extension of Eisenstein extension of Eisenstein Extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5 + O(5^21)) in b defined by (1 + O(a^40))*b^2 + a + O(a^41) in c defined by (~ 1 + O(a^40))*c^2 + ~ (1 + O(a^40))*b
+    Eisenstein extension in c defined by (1 + O(b^80))*c^2 + b + O(b^81) of Eisenstein extension in b defined by (1 + O(a^40))*b^2 + a + O(a^41) of Eisenstein Extension in a defined by (1 + O(5^20))*a^2 + (O(5^21))*a + (5 + O(5^21)) of 5-adic Field with capped relative precision 20
 
 An unramified extension not defined by a polynomial with irreducible
 reduction::
@@ -67,7 +68,7 @@ reduction::
     sage: K = Qp(5)
     sage: R.<u> = K[]
     sage: L.<u> = K.extension(u^2 + 5*u + 25); L
-    Unramified extension of 5-adic Field with capped relative precision 20 in u defined by (1 + O(5^20))*u^2 + (5 + O(5^21))*u + (5^2 + O(5^22))
+    Unramified extension in u defined by (1 + O(5^20))*u^2 + (5 + O(5^21))*u + (5^2 + O(5^22)) of 5-adic Field with capped relative precision 20
 
 Unramified extension over Eisenstein extension::
 
@@ -76,7 +77,7 @@ Unramified extension over Eisenstein extension::
     sage: L.<a> = K.extension(a^2 + 125*a + 125)
     sage: R.<u> = L[]
     sage: M.<u> = L.extension(u^2 + u + 1); M
-    Unramified extension of Totally ramified extension of 5-adic Field with capped relative precision 20 in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23)) in u defined by (~ (1 + O(5^10)))*u^2 + (~ (1 + O(5^10)))*u + ~ (1 + O(5^10))
+    Unramified extension in u defined by (1 + O(pi^20))*u^2 + (1 + O(pi^20))*u + 1 + O(pi^20) of Totally ramified extension in a defined by (1 + O(5^20))*a^2 + (5^3 + O(5^23))*a + (5^3 + O(5^23)) of 5-adic Field with capped relative precision 20
 
 A splitting field::
 
@@ -93,8 +94,8 @@ A splitting field::
     sage: h = g.change_ring(M)//(x-b)
     sage: h.is_irreducible()
     True
-    sage: N.<c> = M.extension(h)
-    sage: len(f.change_ring(N).roots(multiplicities=False))
+    sage: N.<c> = M.extension(h) # long time
+    sage: len(f.change_ring(N).roots(multiplicities=False)) # long time
     4
     sage: len(f.change_ring(N).factor()) # long time
     4
@@ -567,7 +568,7 @@ To create an extension ring, the modulus can be given in a number of ways:
     For unramified extensions, the modulus does not have to be specified::
 
         sage: K.<a> = Qq(27); K
-        Unramified Extension of 3-adic Field with capped relative precision 20 in a defined by (1 + O(3^20))*x^3 + (2 + O(3^20))*x + (1 + O(3^20))
+        Unramified Extension in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20)) of 3-adic Field with capped relative precision 20
 
     In this case, the modulus is the standard lift of the generator chosen for
     `\mathbb{F}_q`::
@@ -575,7 +576,7 @@ To create an extension ring, the modulus can be given in a number of ways:
         sage: GF(27, 'a').modulus()
         x^3 + 2*x + 1
         sage: K.modulus()
-        (1 + O(3^20))*x^3 + (2 + O(3^20))*x + (1 + O(3^20))
+        (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
 
 * As a polynomial:
 
@@ -583,7 +584,7 @@ To create an extension ring, the modulus can be given in a number of ways:
 
         sage: P.<x> = ZZ[]
         sage: R.<a> = Qq(27, modulus = x^3 + 2*x + 1); R.modulus()
-        (1 + O(3^20))*x^3 + (2 + O(3^20))*x + (1 + O(3^20))
+        (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
         sage: P.<x> = QQ[]
         sage: S.<a> = Qq(27, modulus = x^3 + 2*x + 1)
         sage: P.<x> = Zp(3)[]
@@ -619,7 +620,7 @@ To create an extension ring, the modulus can be given in a number of ways:
         sage: x = var('x')
         sage: X.<a> = Qq(27, modulus = x^3 + 2*x + 1)
         sage: X.modulus()
-        (1 + O(3^20))*x^3 + (2 + O(3^20))*x + (1 + O(3^20))
+        (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
         sage: X == R
         True
 
@@ -696,7 +697,10 @@ class AbstractFactory(UniqueFactory):
             print_max_ram_terms = print_mode["max_ram_terms"]
             print_max_unram_terms = print_mode["max_unram_terms"]
             print_max_terse_terse = print_mode["max_terse_terms"]
-            print_mode = print_mode["mode"]
+            if "mode" in print_mode:
+                print_mode = print_mode["mode"]
+            else:
+                print_mode = None
 
         # fill unspecified parameters with default values
         def fill_with_default(key, value):
@@ -774,7 +778,7 @@ class AbstractFactory(UniqueFactory):
         type, kwargs = self._decode_key(key)
 
         if type not in self._constructors:
-            raise ValueError("unsupported precision type `%s`"%type)
+            raise ValueError("unsupported precision type `%s`"%(type))
 
         return self._constructors[type](**kwargs)
 
@@ -1006,7 +1010,7 @@ def create_unramified_factory(base_factory):
         sage: from sage.rings.padics.factory import create_unramified_factory
         sage: zq = create_unramified_factory(Zp)
         sage: R.<u> = zq(9); R
-        Unramified Extension of 3-adic Ring with capped relative precision 20 in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20))
+        Unramified Extension in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20)) of 3-adic Ring with capped relative precision 20
 
     """
     def create_unramified_ring(q, prec=None, type="capped-rel", modulus=None, names=None, print_mode=None, halt=None, ram_name=None, res_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True):
@@ -1073,9 +1077,9 @@ def create_unramified_factory(base_factory):
         EXAMPLES::
 
             sage: R.<u> = Zq(9); R
-            Unramified Extension of 3-adic Ring with capped relative precision 20 in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20))
+            Unramified Extension in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20)) of 3-adic Ring with capped relative precision 20
             sage: K.<u> = Qq(9); K
-            Unramified Extension of 3-adic Field with capped relative precision 20 in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20))
+            Unramified Extension in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20)) of 3-adic Field with capped relative precision 20
 
         """
         q = ZZ(q)
@@ -1108,7 +1112,7 @@ def create_unramified_factory(base_factory):
         if modulus is None:
             from sage.rings.finite_rings.constructor import FiniteField as GF
             from sage.rings.all import PolynomialRing
-            modulus = PolynomialRing(base, 'x')(GF(q, res_name).modulus().change_ring(ZZ))
+            modulus = PolynomialRing(base, 'x')([base(c,prec) for c in (GF(q, res_name).modulus().change_ring(ZZ)).list()])
 
         return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=False) # no need to check irreducibility of the modulus
 
@@ -1139,13 +1143,13 @@ def create_unramified_factory_with_type(base_factory, type):
         EXAMPLES::
 
             sage: R.<u> = ZqCR(9, 10); R
-            Unramified Extension of 3-adic Ring with capped relative precision 10 in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10))
+            Unramified Extension in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10)) of 3-adic Ring with capped relative precision 10
             sage: K.<u> = QqCR(9, 10); K
-            Unramified Extension of 3-adic Field with capped relative precision 10 in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10))
+            Unramified Extension in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10)) of 3-adic Field with capped relative precision 10
             sage: R.<u> = ZqCA(9, 10); R
-            Unramified Extension of 3-adic Ring with capped absolute precision 10 in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10))
+            Unramified Extension in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10)) of 3-adic Ring with capped absolute precision 10
             sage: R.<u> = ZqFM(9, 10); R
-            Unramified Extension of 3-adic Ring of fixed modulus 3^10 in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10))
+            Unramified Extension in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10)) of 3-adic Ring of fixed modulus 3^10
 
         """%type
         return base_factory(q=q, prec=prec, modulus=modulus, names=names, print_mode=print_mode, halt=halt, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=check, type=type)
@@ -1173,7 +1177,7 @@ class GenericExtensionFactory(AbstractFactory):
         sage: K = Qp(2)
         sage: R.<x> = K[]
         sage: QpExtensionFactory(base=K, premodulus=x^2+x+1, unram_name="u")
-        Unramified Extension of 2-adic Field with capped relative precision 20 in u defined by (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20))
+        Unramified Extension in u defined by (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)) of 2-adic Field with capped relative precision 20
 
     """
     @staticmethod
@@ -1437,7 +1441,7 @@ class GenericExtensionFactory(AbstractFactory):
         assert modulus.is_monic()
         return modulus
 
-    def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check=True):
+    def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, print_alphabet=None, check=True):
         r"""
         Create a key which can be used to cache the `p`-adic ring specified by
         the parameters.
@@ -1470,21 +1474,24 @@ class GenericExtensionFactory(AbstractFactory):
         else:
             ext = "?"
 
-        print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, names = self._create_key_printing(print_mode, {"print_mode":base.print_mode(), "print_pos":base._printer._pos(), "print_sep":base._printer._sep(), "print_max_ram_terms":base._printer._max_ram_terms(), "print_max_unram_terms":base._printer._max_unram_terms(), "print_max_terse_terms":base._printer._max_terse_terms()}, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, names)
+        print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, names = self._create_key_printing(print_mode, {"print_mode":base.print_mode(), "print_pos":base._printer._pos(), "print_sep":base._printer._sep(), "print_max_ram_terms":base._printer._max_ram_terms(), "print_max_unram_terms":base._printer._max_unram_terms(), "print_max_terse_terms":base._printer._max_terse_terms()}, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, names)
 
         # merge ram_name, unram_name into names
         if not isinstance(names, (list, tuple)):
             names = (names,)
         names = list(names)
         if names[0] is None:
-            if ext == "?":
-                pass
-            elif ext == "e":
-                names[0] = ram_name
-            elif ext == "u":
-                names[0] = unram_name
+            if var_name is not None:
+                names[0] = var_name
             else:
-                assert(False)
+                if ext == "?":
+                    pass
+                elif ext == "e":
+                    names[0] = ram_name
+                elif ext == "u":
+                    names[0] = unram_name
+                else:
+                    assert(False)
 
         if names[0] is None:
             raise ValueError("name of the generator must be specified")
@@ -1525,7 +1532,8 @@ class GenericExtensionFactory(AbstractFactory):
         if ext == "u":
             modulus = modulus.map_coefficients(lambda c:c.add_bigoh(prec))
         elif ext == "e":
-            modulus = modulus.map_coefficients(lambda c:c.add_bigoh(prec + c.valuation()))
+            from sage.rings.all import infinity
+            modulus = modulus.parent()([c.add_bigoh(prec + (1 if i != modulus.degree() else 0)) for i,c in enumerate(modulus.list())])
         if ext == "e":
             prec *= modulus.degree()
 
@@ -1582,45 +1590,45 @@ class GenericExtensionFactory(AbstractFactory):
 
 from padic_extension_leaves import EisensteinExtensionFieldCappedRelative, UnramifiedExtensionFieldCappedRelative, GeneralExtensionFieldCappedRelative, EisensteinExtensionRingCappedRelative, EisensteinExtensionRingCappedAbsolute, EisensteinExtensionRingFixedMod, UnramifiedExtensionRingCappedRelative, UnramifiedExtensionRingCappedAbsolute, UnramifiedExtensionRingFixedMod, GeneralExtensionRingCappedRelative, GeneralExtensionRingCappedAbsolute, GeneralExtensionRingFixedMod, TwoStepExtensionFieldCappedRelative, TwoStepExtensionRingCappedRelative, TwoStepExtensionRingCappedAbsolute, TwoStepExtensionRingFixedMod
 
-QpExtensionFactory = GenericExtensionFactory("Qp_ext", { ("e", "capped-rel") : EisensteinExtensionFieldCappedRelative,
-                                                         ("u", "capped-rel") : UnramifiedExtensionFieldCappedRelative,
-                                                         ("?", "capped-rel") : GeneralExtensionFieldCappedRelative,
-                                                       })
-ZpExtensionFactory = GenericExtensionFactory("Zp_ext", { ("e", "capped-rel") : EisensteinExtensionRingCappedRelative,
-                                                         ("e", "capped-abs") : EisensteinExtensionRingCappedAbsolute,
-                                                         ("e", "fixed-mod") : EisensteinExtensionRingFixedMod,
-                                                         ("u", "capped-rel") : UnramifiedExtensionRingCappedRelative,
-                                                         ("u", "capped-abs") : UnramifiedExtensionRingCappedAbsolute,
-                                                         ("u", "fixed-mod") : UnramifiedExtensionRingFixedMod,
-                                                         ("?", "capped-rel") : GeneralExtensionRingCappedRelative,
-                                                         ("?", "capped-abs") : GeneralExtensionRingCappedAbsolute,
-                                                         ("?", "fixed-mod") : GeneralExtensionRingFixedMod,
-                                                       })
+QpExtensionFactory = GenericExtensionFactory("QpExtensionFactory", { ("e", "capped-rel") : EisensteinExtensionFieldCappedRelative,
+                                                                     ("u", "capped-rel") : UnramifiedExtensionFieldCappedRelative,
+                                                                     ("?", "capped-rel") : GeneralExtensionFieldCappedRelative,
+                                                                   })
+ZpExtensionFactory = GenericExtensionFactory("ZpExtensionFactory", { ("e", "capped-rel") : EisensteinExtensionRingCappedRelative,
+                                                                     ("e", "capped-abs") : EisensteinExtensionRingCappedAbsolute,
+                                                                     ("e", "fixed-mod") : EisensteinExtensionRingFixedMod,
+                                                                     ("u", "capped-rel") : UnramifiedExtensionRingCappedRelative,
+                                                                     ("u", "capped-abs") : UnramifiedExtensionRingCappedAbsolute,
+                                                                     ("u", "fixed-mod") : UnramifiedExtensionRingFixedMod,
+                                                                     ("?", "capped-rel") : GeneralExtensionRingCappedRelative,
+                                                                     ("?", "capped-abs") : GeneralExtensionRingCappedAbsolute,
+                                                                     ("?", "fixed-mod") : GeneralExtensionRingFixedMod,
+                                                                   })
 
-QpIteratedExtensionFactory = GenericExtensionFactory("Qp_ext", { ("e", "capped-rel") : GeneralExtensionFieldCappedRelative,
-                                                                 ("u", "capped-rel") : GeneralExtensionFieldCappedRelative,
-                                                                 ("?", "capped-rel") : GeneralExtensionFieldCappedRelative,
-                                                               })
-ZpIteratedExtensionFactory = GenericExtensionFactory("Zp_ext", { ("e", "capped-rel") : GeneralExtensionRingCappedRelative,
-                                                                 ("e", "capped-abs") : GeneralExtensionRingCappedAbsolute,
-                                                                 ("e", "fixed-mod") : GeneralExtensionRingFixedMod,
-                                                                 ("u", "capped-rel") : GeneralExtensionRingCappedRelative,
-                                                                 ("u", "capped-abs") : GeneralExtensionRingCappedAbsolute,
-                                                                 ("u", "fixed-mod") : GeneralExtensionRingFixedMod,
-                                                                 ("?", "capped-rel") : GeneralExtensionRingCappedRelative,
-                                                                 ("?", "capped-abs") : GeneralExtensionRingCappedAbsolute,
-                                                                 ("?", "fixed-mod") : GeneralExtensionRingFixedMod,
+QpIteratedExtensionFactory = GenericExtensionFactory("QpIteratedExtensionFactory", { ("e", "capped-rel") : GeneralExtensionFieldCappedRelative,
+                                                                                     ("u", "capped-rel") : GeneralExtensionFieldCappedRelative,
+                                                                                     ("?", "capped-rel") : GeneralExtensionFieldCappedRelative,
+                                                                                   })
+ZpIteratedExtensionFactory = GenericExtensionFactory("ZpIteratedExtensionFactory", { ("e", "capped-rel") : GeneralExtensionRingCappedRelative,
+                                                                                     ("e", "capped-abs") : GeneralExtensionRingCappedAbsolute,
+                                                                                     ("e", "fixed-mod") : GeneralExtensionRingFixedMod,
+                                                                                     ("u", "capped-rel") : GeneralExtensionRingCappedRelative,
+                                                                                     ("u", "capped-abs") : GeneralExtensionRingCappedAbsolute,
+                                                                                     ("u", "fixed-mod") : GeneralExtensionRingFixedMod,
+                                                                                     ("?", "capped-rel") : GeneralExtensionRingCappedRelative,
+                                                                                     ("?", "capped-abs") : GeneralExtensionRingCappedAbsolute,
+                                                                                     ("?", "fixed-mod") : GeneralExtensionRingFixedMod,
+                                                                                   })
+
+QpTwoStepExtensionFactory = GenericExtensionFactory("QpTwoStepExtensionFactory", { ("e", "capped-rel") : TwoStepExtensionFieldCappedRelative,
                                                                })
 
-QpTwoStepExtensionFactory = GenericExtensionFactory("Qp_ext2", { ("e", "capped-rel") : TwoStepExtensionFieldCappedRelative,
-                                                               })
-
-ZpTwoStepExtensionFactory = GenericExtensionFactory("Zp_ext2", { ("e", "capped-rel") : TwoStepExtensionRingCappedRelative,
+ZpTwoStepExtensionFactory = GenericExtensionFactory("ZpTwoStepExtensionFactory", { ("e", "capped-rel") : TwoStepExtensionRingCappedRelative,
                                                                  ("e", "capped-abs") : TwoStepExtensionRingCappedAbsolute,
                                                                  ("e", "fixed-mod") : TwoStepExtensionRingFixedMod,
                                                                })
 
-def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True):
+def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet=None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True):
     """
     Create an extension of ``base``.
 
@@ -1688,7 +1696,7 @@ def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = No
 
         TODO
     """
-    args = base, premodulus, prec, print_mode, halt, names, res_name, unram_name, ram_name, print_pos, print_sep, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, check
+    args = base, premodulus, prec, print_mode, halt, names, var_name, res_name, unram_name, ram_name, print_pos, print_sep, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, print_alphabet, check
     if base is base.ground_ring_of_tower():
         if base.is_field():
             return QpExtensionFactory(*args)

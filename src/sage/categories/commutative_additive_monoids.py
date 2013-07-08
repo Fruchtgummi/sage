@@ -78,8 +78,9 @@ class CommutativeAdditiveMonoids(Category_singleton):
             for x in tester.some_elements():
                 tester.assert_(x + zero == x)
             # Check that zero is immutable by asking its hash:
-            tester.assertEqual(type(zero.__hash__()), int)
-            tester.assertEqual(zero.__hash__(), zero.__hash__())
+            if zero.__hash__ is not None:
+                tester.assertEqual(type(zero.__hash__()), int)
+                tester.assertEqual(zero.__hash__(), zero.__hash__())
             # Check that bool behave consistently on zero
             tester.assertFalse(bool(self.zero()))
 

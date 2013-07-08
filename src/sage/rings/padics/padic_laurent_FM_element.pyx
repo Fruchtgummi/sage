@@ -27,9 +27,10 @@ cdef class pAdicLaurentFMElement(pAdicLaurentElement):
     EXAMPLES::
 
         sage: K = ZpFM(3,10)
-        sage: Ru.<u> = K[]
-        sage: Ra.<a> = Ru[]
-        sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+        sage: R.<u> = K[]
+        sage: L.<u> = K.extension(u^2 + 3*u + 4)
+        sage: R.<a> = L[]
+        sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
         sage: a
         a + O(a^30)
         sage: u
@@ -59,9 +60,10 @@ cdef class pAdicLaurentFMElement(pAdicLaurentElement):
         EXAMPLES::
 
             sage: K = ZpFM(3,10)
-            sage: Ru.<u> = K[]
-            sage: Ra.<a> = Ru[]
-            sage: M.<u,a> = pAdicExtension(K, (u^2 + 3*u + 4,a^3 - 9*u*a^2 + 3*u))
+            sage: R.<u> = K[]
+            sage: L.<u> = K.extension(u^2 + 3*u + 4)
+            sage: R.<a> = L[]
+            sage: M = ZpTwoStepExtensionFactory(L, a^3 - 9*u*a^2 + 3*u, ram_name='a'); a = M.uniformizer(); u = M(u)
             sage: M(None)
             O(a^30)
             sage: M([M.residue_field().gen()])
