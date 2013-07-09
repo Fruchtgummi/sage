@@ -35,7 +35,7 @@ AUTHORS:
 #*****************************************************************************
 
 include "sage/ext/stdsage.pxi"
-include "sage/ext/python_int.pxi"
+include "sage/ext/python.pxi"
 include "padic_template_element.pxi"
 
 from sage.structure.element cimport Element
