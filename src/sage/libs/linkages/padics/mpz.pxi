@@ -34,7 +34,7 @@ import sage.rings.finite_rings.integer_mod
 cdef Integer holder = PY_NEW(Integer)
 cdef Integer holder2 = PY_NEW(Integer)
 
-cdef inline int cconstruct(mpz_t value, PowComputer_ prime_pow) except -1:
+cdef inline int cconstruct(mpz_t value, PowComputer_class prime_pow) except -1:
     """
     Construct a new element.
 
@@ -45,7 +45,7 @@ cdef inline int cconstruct(mpz_t value, PowComputer_ prime_pow) except -1:
     """
     mpz_init(value)
 
-cdef inline int cdestruct(mpz_t value, PowComputer_ prime_pow) except -1:
+cdef inline int cdestruct(mpz_t value, PowComputer_class prime_pow) except -1:
     """
     Deallocate an element.
 
@@ -56,7 +56,7 @@ cdef inline int cdestruct(mpz_t value, PowComputer_ prime_pow) except -1:
     """
     mpz_clear(value)
 
-cdef inline int ccmp(mpz_t a, mpz_t b, long prec, bint reduce_a, bint reduce_b, PowComputer_ prime_pow) except -2:
+cdef inline int ccmp(mpz_t a, mpz_t b, long prec, bint reduce_a, bint reduce_b, PowComputer_class prime_pow) except -2:
     """
     Comparison of two elements.
 
@@ -85,7 +85,7 @@ cdef inline int ccmp(mpz_t a, mpz_t b, long prec, bint reduce_a, bint reduce_b, 
     else:
         return mpz_cmp(a, b)
 
-cdef inline int cneg(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cneg(mpz_t out, mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Negation.
 
@@ -100,7 +100,7 @@ cdef inline int cneg(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) exce
     """
     mpz_neg(out, a)
 
-cdef inline int cadd(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cadd(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_class prime_pow) except -1:
     """
     Addition.
 
@@ -116,7 +116,7 @@ cdef inline int cadd(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_
     """
     mpz_add(out, a, b)
 
-cdef inline bint creduce(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline bint creduce(mpz_t out, mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Reduce modulo a power of the maximal ideal.
 
@@ -134,7 +134,7 @@ cdef inline bint creduce(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) 
     mpz_mod(out, a, prime_pow.pow_mpz_t_tmp(prec)[0])
     return mpz_sgn(out) == 0
 
-cdef inline bint creduce_small(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline bint creduce_small(mpz_t out, mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Reduce modulo a power of the maximal ideal.
 
@@ -160,7 +160,7 @@ cdef inline bint creduce_small(mpz_t out, mpz_t a, long prec, PowComputer_ prime
         mpz_set(out, a)
     return mpz_sgn(out) == 0
 
-cdef inline long cremove(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline long cremove(mpz_t out, mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Extract the maximum power of the uniformizer dividing this
     element.
@@ -182,7 +182,7 @@ cdef inline long cremove(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) 
         return prec
     return mpz_remove(out, a, prime_pow.prime.value)
 
-cdef inline long cvaluation(mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline long cvaluation(mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Returns the maximum power of the uniformizer dividing this
     element.
@@ -205,7 +205,7 @@ cdef inline long cvaluation(mpz_t a, long prec, PowComputer_ prime_pow) except -
         return prec
     return mpz_remove(holder.value, a, prime_pow.prime.value)
 
-cdef inline bint cisunit(mpz_t a, PowComputer_ prime_pow) except -1:
+cdef inline bint cisunit(mpz_t a, PowComputer_class prime_pow) except -1:
     """
     Returns whether this element has valuation zero.
 
@@ -220,7 +220,7 @@ cdef inline bint cisunit(mpz_t a, PowComputer_ prime_pow) except -1:
     """
     return mpz_divisible_p(a, prime_pow.prime.value) == 0
 
-cdef inline int cshift(mpz_t out, mpz_t a, long n, long prec, PowComputer_ prime_pow, bint reduce_afterward) except -1:
+cdef inline int cshift(mpz_t out, mpz_t a, long n, long prec, PowComputer_class prime_pow, bint reduce_afterward) except -1:
     """
     Mulitplies by a power of the uniformizer.
 
@@ -246,7 +246,7 @@ cdef inline int cshift(mpz_t out, mpz_t a, long n, long prec, PowComputer_ prime
     if reduce_afterward:
         creduce(out, out, prec, prime_pow)
 
-cdef inline int cshift_notrunc(mpz_t out, mpz_t a, long n, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cshift_notrunc(mpz_t out, mpz_t a, long n, long prec, PowComputer_class prime_pow) except -1:
     """
     Mulitplies by a power of the uniformizer, assuming that the
     valuation of a is at least -n.
@@ -271,7 +271,7 @@ cdef inline int cshift_notrunc(mpz_t out, mpz_t a, long n, long prec, PowCompute
     else:
         mpz_set(out, a)
 
-cdef inline int csub(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int csub(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_class prime_pow) except -1:
     """
     Subtraction.
 
@@ -287,7 +287,7 @@ cdef inline int csub(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_
     """
     mpz_sub(out, a, b)
 
-cdef inline int cinvert(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cinvert(mpz_t out, mpz_t a, long prec, PowComputer_class prime_pow) except -1:
     """
     Inversion.
 
@@ -305,7 +305,7 @@ cdef inline int cinvert(mpz_t out, mpz_t a, long prec, PowComputer_ prime_pow) e
     if not success:
         raise ZeroDivisionError
     
-cdef inline int cmul(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cmul(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_class prime_pow) except -1:
     """
     Multiplication.
 
@@ -321,7 +321,7 @@ cdef inline int cmul(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_
     """
     mpz_mul(out, a, b)
 
-cdef inline int cdivunit(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cdivunit(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_class prime_pow) except -1:
     """
     Division.
 
@@ -342,7 +342,7 @@ cdef inline int cdivunit(mpz_t out, mpz_t a, mpz_t b, long prec, PowComputer_ pr
         raise ZeroDivisionError
     mpz_mul(out, a, out)
 
-cdef inline int csetone(mpz_t out, PowComputer_ prime_pow) except -1:
+cdef inline int csetone(mpz_t out, PowComputer_class prime_pow) except -1:
     """
     Sets to 1.
 
@@ -353,7 +353,7 @@ cdef inline int csetone(mpz_t out, PowComputer_ prime_pow) except -1:
     """
     mpz_set_ui(out, 1)
     
-cdef inline int csetzero(mpz_t out, PowComputer_ prime_pow) except -1:
+cdef inline int csetzero(mpz_t out, PowComputer_class prime_pow) except -1:
     """
     Sets to 0.
 
@@ -364,7 +364,7 @@ cdef inline int csetzero(mpz_t out, PowComputer_ prime_pow) except -1:
     """
     mpz_set_ui(out, 0)
     
-cdef inline bint cisone(mpz_t out, PowComputer_ prime_pow) except -1:
+cdef inline bint cisone(mpz_t out, PowComputer_class prime_pow) except -1:
     """
     Returns whether this element is equal to 1.
 
@@ -379,7 +379,7 @@ cdef inline bint cisone(mpz_t out, PowComputer_ prime_pow) except -1:
     """
     return mpz_cmp_ui(out, 1) == 0
     
-cdef inline bint ciszero(mpz_t out, PowComputer_ prime_pow) except -1:
+cdef inline bint ciszero(mpz_t out, PowComputer_class prime_pow) except -1:
     """
     Returns whether this element is equal to 0.
 
@@ -394,7 +394,7 @@ cdef inline bint ciszero(mpz_t out, PowComputer_ prime_pow) except -1:
     """
     return mpz_cmp_ui(out, 0) == 0
     
-cdef inline int cpow(mpz_t out, mpz_t a, mpz_t n, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cpow(mpz_t out, mpz_t a, mpz_t n, long prec, PowComputer_class prime_pow) except -1:
     """
     Exponentiation.
 
@@ -408,7 +408,7 @@ cdef inline int cpow(mpz_t out, mpz_t a, mpz_t n, long prec, PowComputer_ prime_
     """
     mpz_powm(out, a, n, prime_pow.pow_mpz_t_tmp(prec)[0])
 
-cdef inline int ccopy(mpz_t out, mpz_t a, PowComputer_ prime_pow) except -1:
+cdef inline int ccopy(mpz_t out, mpz_t a, PowComputer_class prime_pow) except -1:
     """
     Copying.
 
@@ -420,7 +420,7 @@ cdef inline int ccopy(mpz_t out, mpz_t a, PowComputer_ prime_pow) except -1:
     """
     mpz_set(out, a)
 
-cdef inline cpickle(mpz_t a, PowComputer_ prime_pow):
+cdef inline cpickle(mpz_t a, PowComputer_class prime_pow):
     """
     Serialization into objects that Sage knows how to pickle.
 
@@ -437,7 +437,7 @@ cdef inline cpickle(mpz_t a, PowComputer_ prime_pow):
     mpz_set(pic.value, a)
     return pic
 
-cdef inline int cunpickle(mpz_t out, x, PowComputer_ prime_pow) except -1:
+cdef inline int cunpickle(mpz_t out, x, PowComputer_class prime_pow) except -1:
     """
     Reconstruction from the output of meth:`cpickle`.
 
@@ -449,7 +449,7 @@ cdef inline int cunpickle(mpz_t out, x, PowComputer_ prime_pow) except -1:
     """
     mpz_set(out, (<Integer?>x).value)
 
-cdef inline long chash(mpz_t a, long ordp, long prec, PowComputer_ prime_pow) except -1:
+cdef inline long chash(mpz_t a, long ordp, long prec, PowComputer_class prime_pow) except -1:
     """
     Hashing.
 
@@ -477,7 +477,7 @@ cdef inline long chash(mpz_t a, long ordp, long prec, PowComputer_ prime_pow) ex
             return -2
         return n
 
-cdef clist(mpz_t a, long prec, bint pos, PowComputer_ prime_pow):
+cdef clist(mpz_t a, long prec, bint pos, PowComputer_class prime_pow):
     """
     Returns a list of digits in the series expansion.
 
@@ -537,7 +537,7 @@ cdef clist(mpz_t a, long prec, bint pos, PowComputer_ prime_pow):
 # It could be [] for some other linkages.
 _list_zero = Integer(0)
 
-cdef int cteichmuller(mpz_t out, mpz_t value, long prec, PowComputer_ prime_pow) except -1:
+cdef int cteichmuller(mpz_t out, mpz_t value, long prec, PowComputer_class prime_pow) except -1:
     """
     Teichmuller lifting.
 
@@ -581,7 +581,7 @@ cdef int cteichmuller(mpz_t out, mpz_t value, long prec, PowComputer_ prime_pow)
         mpz_add(holder2.value, holder2.value, out)
         mpz_mod(holder2.value, holder2.value, prime_pow.pow_mpz_t_tmp(prec)[0])
 
-cdef int cconv(mpz_t out, x, long prec, long valshift, PowComputer_ prime_pow) except -2:
+cdef int cconv(mpz_t out, x, long prec, long valshift, PowComputer_class prime_pow) except -2:
     """
     Conversion from other Sage types.
 
@@ -601,7 +601,7 @@ cdef int cconv(mpz_t out, x, long prec, long valshift, PowComputer_ prime_pow) e
     """
     return cconv_shared(out, x, prec, valshift, prime_pow)
 
-cdef inline long cconv_mpq_t(mpz_t out, mpq_t x, long prec, bint absolute, PowComputer_ prime_pow) except? -10000:
+cdef inline long cconv_mpq_t(mpz_t out, mpq_t x, long prec, bint absolute, PowComputer_class prime_pow) except? -10000:
     """
     A fast pathway for conversion of rationals that doesn't require
     precomputation of the valuation.
@@ -624,7 +624,7 @@ cdef inline long cconv_mpq_t(mpz_t out, mpq_t x, long prec, bint absolute, PowCo
     """
     return cconv_mpq_t_shared(out, x, prec, absolute, prime_pow)
 
-cdef inline int cconv_mpq_t_out(mpq_t out, mpz_t x, long valshift, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cconv_mpq_t_out(mpq_t out, mpz_t x, long valshift, long prec, PowComputer_class prime_pow) except -1:
     """
     Converts the underlying `p`-adic element into a rational
 
@@ -637,7 +637,7 @@ cdef inline int cconv_mpq_t_out(mpq_t out, mpz_t x, long valshift, long prec, Po
     """
     return cconv_mpq_t_out_shared(out, x, valshift, prec, prime_pow)
 
-cdef inline long cconv_mpz_t(mpz_t out, mpz_t x, long prec, bint absolute, PowComputer_ prime_pow) except -2:
+cdef inline long cconv_mpz_t(mpz_t out, mpz_t x, long prec, bint absolute, PowComputer_class prime_pow) except -2:
     """
     A fast pathway for conversion of integers that doesn't require
     precomputation of the valuation.
@@ -660,7 +660,7 @@ cdef inline long cconv_mpz_t(mpz_t out, mpz_t x, long prec, bint absolute, PowCo
     """
     return cconv_mpz_t_shared(out, x, prec, absolute, prime_pow)
 
-cdef inline int cconv_mpz_t_out(mpz_t out, mpz_t x, long valshift, long prec, PowComputer_ prime_pow) except -1:
+cdef inline int cconv_mpz_t_out(mpz_t out, mpz_t x, long valshift, long prec, PowComputer_class prime_pow) except -1:
     """
     Converts the underlying `p`-adic element into an integer if
     possible.
