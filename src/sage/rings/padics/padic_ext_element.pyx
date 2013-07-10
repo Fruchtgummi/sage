@@ -20,6 +20,17 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+#*****************************************************************************
+#       Copyright (C) 2008 David Roe <roed.math@gmail.com>
+#                          William Stein <wstein@gmail.com>
+#
+#  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
+#
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
+
 from sage.rings.padics.pow_computer cimport PowComputer_class
 from sage.rings.integer import Integer
 from sage.libs.ntl.ntl_ZZ_p cimport ntl_ZZ_p
@@ -302,7 +313,7 @@ cdef class pAdicExtElement(pAdicGenericElement):
             - pos -- bint.  If True, all integers will be in the range [0,p-1],
               otherwise they will be in the range [(1-p)/2, p/2].
 
-        OUTPUT::
+        OUTPUT:
 
             - L -- A list of integers or list of lists giving the
               series expansion of self.
@@ -380,6 +391,23 @@ cdef class pAdicExtElement(pAdicGenericElement):
             ans += ppow * L[m]**exp
         return ans
 
+    cpdef bint _is_base_elt(self, p) except -1:
+        """
+        Return ``True`` if this element is an element of Zp or Qp (rather than
+        an extension).
+
+        INPUT:
+
+        - ``p`` -- a prime, which is compared with the parent of this element.
+
+        EXAMPLES::
+
+            sage: K.<a> = Qq(7^3,4)
+            sage: a._is_base_elt(5)
+            False
+
+        """
+        return False
     def residue(self, absprec=1):
         r"""
         Reduces ``self`` modulo `\pi^\mathrm{absprec}`.

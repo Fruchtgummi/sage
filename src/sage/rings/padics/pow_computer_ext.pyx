@@ -38,10 +38,12 @@ AUTHORS:
 """
 
 #*****************************************************************************
-#       Copyright (C) 2008 David Roe <roed@math.harvard.edu>
+#       Copyright (C) 2008 David Roe <roed.math@gmail.com>
 #                          William Stein <wstein@gmail.com>
 #
 #  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
 #
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
@@ -491,6 +493,8 @@ cdef class PowComputer_ext(PowComputer_class):
 
             sage: PC = PowComputer_ext_maker(5, 10, 10, 20, False, ntl.ZZ_pX([-5, 0, 1], 5^10), 'small', 'e',ntl.ZZ_pX([1],5^10)) #indirect doctest
         """
+        PowComputer_class.__init__(self, prime, cache_limit, prec_cap, ram_prec_cap, in_field, poly, shift_seed)
+
         self._initialized = 0
         sig_on()
         self.small_powers = <ZZ_c *>sage_malloc(sizeof(ZZ_c) * (cache_limit + 1))
@@ -517,6 +521,7 @@ cdef class PowComputer_ext(PowComputer_class):
         ZZ_power(self.top_power, self.top_power, prec_cap)
         sig_off()
         mpz_init(self.temp_m)
+        mpz_init(self.temp_m2)
         ZZ_construct(&self.temp_z)
 
         self._poly = poly
@@ -531,7 +536,7 @@ cdef class PowComputer_ext(PowComputer_class):
             sage: PC = PowComputer_ext_maker(5, 5, 10, 20, False, ntl.ZZ_pX([-5,0,1],5^10), 'FM', 'e',ntl.ZZ_pX([1],5^10))
             sage: del PC # indirect doctest
         """
-        if (<PowComputer_class>self)._initialized:
+        if (<PowComputer_ext>self)._initialized:
             self.cleanup_ext()
 
     def __repr__(self):
@@ -581,9 +586,10 @@ cdef class PowComputer_ext(PowComputer_class):
         sage_free(self.small_powers)
         ZZ_destruct(&self.top_power)
         mpz_clear(self.temp_m)
+        mpz_clear(self.temp_m2)
         ZZ_destruct(&self.temp_z)
 
-    cdef mpz_t* pow_mpz_t_tmp(self, long n):
+    cdef mpz_t* pow_mpz_t_tmp(self, unsigned long n):
         """
         Provides fast access to an mpz_t* pointing to self.prime^n.
 
@@ -784,6 +790,16 @@ cdef class PowComputer_ext(PowComputer_class):
 
 cdef class PowComputer_ZZ_pX(PowComputer_ext):
     def __cinit__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly, shift_seed = None):
+        """
+        Initialization.
+
+        For input types see :func:`PowComputer_ext_maker`
+
+        TESTS::
+
+            sage: PC = PowComputer_ext_maker(5, 5, 10, 20, False, ntl.ZZ_pX([-5,0,1],5^10), 'FM', 'e',ntl.ZZ_pX([1],5^10))
+            sage: TestSuite(PC).run()
+        """
         if not PY_TYPE_CHECK(poly, ntl_ZZ_pX):
             raise TypeError
         self.deg = ZZ_pX_deg((<ntl_ZZ_pX>poly).x)
@@ -1251,7 +1267,7 @@ cdef class PowComputer_ZZ_pX(PowComputer_ext):
             ZZ_pX_add(xnew_q, xnew_q, x[0])
             # while x != xnew:
             #     x = xnew
-            #     xnew = x + u*(x^p - x)
+            #     xnew = x + u*(x^q - x)
             while not ZZ_pX_equal(x[0], xnew_q):
                 x[0] = xnew_q
                 ZZ_pX_PowerMod_pre(xnew_q, x[0], q, self.get_modulus(absprec)[0])
@@ -1843,6 +1859,18 @@ cdef class PowComputer_ZZ_pX_small_Eis(PowComputer_ZZ_pX_small):
     These are only stored at maximal precision: in order to get lower precision versions just reduce mod p^n.
     """
     def __cinit__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly, shift_seed = None):
+        """
+        Initialization.
+
+        For input types see :func:`PowComputer_ext_maker`
+
+        TESTS::
+
+            sage: A = PowComputer_ext_maker(5, 10, 10, 40, False, ntl.ZZ_pX([-5,75,15,0,1],5^10), 'small', 'e',ntl.ZZ_pX([1,-15,-3],5^10))
+            sage: type(A)
+            <type 'sage.rings.padics.pow_computer_ext.PowComputer_ZZ_pX_small_Eis'>
+            sage: TestSuite(A).run()
+        """
         self._ext_type = 'e'
         if not PY_TYPE_CHECK(shift_seed, ntl_ZZ_pX):
             raise TypeError, "shift_seed must be an ntl_ZZ_pX"
@@ -2272,6 +2300,18 @@ cdef class PowComputer_ZZ_pX_big_Eis(PowComputer_ZZ_pX_big):
     These are only stored at maximal precision: in order to get lower precision versions just reduce mod p^n.
     """
     def __cinit__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly, shift_seed = None):
+        """
+        Initialization.
+
+        For input types see :func:`PowComputer_ext_maker`
+
+        TESTS::
+
+            sage: A = PowComputer_ext_maker(5, 3, 10, 40, False, ntl.ZZ_pX([-5,75,15,0,1],5^10), 'big', 'e',ntl.ZZ_pX([1,-15,-3],5^10))
+            sage: type(A)
+            <type 'sage.rings.padics.pow_computer_ext.PowComputer_ZZ_pX_big_Eis'>
+            sage: TestSuite(A).run()
+        """
         self._ext_type = 'e'
         if not PY_TYPE_CHECK(shift_seed, ntl_ZZ_pX):
             raise TypeError, "shift_seed must be an ntl_ZZ_pX"

@@ -22,15 +22,15 @@ AUTHORS:
 """
 
 #*****************************************************************************
-#       Copyright (C) 2007 David Roe <roed@math.harvard.edu>
-#                          William Stein <wstein@gmail.com>
+#       Copyright (C) 2007-2013 David Roe <roed.math@gmail.com>
+#                               William Stein <wstein@gmail.com>
 #
 #  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
 #
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
-
-
 
 import weakref
 from sage.rings.infinity import infinity
@@ -44,7 +44,7 @@ cdef long maxpreccap = (1L << (sizeof(long) * 8 - 2)) - 1
 cdef class PowComputer_class(SageObject):
     def __cinit__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly=None, shift_seed=None):
         """
-        Creates a new PowComputer_class.
+        Memory allocation.
 
         EXAMPLES::
 
@@ -52,16 +52,16 @@ cdef class PowComputer_class(SageObject):
             sage: PC.pow_Integer_Integer(2)
             9
         """
-        self.prime = prime
-        self.in_field = in_field
-        self.cache_limit = cache_limit
-        self.prec_cap = prec_cap
+        sig_on()
+        mpz_init(self.temp_m)
+        sig_off()
+        self.__allocated = 1
 
     def __init__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly=None, shift_seed=None):
         """
         Initializes self.
 
-        INPUT::
+        INPUT:
 
             * prime -- the prime that is the base of the exponentials
               stored in this pow_computer.
@@ -86,7 +86,11 @@ cdef class PowComputer_class(SageObject):
             sage: PC.pow_Integer_Integer(2)
             9
         """
-        self._initialized = 1
+        self.prime = prime
+        self.in_field = in_field
+        self.cache_limit = cache_limit
+        self.prec_cap = prec_cap
+        self.ram_prec_cap = ram_prec_cap
 
     def __cmp__(self, other):
         """
@@ -181,7 +185,7 @@ cdef class PowComputer_class(SageObject):
                 raise ValueError, "result too big"
             return self.pow_Integer(mpz_get_ui(_n.value))
 
-    cdef mpz_t* pow_mpz_t_tmp(self, long n):
+    cdef mpz_t* pow_mpz_t_tmp(self, unsigned long n):
         """
         Provides fast access to an mpz_t* pointing to self.prime^n.
 
@@ -293,7 +297,7 @@ cdef class PowComputer_class(SageObject):
         mpz_set(ans.value, self.pow_mpz_t_top()[0])
         return ans
 
-    def __repr__(self):
+    def _repr_(self):
         """
         Returns a string representation of self.
 
@@ -412,35 +416,68 @@ cdef class PowComputer_class(SageObject):
 cdef class PowComputer_base(PowComputer_class):
     def __cinit__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly=None, shift_seed=None):
         """
-        Initializes a PowComputer_base.
+        Allocates a PowComputer_base.
 
         EXAMPLES::
 
             sage: PC = PowComputer(5, 7, 10)
             sage: PC(3)
             125
+
         """
-        (<PowComputer_class>self)._initialized = 0
+        cdef Py_ssize_t i
+
         sig_on()
         self.small_powers = <mpz_t *>sage_malloc(sizeof(mpz_t) * (cache_limit + 1))
-        sig_off()
         if self.small_powers == NULL:
             raise MemoryError, "out of memory allocating power storing"
-        mpz_init(self.top_power)
-        mpz_init(self.temp_m)
+        try:
+            mpz_init(self.top_power)
+            try:
+                for i from 0 <= i <= cache_limit:
+                    try:
+                        mpz_init(self.small_powers[i])
+                    except:
+                        while i:
+                            i-=1
+                            mpz_clear(self.small_powers[i])
+                        raise
+            except:
+                mpz_clear(self.top_power)
+                raise
+        except:
+            sage_free(self.small_powers)
+            raise
+        sig_off()
+
+        self.__allocated = 2
+
+    def __init__(self, Integer prime, long cache_limit, long prec_cap, long ram_prec_cap, bint in_field, poly=None, shift_seed=None):
+        """
+        Initialization.
+
+        TESTS::
+
+            sage: PC = PowComputer(5, 7, 10)
+            sage: PC(3)
+            125
+
+        """
+        PowComputer_class.__init__(self, prime, cache_limit, prec_cap, ram_prec_cap, in_field, poly, shift_seed)
 
         cdef Py_ssize_t i
         cdef Integer x
 
-        mpz_init_set_ui(self.small_powers[0], 1)
+        mpz_set_ui(self.small_powers[0], 1)
         if cache_limit > 0:
-            mpz_init_set(self.small_powers[1], prime.value)
-
+            mpz_set(self.small_powers[1], prime.value)
         for i from 2 <= i <= cache_limit:
-            mpz_init(self.small_powers[i])
             mpz_mul(self.small_powers[i], self.small_powers[i - 1], prime.value)
         mpz_pow_ui(self.top_power, prime.value, prec_cap)
-        (<PowComputer_class>self)._initialized = 1
+        self.deg = 1
+        self.e = 1
+        self.f = 1
+        self.ram_prec_cap = prec_cap
 
     def __dealloc__(self):
         """
@@ -454,13 +491,13 @@ cdef class PowComputer_base(PowComputer_class):
             PowComputer for 5
         """
         cdef Py_ssize_t i
-        if (<PowComputer_class>self)._initialized:
+
+        if self.__allocated >= 2:
             for i from 0 <= i <= self.cache_limit:
                 mpz_clear(self.small_powers[i])
-            sage_free(self.small_powers)
             mpz_clear(self.top_power)
             mpz_clear(self.temp_m)
-
+            sage_free(self.small_powers)
 
     def __reduce__(self):
         """
@@ -487,7 +524,7 @@ cdef class PowComputer_base(PowComputer_class):
         """
         return &self.top_power
 
-    cdef mpz_t* pow_mpz_t_tmp(self, long n):
+    cdef mpz_t* pow_mpz_t_tmp(self, unsigned long n):
         """
         Computes self.prime^n.
 
@@ -505,7 +542,7 @@ cdef class PowComputer_base(PowComputer_class):
         return &(self.temp_m)
 
 pow_comp_cache = {}
-cdef PowComputer_base PowComputer_c(Integer m, Integer cache_limit, Integer prec_cap, in_field):
+cdef PowComputer_base PowComputer_c(Integer m, Integer cache_limit, Integer prec_cap, in_field, prec_type=None):
     """
     Returns a PowComputer.
 
@@ -522,18 +559,26 @@ cdef PowComputer_base PowComputer_c(Integer m, Integer cache_limit, Integer prec
     if mpz_cmp_si((<Integer>prec_cap).value, maxpreccap) >= 0:
         raise ValueError, "cannot create p-adic parents with precision cap larger than (1 << (sizeof(long)*8 - 2))"
 
-    key = (m, cache_limit, prec_cap, in_field)
+    key = (m, cache_limit, prec_cap, in_field, prec_type)
     if pow_comp_cache.has_key(key):
         PC = pow_comp_cache[key]()
         if PC is not None:
             return PC
-    PC = PowComputer_base(m, mpz_get_ui(cache_limit.value), mpz_get_ui(prec_cap.value), mpz_get_ui(prec_cap.value), in_field)
+    if prec_type == 'capped-rel':
+        from padic_capped_relative_element import PowComputer_ as PC_class
+    elif prec_type == 'capped-abs':
+        from padic_capped_absolute_element import PowComputer_ as PC_class
+    elif prec_type == 'fixed-mod':
+        from padic_fixed_mod_element import PowComputer_ as PC_class
+    else:
+        PC_class = PowComputer_base
+    PC = PC_class(m, mpz_get_ui(cache_limit.value), mpz_get_ui(prec_cap.value), mpz_get_ui(prec_cap.value), in_field)
     pow_comp_cache[key] = weakref.ref(PC)
     return PC
 
 # To speed up the creation of PowComputers with the same m, we might eventually want to copy over data from an existing PowComputer.
 
-def PowComputer(m, cache_limit, prec_cap, in_field = False):
+def PowComputer(m, cache_limit, prec_cap, in_field = False, prec_type=None):
     r"""
     Returns a PowComputer that caches the values $1, m, m^2, \ldots, m^{C}$,
     where $C$ is ``cache_limit``.
@@ -543,7 +588,7 @@ def PowComputer(m, cache_limit, prec_cap, in_field = False):
     You can input any integer, even if it's outside of the precomputed
     range.
 
-    INPUT::
+    INPUT:
 
         * m -- An integer, the base that you want to exponentiate.
         * cache_limit -- A positive integer that you want to cache powers up to.
@@ -566,5 +611,4 @@ def PowComputer(m, cache_limit, prec_cap, in_field = False):
         cache_limit = Integer(cache_limit)
     if not PY_TYPE_CHECK(prec_cap, Integer):
         prec_cap = Integer(prec_cap)
-    return PowComputer_c(m, cache_limit, prec_cap, in_field)
-
+    return PowComputer_c(m, cache_limit, prec_cap, in_field, prec_type)

@@ -1598,16 +1598,12 @@ ext_modules = [
         ##
         ################################
 
+    Extension('sage.rings.padics.common_conversion',
+              sources = ['sage/rings/padics/common_conversion.pyx'],
+              libraries=['gmp']),
+
     Extension('sage.rings.padics.local_generic_element',
               sources = ['sage/rings/padics/local_generic_element.pyx']),
-
-    Extension('sage.rings.padics.padic_base_coercion',
-              sources = ['sage/rings/padics/padic_base_coercion.pyx'],
-              libraries=['gmp']),
-
-    Extension('sage.rings.padics.padic_base_generic_element',
-              sources = ['sage/rings/padics/padic_base_generic_element.pyx'],
-              libraries=['gmp']),
 
     Extension('sage.rings.padics.padic_capped_absolute_element',
               sources = ['sage/rings/padics/padic_capped_absolute_element.pyx'],
@@ -1684,6 +1680,31 @@ ext_modules = [
               sources = ['sage/rings/padics/pow_computer_ext.pyx'],
               libraries = ["csage", "ntl", "gmp", "gmpxx", "m", "stdc++"],
               language='c++'),
+
+    Extension('sage.rings.padics.pow_computer_flint',
+              sources = ['sage/rings/padics/pow_computer_flint.pyx'],
+              libraries = ["csage", "flint", "gmpxx", "gmp", "ntl"],
+              language='c++',
+              include_dirs = [SAGE_INC + 'flint/'],
+              depends = flint_depends),
+
+    Extension('sage.rings.padics.qadic_flint_CR',
+              sources = ['sage/rings/padics/qadic_flint_CR.pyx'],
+              include_dirs = [SAGE_INC + 'flint/'],
+              depends = flint_depends,
+              libraries = ["csage", "flint"]),
+
+    Extension('sage.rings.padics.qadic_flint_CA',
+              sources = ['sage/rings/padics/qadic_flint_CA.pyx'],
+              include_dirs = [SAGE_INC + 'flint/'],
+              depends = flint_depends,
+              libraries = ["csage", "flint"]),
+
+    Extension('sage.rings.padics.qadic_flint_FM',
+              sources = ['sage/rings/padics/qadic_flint_FM.pyx'],
+              include_dirs = [SAGE_INC + 'flint/'],
+              depends = flint_depends,
+              libraries = ["csage", "flint"]),
 
         ################################
         ##

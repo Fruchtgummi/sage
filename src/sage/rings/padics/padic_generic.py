@@ -11,25 +11,30 @@ AUTHORS:
 
 - David Harvey: doctests
 
-- Julian Rueth (2012-09-05): added (x)gcd for polynomials
+- Julian Rueth (2013-03-16): test methods for basic arithmetic
 
 """
 
 #*****************************************************************************
-#       Copyright (C) 2007 David Roe <roed@math.harvard.edu>
-#                     2007 William Stein <wstein@gmail.com>
-#                     2012 Julian Rueth <julian.rueth@fsfe.org>
+#       Copyright (C) 2007-2013 David Roe <roed.math@gmail.com>
+#                               William Stein <wstein@gmail.com>
+#                          2012 Julian Rueth <julian.rueth@fsfe.org>
 #
 #  Distributed under the terms of the GNU General Public License (GPL)
+#  as published by the Free Software Foundation; either version 2 of
+#  the License, or (at your option) any later version.
 #
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from sage.categories.principal_ideal_domains import PrincipalIdealDomains
+from sage.categories.fields import Fields
 from sage.rings.infinity import infinity
 from local_generic import LocalGeneric
 from sage.rings.ring import PrincipalIdealDomain
 from sage.rings.integer import Integer
 from sage.rings.padics.padic_printing import pAdicPrinter
+from sage.rings.padics.precision_error import PrecisionError
 from sage.misc.cachefunc import cached_method
 from sage.categories.principal_ideal_domains import PrincipalIdealDomains
 from precision_error import PrecisionError
@@ -53,6 +58,20 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         LocalGeneric.__init__(self, base, prec, names, element_class, category=category)
         self._printer = pAdicPrinter(self, print_mode)
+
+    def some_elements(self):
+        r"""
+        Returns a list of elements in this ring.
+
+        This is typically used for running generic tests (see :class:`TestSuite`).
+
+        EXAMPLES::
+
+            sage: Zp(2).some_elements()
+            [0, 1 + O(2^20), 2 + O(2^21)]
+
+        """
+        return [self.zero(), self.one(), self(self.prime())]
 
     def _modified_print_mode(self, print_mode):
         """
@@ -1187,11 +1206,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         r"""
         Returns the current print mode as a string.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic field
 
-        OUTPUT::
+        OUTPUT:
 
             string -- self's print mode
 
@@ -1210,11 +1229,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         r"""
         Returns the characteristic of self, which is always 0.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic parent
 
-        OUTPUT::
+        OUTPUT:
 
             integer -- self's characteristic, i.e., 0
 
@@ -1229,11 +1248,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         Returns the prime, ie the characteristic of the residue field.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic parent
 
-        OUTPUT::
+        OUTPUT:
 
             integer -- the characteristic of the residue field
 
@@ -1277,11 +1296,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         Returns the prime, i.e., the characteristic of the residue field.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic ring
 
-        OUTPUT::
+        OUTPUT:
 
             integer -- the characteristic of the residue field
 
@@ -1297,11 +1316,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         Returns the residue class field.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic ring
 
-        OUTPUT::
+        OUTPUT:
 
             the residue field
 
@@ -1319,11 +1338,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         Returns the residue class field.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic ring
 
-        OUTPUT::
+        OUTPUT:
 
             the residue field
 
@@ -1340,11 +1359,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         Returns a list of elements representing all the residue classes.
 
-        INPUT::
+        INPUT:
 
             self -- a p-adic ring
 
-        OUTPUT::
+        OUTPUT:
 
             list of elements -- a list of elements representing all the residue classes
 
@@ -1360,12 +1379,12 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         r"""
         Returns the teichmuller representative of x.
 
-        INPUT::
+        INPUT:
 
             - self -- a p-adic ring
             - x -- something that can be cast into self
 
-        OUTPUT::
+        OUTPUT:
 
             - element -- the teichmuller lift of x
 
@@ -1408,7 +1427,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         else:
             prec = min(Integer(prec), self.precision_cap())
         ans = self(x, prec)
-        ans._teichmuller_set()
+        ans._teichmuller_set_unsafe()
         return ans
 
     def teichmuller_system(self):
@@ -1456,7 +1475,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
 #         """
 #         raise NotImplementedError
 
-    def extension(self, modulus, prec = None, names = None, print_mode = None, halt = None, res_name = None, check = True, **kwds):
+    def extension(self, modulus, prec = None, names = None, print_mode = None, halt = None, res_name = None, check = True, implementation="FLINT", **kwds):
         """
         Create an extension of this p-adic ring.
 
@@ -1495,7 +1514,7 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
                         print_mode[option] = kwds[option]
                     else:
                         print_mode[option] = self._printer.dict()[option]
-        return ExtensionFactory(base=self, premodulus=modulus, prec=prec, halt=halt, names=names, check = check, res_name = res_name, **print_mode)
+        return ExtensionFactory(base=self, premodulus=modulus, prec=prec, halt=halt, names=names, check = check, res_name = res_name, implementation=implementation, **print_mode)
 
     @cached_method
     def _log_unit_part_p(self):
@@ -1621,6 +1640,25 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             for g,e in F:
                 ret = ret.splitting_field(g, simplify)
             return ret
+
+    def _test_elements_eq_transitive(self, **options):
+        """
+        The operator ``==`` is not transitive for `p`-adic numbers. We disable
+        the check of the category framework by overriding this method.
+
+        EXAMPLES:
+
+            sage: R = Zp(3)
+            sage: R(3) == R(0,1)
+            True
+            sage: R(0,1) == R(6)
+            True
+            sage: R(3) == R(6)
+            False
+            sage: R._test_elements_eq_transitive()
+
+        """
+        pass
 
 def local_print_mode(obj, print_options, pos = None, ram_name = None):
     r"""
