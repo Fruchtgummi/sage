@@ -778,7 +778,7 @@ class AbstractFactory(UniqueFactory):
         type, kwargs = self._decode_key(key)
 
         if type not in self._constructors:
-            raise ValueError("unsupported precision type `%s`"%(type))
+            raise ValueError("unsupported precision type `%s`"%(type,))
 
         return self._constructors[type](**kwargs)
 
@@ -844,7 +844,7 @@ class BaseFactory(AbstractFactory):
         9 + 6*15 + 4*15^2 + O(15^20)
 
     """
-    def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None, halt = None, names = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet = None, print_max_ram_terms = None, check = True):
+    def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None, halt = None, names = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet = None, print_max_ram_terms = None, check = True, implementation = None):
         r"""
         Create a key which can be used to cache the `p`-adic ring specified by
         the parameters.
@@ -895,7 +895,7 @@ class BaseFactory(AbstractFactory):
         if p == 2:
             print_pos = None
 
-        return p, prec, type, print_mode, names[0], print_pos, print_sep, print_alphabet, print_max_ram_terms
+        return p, prec, type, print_mode, names[0], print_pos, print_sep, print_alphabet, print_max_ram_terms, implementation
 
     def _normalize_version(self, version, key):
         r"""
@@ -946,9 +946,9 @@ class BaseFactory(AbstractFactory):
             ('capped-rel', {'p': 2, 'print_mode': {'sep': None, 'alphabet': None, 'pos': None, 'mode': 'terse', 'ram_name': '2', 'max_ram_terms': None}, 'names': '2', 'prec': 10})
 
         """
-        p, prec, type, print_mode, names, print_pos, print_sep, print_alphabet, print_max_ram_terms = key
+        p, prec, type, print_mode, names, print_pos, print_sep, print_alphabet, print_max_ram_terms, implementation = key
         print_mode = { "mode":print_mode, "pos":print_pos, "sep":print_sep, "alphabet":print_alphabet, "ram_name":names, "max_ram_terms":print_max_ram_terms }
-        return type, {"p":p, "prec":prec, "print_mode":print_mode, "names":names}
+        return type, {"p":p, "prec":prec, "print_mode":print_mode, "names":names, "implementation":implementation}
 
 import padic_base_leaves
 Qp = BaseFactory("Qp", { "capped-rel":padic_base_leaves.pAdicFieldCappedRelative })
@@ -968,7 +968,7 @@ def create_base_factory_with_type(base_factory, type):
         3-adic Ring with capped absolute precision 20
 
     """
-    def create_ring(p, prec=None, print_mode=None, halt=None, names=None, print_pos=None, print_sep=None, print_alphabet=None, print_max_ram_terms=None, check=True):
+    def create_ring(p, prec=None, print_mode=None, halt=None, names=None, print_pos=None, print_sep=None, print_alphabet=None, print_max_ram_terms=None, check=True, implementation=None):
         """
         Shortcut function to create a %s ring.
 
@@ -987,7 +987,7 @@ def create_base_factory_with_type(base_factory, type):
             3-adic Ring of fixed modulus 3^10
 
         """%type
-        return base_factory(p=p, prec=prec, print_mode=print_mode, halt=halt, names=names, print_pos=print_pos, print_sep=print_sep, print_alphabet=print_alphabet, print_max_ram_terms=print_max_ram_terms, check=check, type=type)
+        return base_factory(p=p, prec=prec, print_mode=print_mode, halt=halt, names=names, print_pos=print_pos, print_sep=print_sep, print_alphabet=print_alphabet, print_max_ram_terms=print_max_ram_terms, check=check, type=type, implementation=implementation)
     return create_ring
 
 QpCR = create_base_factory_with_type(Qp, "capped-rel")
@@ -1013,7 +1013,7 @@ def create_unramified_factory(base_factory):
         Unramified Extension in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20)) of 3-adic Ring with capped relative precision 20
 
     """
-    def create_unramified_ring(q, prec=None, type="capped-rel", modulus=None, names=None, print_mode=None, halt=None, ram_name=None, res_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True):
+    def create_unramified_ring(q, prec=None, type="capped-rel", modulus=None, names=None, print_mode=None, halt=None, ram_name=None, res_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True, implementation=None):
         """
         Given a prime power `q = p^n`, return the unique unramified extension ring
         of degree `n`.
@@ -1096,7 +1096,7 @@ def create_unramified_factory(base_factory):
             halt = 40
         halt = ZZ(halt)
 
-        base = base_factory(p=p, prec=prec, type=type, print_mode=print_mode, halt=halt, names=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, check=False)
+        base = base_factory(p=p, prec=prec, type=type, print_mode=print_mode, halt=halt, names=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, check=False, implementation=implementation)
 
         if F[0][1] == 1:
             return base
@@ -1114,7 +1114,7 @@ def create_unramified_factory(base_factory):
             from sage.rings.all import PolynomialRing
             modulus = PolynomialRing(base, 'x')([base(c,prec) for c in (GF(q, res_name).modulus().change_ring(ZZ)).list()])
 
-        return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=False) # no need to check irreducibility of the modulus
+        return ExtensionFactory(base=base, premodulus=modulus, prec=prec, print_mode=print_mode, halt=halt, names=names, res_name=res_name, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=False, implementation=implementation) # no need to check irreducibility of the modulus
 
     return create_unramified_ring
 
@@ -1133,7 +1133,7 @@ def create_unramified_factory_with_type(base_factory, type):
         3-adic Ring with capped absolute precision 20
 
     """
-    def create_ring(q, prec=None, modulus=None, names=None, print_mode=None, halt=None, ram_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True):
+    def create_ring(q, prec=None, modulus=None, names=None, print_mode=None, halt=None, ram_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True, implementation=None):
         """
         Shortcut function to create an unramified %s ring.
 
@@ -1152,7 +1152,7 @@ def create_unramified_factory_with_type(base_factory, type):
             Unramified Extension in u defined by (1 + O(3^10))*x^2 + (2 + O(3^10))*x + (2 + O(3^10)) of 3-adic Ring of fixed modulus 3^10
 
         """%type
-        return base_factory(q=q, prec=prec, modulus=modulus, names=names, print_mode=print_mode, halt=halt, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=check, type=type)
+        return base_factory(q=q, prec=prec, modulus=modulus, names=names, print_mode=print_mode, halt=halt, ram_name=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, print_max_unram_terms=print_max_unram_terms, print_max_terse_terms=print_max_terse_terms, check=check, type=type, implementation=implementation)
     return create_ring
 
 ZqCR = create_unramified_factory_with_type(Zq, "capped-rel")
@@ -1441,7 +1441,7 @@ class GenericExtensionFactory(AbstractFactory):
         assert modulus.is_monic()
         return modulus
 
-    def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, print_alphabet=None, check=True):
+    def create_key_and_extra_args(self, base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, print_alphabet=None, check=True, implementation=None):
         r"""
         Create a key which can be used to cache the `p`-adic ring specified by
         the parameters.
@@ -1537,7 +1537,7 @@ class GenericExtensionFactory(AbstractFactory):
         if ext == "e":
             prec *= modulus.degree()
 
-        return (ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms), {"check":check}
+        return (ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, implementation), {"check":check}
 
     def get_object(self, version, key, extra_args):
         check = True
@@ -1574,7 +1574,7 @@ class GenericExtensionFactory(AbstractFactory):
             (('u', 'capped-rel'), {'halt': 40, 'prec': 20, 'print_mode': {'sep': None, 'alphabet': None, 'pos': True, 'max_unram_terms': -1, 'max_terse_terms': None, 'mode': 'series', 'max_ram_terms': -1}, 'poly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'prepoly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'names': ('u', 'u0')})
 
         """
-        ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms = key
+        ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, implementation = key
 
         precision_type = None
         if base.is_capped_relative():
@@ -1586,7 +1586,7 @@ class GenericExtensionFactory(AbstractFactory):
         assert precision_type
 
         print_mode = { "mode":print_mode, "pos":print_pos, "sep":print_sep, "alphabet":print_alphabet, "max_ram_terms":print_max_ram_terms, "max_unram_terms":print_max_unram_terms, "max_terse_terms":print_max_terse_terms }
-        return (ext, precision_type), {"prepoly":premodulus, "poly":modulus, "names":names, "prec":prec, "halt":halt, "print_mode":print_mode}
+        return (ext, precision_type), {"prepoly":premodulus, "poly":modulus, "names":names, "prec":prec, "halt":halt, "print_mode":print_mode, "implementation":implementation}
 
 from padic_extension_leaves import EisensteinExtensionFieldCappedRelative, UnramifiedExtensionFieldCappedRelative, GeneralExtensionFieldCappedRelative, EisensteinExtensionRingCappedRelative, EisensteinExtensionRingCappedAbsolute, EisensteinExtensionRingFixedMod, UnramifiedExtensionRingCappedRelative, UnramifiedExtensionRingCappedAbsolute, UnramifiedExtensionRingFixedMod, GeneralExtensionRingCappedRelative, GeneralExtensionRingCappedAbsolute, GeneralExtensionRingFixedMod, TwoStepExtensionFieldCappedRelative, TwoStepExtensionRingCappedRelative, TwoStepExtensionRingCappedAbsolute, TwoStepExtensionRingFixedMod
 
@@ -1628,7 +1628,7 @@ ZpTwoStepExtensionFactory = GenericExtensionFactory("ZpTwoStepExtensionFactory",
                                                                  ("e", "fixed-mod") : TwoStepExtensionRingFixedMod,
                                                                })
 
-def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet=None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True):
+def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = None, names = None, var_name = None, res_name = None, unram_name = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet=None, print_max_ram_terms = None, print_max_unram_terms = None, print_max_terse_terms = None, check = True, implementation = None):
     """
     Create an extension of ``base``.
 
@@ -1696,7 +1696,7 @@ def ExtensionFactory(base, premodulus, prec = None, print_mode = None, halt = No
 
         TODO
     """
-    args = base, premodulus, prec, print_mode, halt, names, var_name, res_name, unram_name, ram_name, print_pos, print_sep, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, print_alphabet, check
+    args = base, premodulus, prec, print_mode, halt, names, var_name, res_name, unram_name, ram_name, print_pos, print_sep, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, print_alphabet, check, implementation
     if base is base.ground_ring_of_tower():
         if base.is_field():
             return QpExtensionFactory(*args)

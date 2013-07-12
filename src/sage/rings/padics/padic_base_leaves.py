@@ -205,7 +205,7 @@ class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGener
     An implementation of the `p`-adic integers with capped relative
     precision.
     """
-    def __init__(self, p, prec, print_mode, names):
+    def __init__(self, p, prec, print_mode, names, implementation):
         """
         Initialization.
 
@@ -215,6 +215,7 @@ class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGener
         - ``prec`` -- precision cap
         - ``print_mode`` -- dictionary with print options.
         - ``names`` -- how to print the prime.
+        - ``implementation`` -- not used
 
         EXAMPLES::
 
@@ -324,7 +325,7 @@ class pAdicRingCappedAbsolute(pAdicRingBaseGeneric, pAdicCappedAbsoluteRingGener
     r"""
     An implementation of the `p`-adic integers with capped absolute precision.
     """
-    def __init__(self, p, prec, print_mode, names):
+    def __init__(self, p, prec, print_mode, names, implementation):
         """
         Initialization.
 
@@ -334,6 +335,7 @@ class pAdicRingCappedAbsolute(pAdicRingBaseGeneric, pAdicCappedAbsoluteRingGener
         - ``prec`` -- precision cap
         - ``print_mode`` -- dictionary with print options.
         - ``names`` -- how to print the prime.
+        - ``implementation`` -- not used
 
         EXAMPLES::
 
@@ -415,7 +417,7 @@ class pAdicRingFixedMod(pAdicRingBaseGeneric, pAdicFixedModRingGeneric):
     r"""
     An implementation of the `p`-adic integers using fixed modulus.
     """
-    def __init__(self, p, prec, print_mode, names):
+    def __init__(self, p, prec, print_mode, names, implementation):
         """
         Initialization
 
@@ -425,6 +427,7 @@ class pAdicRingFixedMod(pAdicRingBaseGeneric, pAdicFixedModRingGeneric):
         - ``prec`` -- precision cap
         - ``print_mode`` -- dictionary with print options.
         - ``names`` -- how to print the prime.
+        - ``implementation`` -- not used
 
         EXAMPLES::
 
@@ -531,7 +534,7 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
 
     """
 
-    def __init__(self, p, prec, print_mode, names):
+    def __init__(self, p, prec, print_mode, names, implementation):
         """
         Initialization.
 
@@ -541,6 +544,7 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
         - ``prec`` -- precision cap
         - ``print_mode`` -- dictionary with print options.
         - ``names`` -- how to print the prime.
+        - ``implementation`` -- not used
 
         EXAMPLES::
 
