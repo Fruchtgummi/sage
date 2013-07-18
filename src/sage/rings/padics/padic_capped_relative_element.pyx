@@ -293,7 +293,7 @@ cdef class pAdicCappedRelativeElement(CRElement):
             # Need to do this better.
             mpz_mul(selfvalue.value, self.prime_pow.pow_mpz_t_tmp(self.ordp)[0], self.unit)
             mpz_set(modulus.value, self.prime_pow.pow_mpz_t_tmp(aprec)[0])
-            return Mod(selfvalue, modulus)
+        return Mod(selfvalue, modulus)
 
 def unpickle_pcre_v1(R, unit, ordp, relprec):
     """

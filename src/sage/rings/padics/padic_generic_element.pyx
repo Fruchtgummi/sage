@@ -57,10 +57,15 @@ cdef class pAdicGenericElement(LocalGenericElement):
         else:
             ret = self._vector_impl()
             from sage.misc.flatten import flatten
-            return flatten([c.vector() for c in ret])
+            return flatten([c.vector(base) for c in ret])
+
+    def polynomial(self):
+        from sage.rings.all import PolynomialRing
+        base = self.parent().base_ring()
+        return PolynomialRing(base,names=(self.parent().variable_name(),))(self.vector(base))
 
     def _vector_impl(self):
-        raise NotImplementedError
+        raise NotImplementedError("not implemented for `%s` which is a `%s` in `%s`"%(self,type(self),self.parent()))
 
     def __richcmp__(left, right, int op):
         """
@@ -189,6 +194,11 @@ cdef class pAdicGenericElement(LocalGenericElement):
 
     cdef bint _set_prec_both(self, long absprec, long relprec) except -1:
         return 0
+
+    def residue(self, n = 1):
+        if n != 1:
+            raise NotImplementedError
+        return self.parent().residue_field()(self[0])
 
     #def _pari_(self):
     #    """

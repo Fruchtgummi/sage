@@ -54,6 +54,11 @@ def frobenius_unram(self, arithmetic=True):
         ans += ppow * L[m]**exp
     return ans
 
+def residue_unram(self, absprec=1):
+    if absprec != 1:
+        raise NotImplementedError
+    return self.parent().residue_field(self[0])
+
 def norm_unram(self, base = None):
     """
     Return the absolute or relative norm of this element.

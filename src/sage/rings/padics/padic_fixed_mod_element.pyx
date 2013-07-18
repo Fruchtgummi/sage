@@ -486,45 +486,6 @@ cdef class pAdicFixedModElement(FMElement):
     #        # an extension field
     #        raise ValueError, "element is not a square"
 
-    cpdef pAdicFixedModElement unit_part(pAdicFixedModElement self):
-        r"""
-        Returns the unit part of self.
-
-        If the valuation of self is positive, then the high digits of the
-        result will be zero.
-
-        INPUT::
-
-            - self -- a p-adic element
-
-        OUTPUT::
-
-            - p-adic element -- the unit part of self
-
-        EXAMPLES::
-
-            sage: R = Zp(17, 4, 'fixed-mod')
-            sage: R(5).unit_part()
-            5 + O(17^4)
-            sage: R(18*17).unit_part()
-            1 + 17 + O(17^4)
-            sage: R(0).unit_part()
-            O(17^4)
-            sage: type(R(5).unit_part())
-            <type 'sage.rings.padics.padic_fixed_mod_element.pAdicFixedModElement'>
-            sage: R = ZpFM(5, 5); a = R(75); a.unit_part()
-            3 + O(5^5)
-        """
-        cdef pAdicFixedModElement ans
-        if mpz_sgn(self.value) == 0:
-            return self
-        elif mpz_divisible_p(self.value, self.prime_pow.prime.value):
-            ans = self._new_c()
-            mpz_remove(ans.value, self.value, self.prime_pow.prime.value)
-            return ans
-        else:
-            return self
-
     def valuation(self, prime=None):
         """
         Returns the valuation of self.

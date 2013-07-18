@@ -1013,7 +1013,7 @@ def create_unramified_factory(base_factory):
         Unramified Extension in u defined by (1 + O(3^20))*x^2 + (2 + O(3^20))*x + (2 + O(3^20)) of 3-adic Ring with capped relative precision 20
 
     """
-    def create_unramified_ring(q, prec=None, type="capped-rel", modulus=None, names=None, print_mode=None, halt=None, ram_name=None, res_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True, implementation=None):
+    def create_unramified_ring(q, prec=None, type="capped-rel", modulus=None, names=None, print_mode=None, halt=None, ram_name=None, res_name=None, print_pos=None, print_sep=None, print_max_ram_terms=None, print_max_unram_terms=None, print_max_terse_terms=None, check=True, implementation=None, base_implementation=None):
         """
         Given a prime power `q = p^n`, return the unique unramified extension ring
         of degree `n`.
@@ -1096,7 +1096,7 @@ def create_unramified_factory(base_factory):
             halt = 40
         halt = ZZ(halt)
 
-        base = base_factory(p=p, prec=prec, type=type, print_mode=print_mode, halt=halt, names=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, check=False, implementation=implementation)
+        base = base_factory(p=p, prec=prec, type=type, print_mode=print_mode, halt=halt, names=ram_name, print_pos=print_pos, print_sep=print_sep, print_max_ram_terms=print_max_ram_terms, check=False, implementation=base_implementation)
 
         if F[0][1] == 1:
             return base
@@ -1536,6 +1536,15 @@ class GenericExtensionFactory(AbstractFactory):
             modulus = modulus.parent()([c.add_bigoh(prec + (1 if i != modulus.degree() else 0)) for i,c in enumerate(modulus.list())])
         if ext == "e":
             prec *= modulus.degree()
+
+        # set a default implementation
+        if implementation is None:
+            if ext == "u" and base.ground_ring_of_tower() is base:
+                implementation = "FLINT"
+            elif ext == "e" and base.ground_ring_of_tower() is base:
+                implementation = "NTL"
+            else:
+                implementation = None
 
         return (ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, None, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, implementation), {"check":check}
 

@@ -138,6 +138,7 @@ class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCap
         self._shift_seed = None
         self._pre_poly = prepoly
         self._implementation = implementation
+
         if implementation == 'NTL':
             ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**prec)
             if prec <= 30:
@@ -145,13 +146,17 @@ class UnramifiedExtensionRingCappedRelative(UnramifiedExtensionGeneric, pAdicCap
             else:
                 self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), 30, prec, prec, False, ntl_poly, "big", "u")
             element_class = pAdicZZpXCRElement
-        else:
+        elif implementation == "FLINT":
             Zpoly = _make_integral_poly(prepoly, poly.base_ring().prime(), prec)
             cache_limit = min(prec, 30)
             self.prime_pow = PowComputer_flint_maker(poly.base_ring().prime(), cache_limit, prec, prec, False, Zpoly, prec_type='capped-rel')
             element_class = qAdicCappedRelativeElement
+        else:
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
-        if implementation != 'NTL':
+
+        if implementation == 'FLINT':
             from qadic_flint_CR import pAdicCoercion_ZZ_CR, pAdicConvert_QQ_CR
             self.register_coercion(pAdicCoercion_ZZ_CR(self))
             self.register_conversion(pAdicConvert_QQ_CR(self))
@@ -197,6 +202,7 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
         self._shift_seed = None
         self._pre_poly = prepoly
         self._implementation = implementation
+
         if implementation == 'NTL':
             ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**prec)
             if prec <= 30:
@@ -204,11 +210,14 @@ class UnramifiedExtensionFieldCappedRelative(UnramifiedExtensionGeneric, pAdicCa
             else:
                 self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), 30, prec, prec, True, ntl_poly, "big", "u")
             element_class = pAdicZZpXCRElement
-        else:
+        elif implementation == "FLINT":
             Zpoly = _make_integral_poly(prepoly, poly.base_ring().prime(), prec)
             cache_limit = min(prec, 30)
             self.prime_pow = PowComputer_flint_maker(poly.base_ring().prime(), cache_limit, prec, prec, True, Zpoly, prec_type='capped-rel')
             element_class = qAdicCappedRelativeElement
+        else:
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
         if implementation != 'NTL':
             from qadic_flint_CR import pAdicCoercion_ZZ_CR, pAdicCoercion_QQ_CR
@@ -255,7 +264,9 @@ class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCap
         # Currently doesn't support polynomials with non-integral coefficients
         self._shift_seed = None
         self._pre_poly = prepoly
+
         self._implementation = implementation
+
         if implementation == 'NTL':
             ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**prec)
             if prec <= 30:
@@ -263,11 +274,14 @@ class UnramifiedExtensionRingCappedAbsolute(UnramifiedExtensionGeneric, pAdicCap
             else:
                 self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), 30, prec, prec, True, ntl_poly, "big", "u")
             element_class = pAdicZZpXCAElement
-        else:
+        elif implementation == "FLINT":
             Zpoly = _make_integral_poly(prepoly, poly.base_ring().prime(), prec)
             cache_limit = min(prec, 30)
             self.prime_pow = PowComputer_flint_maker(poly.base_ring().prime(), cache_limit, prec, prec, False, Zpoly, prec_type='capped-abs')
             element_class = qAdicCappedAbsoluteElement
+        else:
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
         if implementation != 'NTL':
             from qadic_flint_CA import pAdicCoercion_ZZ_CA, pAdicConvert_QQ_CA
@@ -313,16 +327,19 @@ class UnramifiedExtensionRingFixedMod(UnramifiedExtensionGeneric, pAdicFixedModR
         """
         self._shift_seed = None
         self._pre_poly = prepoly
-        self._implementation = implementation
+
         if implementation == 'NTL':
             ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**prec)
             self.prime_pow = PowComputer_ext_maker(poly.base_ring().prime(), max(min(prec - 1, 30), 1), prec, prec, False, ntl_poly, "FM", "u")
             element_class = pAdicZZpXFMElement
-        else:
+        elif implementation == "FLINT":
             Zpoly = _make_integral_poly(prepoly, poly.base_ring().prime(), prec)
             cache_limit = 0 # prevents caching
             self.prime_pow = PowComputer_flint_maker(poly.base_ring().prime(), cache_limit, prec, prec, False, Zpoly, prec_type='fixed-mod')
             element_class = qAdicFixedModElement
+        else:
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         UnramifiedExtensionGeneric.__init__(self, poly, prec, print_mode, names, element_class)
         if implementation != 'NTL':
             from qadic_flint_FM import pAdicCoercion_ZZ_FM, pAdicConvert_QQ_FM
@@ -373,6 +390,9 @@ class EisensteinExtensionRingCappedRelative(EisensteinExtensionGeneric, pAdicCap
             sage: W.precision_cap()
             9
         """
+        if implementation != "NTL":
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
         shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
@@ -430,6 +450,9 @@ class EisensteinExtensionFieldCappedRelative(EisensteinExtensionGeneric, pAdicCa
             sage: W.precision_cap()
             9
         """
+        if implementation != "NTL":
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         # Currently doesn't support polynomials with non-integral coefficients
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
@@ -452,7 +475,7 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
         sage: W.<w> = R.ext(f); W == loads(dumps(W))
         True
     """
-    def __init__(self, prepoly, poly, prec, halt, print_mode, shift_seed, names, implementation):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation="NTL"):
         """
         A capped absolute representation of an eisenstein extension of Zp.
 
@@ -478,7 +501,7 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
 
             sage: R = ZpCA(3, 10000, print_pos=False); S.<x> = ZZ[]; f = x^3 + 9*x - 3
             sage: W.<w> = R.ext(f); W #indirect doctest
-            Eisenstein Extension of 3-adic Ring with capped absolute precision 10000 in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + O(3^10000))
+            Eisenstein Extension in w defined by (1 + O(3^10000))*x^3 + (3^2 + O(3^10000))*x + (-3 + O(3^10000)) of 3-adic Ring with capped absolute precision 10000
             sage: W.precision_cap()
             30000
 
@@ -488,6 +511,9 @@ class EisensteinExtensionRingCappedAbsolute(EisensteinExtensionGeneric, pAdicCap
             sage: W.precision_cap() # known bug
             6
         """
+        if implementation != "NTL":
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
         shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
@@ -545,6 +571,9 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
             sage: W.precision_cap()
             9
         """
+        if implementation != "NTL":
+            raise ValueError("unknown implementation `%s`"%implementation)
+
         unram_prec = (prec + poly.degree() - 1) // poly.degree()
         ntl_poly = ntl_ZZ_pX([a.lift() for a in poly.list()], poly.base_ring().prime()**unram_prec)
         shift_seed = self._compute_shift_seed(prepoly, poly.base_ring())
@@ -557,37 +586,53 @@ class EisensteinExtensionRingFixedMod(EisensteinExtensionGeneric, pAdicFixedModR
         EisensteinExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicZZpXFMElement)
 
 class TwoStepExtensionRingCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionFieldCappedRelative(TwoStepExtensionGeneric, pAdicCappedRelativeFieldGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCRElement)
 
 class TwoStepExtensionRingCappedAbsolute(TwoStepExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentCAElement)
 
 class TwoStepExtensionRingFixedMod(TwoStepExtensionGeneric, pAdicFixedModRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         TwoStepExtensionGeneric.__init__(self, poly, prec, print_mode, names, pAdicLaurentFMElement)
 
 class GeneralExtensionFieldCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeFieldGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         self.prime_pow = None # general extensions do not use the pow_computer yet
         GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCRElement)
 
 class GeneralExtensionRingCappedRelative(GeneralExtensionGeneric, pAdicCappedRelativeRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         self.prime_pow = None # general extensions do not use the pow_computer yet
         GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCRElement)
 
 class GeneralExtensionRingCappedAbsolute(GeneralExtensionGeneric, pAdicCappedAbsoluteRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         self.prime_pow = None # general extensions do not use the pow_computer yet
         GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralCAElement)
 
 class GeneralExtensionRingFixedMod(GeneralExtensionGeneric, pAdicFixedModRingGeneric):
-    def __init__(self, prepoly, poly, prec, halt, print_mode, names):
+    def __init__(self, prepoly, poly, prec, halt, print_mode, names, implementation):
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         self.prime_pow = None # general extensions do not use the pow_computer yet
         GeneralExtensionGeneric.__init__(self, prepoly, poly, prec, print_mode, names, pAdicGeneralFMElement)

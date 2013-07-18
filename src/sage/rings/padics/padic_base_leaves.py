@@ -215,7 +215,7 @@ class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGener
         - ``prec`` -- precision cap
         - ``print_mode`` -- dictionary with print options.
         - ``names`` -- how to print the prime.
-        - ``implementation`` -- not used
+        - ``implementation`` -- not used, must be ``None``
 
         EXAMPLES::
 
@@ -240,6 +240,8 @@ class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGener
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^4)], max_runs = 2^6) # long time
 
         """
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, pAdicCappedRelativeElement)
 
     def _coerce_map_from_(self, R):
@@ -360,6 +362,8 @@ class pAdicRingCappedAbsolute(pAdicRingBaseGeneric, pAdicCappedAbsoluteRingGener
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^4)], max_runs = 2^6) # long time
 
         """
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, pAdicCappedAbsoluteElement)
 
     def _repr_(self, do_latex = False):
@@ -452,6 +456,8 @@ class pAdicRingFixedMod(pAdicRingBaseGeneric, pAdicFixedModRingGeneric):
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^4)], max_runs = 2^6) # long time
 
         """
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, pAdicFixedModElement)
 
     def _coerce_map_from_(self, R):
@@ -559,7 +565,7 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^10)], max_runs = 2^12) # long time
 
             sage: R = Qp(3, 1)
-            sage: TestSuite(R).run(elements = [R.random_element() for i in range(3^6)])
+            sage: TestSuite(R).run(elements
 
             sage: R = Qp(3, 2)
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(3^9)])
@@ -568,6 +574,8 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
             sage: TestSuite(R).run()
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^4)], max_runs = 2^6) # long time
         """
+        if implementation is not None:
+            raise ValueError("implementation must be None")
         pAdicFieldBaseGeneric.__init__(self, p, prec, print_mode, names, pAdicCappedRelativeElement)
 
     def _coerce_map_from_(self, R):

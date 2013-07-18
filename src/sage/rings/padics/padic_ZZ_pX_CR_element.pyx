@@ -1284,7 +1284,7 @@ cdef class pAdicZZpXCRElement(pAdicZZpXElement):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(125,implementation="NTL"); b = 5*a + 4; c = 10*a^2 + 6; d = b + c
+            sage: R.<a> = ZqCR(125, implementation="NTL"); b = 5*a + 4; c = 10*a^2 + 6; d = b + c
             sage: d._is_normalized()
             False
             sage: d.valuation()
@@ -2521,7 +2521,7 @@ cdef class pAdicZZpXCRElement(pAdicZZpXElement):
 
             sage: R = Zp(3,5)
             sage: S.<u> = R[]
-            sage: L.<u> = R.extension(u^4+u-1)
+            sage: L.<u> = R.extension(u^4+u-1, implementation="NTL")
             sage: all([Integer(L(i)._ntl_rep_abs()[0][0]) == i for i in range(1,3^5)])
             True
             sage: all([Integer(L(i*u)._ntl_rep_abs()[0][1]) == i for i in range(1,3^5)])
@@ -3091,12 +3091,6 @@ cdef class pAdicZZpXCRElement(pAdicZZpXElement):
         cdef Integer ans = PY_NEW(Integer)
         mpz_set_ui(ans.value, self.relprec)
         return ans
-
-#    def residue(self, n = 1):
-#        """
-#        Reduces this element modulo pi^n.
-#        """
-#        raise NotImplementedError
 
     cdef long valuation_c(self):
         """

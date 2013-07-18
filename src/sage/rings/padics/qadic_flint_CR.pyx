@@ -89,3 +89,8 @@ cdef class qAdicCappedRelativeElement(CRElement):
             return self._flint_rep(var), Integer(self.ordp)
         cshift(self.prime_pow.poly_flint_rep, self.unit, self.ordp, self.ordp + self.relprec, self.prime_pow, False)
         return self.prime_pow._new_fmpz_poly(self.prime_pow.poly_flint_rep, var), Integer(0)
+
+    def _vector_impl(self):
+        ret = map(self.parent().base_ring(), self._flint_rep_abs()[0].list())
+        ret.extend([self.parent().base_ring().zero()]*(self.parent().degree() - len(ret)))
+        return ret

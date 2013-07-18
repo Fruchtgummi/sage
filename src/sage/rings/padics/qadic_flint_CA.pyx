@@ -13,6 +13,7 @@ cdef class qAdicCappedAbsoluteElement(CAElement):
     frobenius = MethodType(frobenius_unram, None, qAdicCappedAbsoluteElement)
     trace = MethodType(trace_unram, None, qAdicCappedAbsoluteElement)
     norm = MethodType(norm_unram, None, qAdicCappedAbsoluteElement)
+    residue = MethodType(residue_unram, None, qAdicCappedAbsoluteElement)
 
     def matrix_mod_pn(self):
         """

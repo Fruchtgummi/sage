@@ -109,6 +109,8 @@ cdef class pAdicTemplateElement(pAdicGenericElement):
                 raise NotImplementedError("conversion between padic extensions not implemented")
         elif sage.rings.finite_rings.element_base.is_FiniteFieldElement(x) and x.parent() is self.parent().residue_field():
             x = x.polynomial().list()
+            if absprec > 1:
+                absprec = 1
         elif not (PY_TYPE_CHECK(x, Integer) or \
                   PY_TYPE_CHECK(x, Rational) or \
                   PY_TYPE_CHECK(x, pari_gen) or \

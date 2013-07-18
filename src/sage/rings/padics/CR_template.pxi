@@ -1988,12 +1988,12 @@ cdef class pAdicCoercion_CR_frac_field(RingHomomorphism_coercion):
 
     EXAMPLES::
 
-        sage: R.<a> = ZqCR(27, implementation='FLINT')
+        sage: R.<a> = ZqCR(27)
         sage: K = R.fraction_field()
         sage: K.coerce_map_from(R)
         Ring Coercion morphism:
-          From: Unramified Extension of 3-adic Ring with capped relative precision 20 in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
-          To:   Unramified Extension of 3-adic Field with capped relative precision 20 in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
+          From: Unramified Extension in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20)) of 3-adic Ring with capped relative precision 20
+          To:   Unramified Extension in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20)) of 3-adic Field with capped relative precision 20
     """
     def __init__(self, R, K):
         """
@@ -2001,7 +2001,7 @@ cdef class pAdicCoercion_CR_frac_field(RingHomomorphism_coercion):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = K.coerce_map_from(R); type(f)
             <type 'sage.rings.padics.qadic_flint_CR.pAdicCoercion_CR_frac_field'>
@@ -2016,7 +2016,7 @@ cdef class pAdicCoercion_CR_frac_field(RingHomomorphism_coercion):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = K.coerce_map_from(R)
             sage: f(a)
@@ -2041,7 +2041,7 @@ cdef class pAdicCoercion_CR_frac_field(RingHomomorphism_coercion):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = K.coerce_map_from(R)
             sage: f(a, 3)
@@ -2091,7 +2091,7 @@ cdef class pAdicCoercion_CR_frac_field(RingHomomorphism_coercion):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = K.coerce_map_from(R)
             sage: f(K.gen())
@@ -2105,12 +2105,12 @@ cdef class pAdicConvert_CR_frac_field(Morphism):
 
     EXAMPLES::
 
-        sage: R.<a> = ZqCR(27, implementation='FLINT')
+        sage: R.<a> = ZqCR(27)
         sage: K = R.fraction_field()
         sage: f = R.convert_map_from(K); f
         Generic morphism:
-          From: Unramified Extension of 3-adic Field with capped relative precision 20 in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
-          To:   Unramified Extension of 3-adic Ring with capped relative precision 20 in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20))
+          From: Unramified Extension in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20)) of 3-adic Field with capped relative precision 20
+          To:   Unramified Extension in a defined by (1 + O(3^20))*x^3 + (O(3^20))*x^2 + (2 + O(3^20))*x + (1 + O(3^20)) of 3-adic Ring with capped relative precision 20
     """
     def __init__(self, K, R):
         """
@@ -2118,7 +2118,7 @@ cdef class pAdicConvert_CR_frac_field(Morphism):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = R.convert_map_from(K); type(f)
             <type 'sage.rings.padics.qadic_flint_CR.pAdicConvert_CR_frac_field'>
@@ -2132,7 +2132,7 @@ cdef class pAdicConvert_CR_frac_field(Morphism):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = R.convert_map_from(K)
             sage: f(K.gen())
@@ -2156,7 +2156,7 @@ cdef class pAdicConvert_CR_frac_field(Morphism):
 
         EXAMPLES::
 
-            sage: R.<a> = ZqCR(27, implementation='FLINT')
+            sage: R.<a> = ZqCR(27)
             sage: K = R.fraction_field()
             sage: f = R.convert_map_from(K); a = K(a)
             sage: f(a, 3)

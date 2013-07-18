@@ -1075,7 +1075,7 @@ cdef class pAdicPrinter_class(SageObject):
                 val = elt.valuation_c()
                 # since elt was not supposed to be zero, this should give a non-empty list.
                 if len(L) == 0:
-                    raise RuntimeError, "repr_spec called on zero"
+                    raise RuntimeError, "repr_spec called on zero `%s`"%elt
                 if isinstance(L[0], list): # unramified part to the extension
                     if unram_name is None:
                         raise RuntimeError, "need to have specified a name for the unramified variable"

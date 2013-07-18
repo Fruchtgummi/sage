@@ -339,7 +339,7 @@ cdef class pAdicCappedAbsoluteElement(CAElement):
             sage: a.residue(-1)
             Traceback (most recent call last):
             ...
-            ValueError: Cannot reduce modulo a negative power of p.
+            ValueError: cannot reduce modulo a negative power of p
             sage: a.residue(5)
             Traceback (most recent call last):
             ...
@@ -354,89 +354,6 @@ cdef class pAdicCappedAbsoluteElement(CAElement):
         selfvalue = PY_NEW(Integer)
         mpz_set(selfvalue.value, self.value)
         return Mod(selfvalue, self.parent().prime_pow(absprec))
-
-
-    #def square_root(self):
-    #    r"""
-    #    Returns the square root of this p-adic number
-
-    #    INPUT:
-    #        self -- a p-adic element
-    #    OUTPUT:
-    #        p-adic element -- the square root of this p-adic number
-    #    EXAMPLES:
-    #        sage: R = Zp(3,20,'capped-abs')
-    #        sage: R(0).square_root()
-    #            O(3^10)
-    #        sage: R(1).square_root()
-    #            1 + O(3^20)
-    #        sage: R(4).square_root() == R(-2)
-    #            True
-    #        sage: R(9).square_root()
-    #            3 + O(3^19)
-    #        sage: R2 = Zp(2,20,'capped-abs')
-    #        sage: R2(0).square_root()
-    #            O(2^10)
-    #        sage: R2(1).square_root()
-    #            1 + O(2^19)
-    #        sage: R2(4).square_root()
-    #            2 + O(2^18)
-    #        sage: R2(9).square_root() == R2(3) or R2(9).square_root() == R2(-3)
-    #            True
-    #        sage: R2(17).square_root()
-    #            1 + 2^3 + 2^5 + 2^6 + 2^7 + 2^9 + 2^10 + 2^13 + 2^16 + 2^17 + O(2^19)
-    #        sage: R3 = Zp(5,20,'capped-abs')
-    #        sage: R3(0).square_root()
-    #            O(5^10)
-    #        sage: R3(1).square_root()
-    #            1 + O(5^20)
-    #        sage: R3(-1).square_root() == R3.teichmuller(2) or R3(-1).square_root() == R3.teichmuller(3)
-    #            True
-    #    """
-    #    #todo: make more efficient
-    #    try:
-    #        # use pari
-    #        return self.parent()(pari(self).sqrt())
-    #    except PariError:
-    #        raise ValueError, "element is not a square" # should eventually change to return an element of an extension field
-
-    cpdef pAdicCappedAbsoluteElement unit_part(self):
-        r"""
-        Returns the unit part of ``self``.
-
-        INPUT:
-
-        - ``self`` -- a `p`-adic element
-
-        OUTPUT:
-
-        - `p`-adic element -- the unit part of ``self``
-
-        EXAMPLES::
-
-            sage: R = Zp(17,4,'capped-abs', 'val-unit')
-            sage: a = R(18*17)
-            sage: a.unit_part()
-            18 + O(17^3)
-            sage: type(a)
-            <type 'sage.rings.padics.padic_capped_absolute_element.pAdicCappedAbsoluteElement'>
-        """
-        cdef pAdicCappedAbsoluteElement ans
-        cdef unsigned long v
-        if mpz_sgn(self.value) == 0:
-            ans = self._new_c()
-            mpz_set_ui(ans.value, 0)
-            ans._set_prec_abs(0)
-            return ans
-        elif mpz_divisible_p(self.value, self.prime_pow.prime.value):
-            ans = self._new_c()
-            sig_on()
-            v = mpz_remove(ans.value, self.value, self.prime_pow.prime.value)
-            sig_off()
-            ans._set_prec_abs(self.absprec - v)
-            return ans
-        else:
-            return self
 
     def valuation(self, prime=None):
         """
@@ -495,41 +412,41 @@ cdef class pAdicCappedAbsoluteElement(CAElement):
         mpz_clear(tmp)
         return ans
 
-    cpdef val_unit(self):
-        """
-        Returns a 2-tuple, the first element set to the valuation of
-        ``self``, and the second to the unit part of ``self``.
+   # cpdef val_unit(self):
+   #     """
+   #     Returns a 2-tuple, the first element set to the valuation of
+   #     ``self``, and the second to the unit part of ``self``.
 
-        If ``self = 0``, then the unit part is ``O(p^0)``.
+   #     If ``self = 0``, then the unit part is ``O(p^0)``.
 
-        EXAMPLES::
+   #     EXAMPLES::
 
-            sage: R = ZpCA(5)
-            sage: a = R(75, 6); b = a - a
-            sage: a.val_unit()
-            (2, 3 + O(5^4))
-            sage: b.val_unit()
-            (6, O(5^0))
-        """
-        cdef pAdicCappedAbsoluteElement unit
-        cdef Integer val
-        cdef unsigned long v
-        val = PY_NEW(Integer)
-        if mpz_sgn(self.value) == 0:
-            unit = self._new_c()
-            mpz_set_ui(unit.value, 0)
-            unit._set_prec_abs(0)
-            mpz_set_ui(val.value, self.absprec)
-            return (val, unit)
-        elif mpz_divisible_p(self.value, self.prime_pow.prime.value):
-            unit = self._new_c()
-            v = mpz_remove(unit.value, self.value, self.prime_pow.prime.value)
-            unit._set_prec_abs(self.absprec - v)
-            mpz_set_ui(val.value, v)
-            return (val, unit)
-        else:
-            mpz_set_ui(val.value, 0)
-            return (val, self)
+   #         sage: R = ZpCA(5)
+   #         sage: a = R(75, 6); b = a - a
+   #         sage: a.val_unit()
+   #         (2, 3 + O(5^4))
+   #         sage: b.val_unit()
+   #         (6, O(5^0))
+   #     """
+   #     cdef pAdicCappedAbsoluteElement unit
+   #     cdef Integer val
+   #     cdef unsigned long v
+   #     val = PY_NEW(Integer)
+   #     if mpz_sgn(self.value) == 0:
+   #         unit = self._new_c()
+   #         mpz_set_ui(unit.value, 0)
+   #         unit._set_prec_abs(0)
+   #         mpz_set_ui(val.value, self.absprec)
+   #         return (val, unit)
+   #     elif mpz_divisible_p(self.value, self.prime_pow.prime.value):
+   #         unit = self._new_c()
+   #         v = mpz_remove(unit.value, self.value, self.prime_pow.prime.value)
+   #         unit._set_prec_abs(self.absprec - v)
+   #         mpz_set_ui(val.value, v)
+   #         return (val, unit)
+   #     else:
+   #         mpz_set_ui(val.value, 0)
+   #         return (val, self)
 
 def make_pAdicCappedAbsoluteElement(parent, x, absprec):
     """
