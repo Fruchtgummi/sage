@@ -212,7 +212,7 @@ cdef class CAElement(pAdicTemplateElement):
         cdef CAElement ans = self._new_c()
         ans.absprec = min(self.absprec, right.absprec)
         cadd(ans.value, self.value, right.value, ans.absprec, ans.prime_pow)
-        creduce_small(ans.value, ans.value, ans.absprec, ans.prime_pow)
+        creduce(ans.value, ans.value, ans.absprec, ans.prime_pow)
         return ans
 
     cpdef ModuleElement _sub_(self, ModuleElement _right):
@@ -231,7 +231,7 @@ cdef class CAElement(pAdicTemplateElement):
         cdef CAElement ans = self._new_c()
         ans.absprec = min(self.absprec, right.absprec)
         csub(ans.value, self.value, right.value, ans.absprec, ans.prime_pow)
-        creduce_small(ans.value, ans.value, ans.absprec, ans.prime_pow)
+        creduce(ans.value, ans.value, ans.absprec, ans.prime_pow)
         return ans
 
     def __invert__(self):

@@ -759,7 +759,7 @@ class AbstractFactory(UniqueFactory):
         EXAMPLES::
 
             sage: Qp._normalize_version((3,1), (2, 10, "capped-rel", "terse", None))
-            (2, 10, 'capped-rel', 'terse', '2', None, None, None, None)
+            (2, 10, 'capped-rel', 'terse', '2', None, None, None, None, None)
 
         """
         return key
@@ -857,9 +857,9 @@ class BaseFactory(AbstractFactory):
         TESTS::
 
             sage: Qp.create_key(5)
-            (5, 20, 'capped-rel', 'series', '5', True, None, None, -1)
+            (5, 20, 'capped-rel', 'series', '5', True, None, None, -1, None)
             sage: Zp.create_key(5)
-            (5, 20, 'capped-rel', 'series', '5', True, None, None, -1)
+            (5, 20, 'capped-rel', 'series', '5', True, None, None, -1, None)
 
         """
         # normalize parameters and fill in default values
@@ -910,7 +910,7 @@ class BaseFactory(AbstractFactory):
         EXAMPLES::
 
             sage: Qp._normalize_version((3,1), (2, 10, "capped-rel", "terse", None))
-            (2, 10, 'capped-rel', 'terse', '2', None, None, None, None)
+            (2, 10, 'capped-rel', 'terse', '2', None, None, None, None, None)
 
         """
         version = (version[0], version[1] if len(version)>1 else 0, version[2] if len(version)>2 else 0)
@@ -942,8 +942,8 @@ class BaseFactory(AbstractFactory):
 
         EXAMPLES:
 
-            sage: Qp._decode_key((2, 10, 'capped-rel', 'terse', '2', None, None, None, None))
-            ('capped-rel', {'p': 2, 'print_mode': {'sep': None, 'alphabet': None, 'pos': None, 'mode': 'terse', 'ram_name': '2', 'max_ram_terms': None}, 'names': '2', 'prec': 10})
+            sage: Qp._decode_key((2, 10, 'capped-rel', 'terse', '2', None, None, None, None, None))
+            ('capped-rel', {'implementation': None, 'p': 2, 'print_mode': {'sep': None, 'alphabet': None, 'pos': None, 'mode': 'terse', 'ram_name': '2', 'max_ram_terms': None}, 'names': '2', 'prec': 10})
 
         """
         p, prec, type, print_mode, names, print_pos, print_sep, print_alphabet, print_max_ram_terms, implementation = key
@@ -1457,7 +1457,7 @@ class GenericExtensionFactory(AbstractFactory):
             sage: K = Qp(2)
             sage: R.<x> = K[]
             sage: QpExtensionFactory.create_key_and_extra_args(base=K, premodulus=x^2+x+1, unram_name="u")
-            (('u', 2-adic Field with capped relative precision 20, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, None), {'check': True})
+            (('u', 2-adic Field with capped relative precision 20, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, None, 'FLINT'), {'check': True})
 
         """
         # a univariate polynomial over base, the actual modulus to use for the extension
@@ -1579,8 +1579,8 @@ class GenericExtensionFactory(AbstractFactory):
             sage: K = Qp(2)
             sage: R.<x> = K[]
             sage: from sage.rings.padics.factory import QpExtensionFactory
-            sage: QpExtensionFactory._decode_key(('u', K, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, None))
-            (('u', 'capped-rel'), {'halt': 40, 'prec': 20, 'print_mode': {'sep': None, 'alphabet': None, 'pos': True, 'max_unram_terms': -1, 'max_terse_terms': None, 'mode': 'series', 'max_ram_terms': -1}, 'poly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'prepoly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'names': ('u', 'u0')})
+            sage: QpExtensionFactory._decode_key(('u', K, (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), ('u', 'u0'), 20, 40, 'series', True, None, None, -1, -1, -1, None))
+            (('u', 'capped-rel'), {'halt': 40, 'implementation': None, 'prec': 20, 'print_mode': {'sep': None, 'alphabet': None, 'pos': True, 'max_unram_terms': -1, 'max_terse_terms': -1, 'mode': 'series', 'max_ram_terms': -1}, 'poly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'prepoly': (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)), 'names': ('u', 'u0')})
 
         """
         ext, base, premodulus, modulus, names, prec, halt, print_mode, print_pos, print_sep, print_alphabet, print_max_ram_terms, print_max_unram_terms, print_max_terse_terms, implementation = key

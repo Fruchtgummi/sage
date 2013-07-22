@@ -565,7 +565,7 @@ class pAdicFieldCappedRelative(pAdicFieldBaseGeneric, pAdicCappedRelativeFieldGe
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(2^10)], max_runs = 2^12) # long time
 
             sage: R = Qp(3, 1)
-            sage: TestSuite(R).run(elements
+            sage: TestSuite(R).run(elements = [R.random_element() for i in range(3^9)])
 
             sage: R = Qp(3, 2)
             sage: TestSuite(R).run(elements = [R.random_element() for i in range(3^9)])

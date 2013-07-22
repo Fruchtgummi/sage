@@ -992,6 +992,7 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
             zzpoly = self._poly.rescale(Integer(a))
         return Polynomial_padic_capped_relative_dense(self.parent(), (zzpoly, self._valbase, relprec, False, valadded, None), construct = True)
 
+    @coerce_binop
     def quo_rem(self, right):
         return self._quo_rem_hensel(right)
 

@@ -652,7 +652,7 @@ cdef class pAdicZZpXElement(pAdicExtElement):
             sage: K = ZpCA(3)
             sage: R.<u> = K[]
             sage: L.<u> = K.extension(u^2 + 1)
-            sage: L(R.gen())
+            sage: L(R.gen()) # known bug, this is not supported for flint qadics anymore
             u + O(3^20)
 
         """

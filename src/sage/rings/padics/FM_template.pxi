@@ -476,7 +476,7 @@ cdef class FMElement(pAdicTemplateElement):
             True
         """
         cdef bint iszero = ciszero(self.value, self.prime_pow)
-        if absprec is None:
+        if absprec is None or absprec is infinity:
             return iszero
         if not PY_TYPE_CHECK(absprec, Integer):
             absprec = Integer(absprec)

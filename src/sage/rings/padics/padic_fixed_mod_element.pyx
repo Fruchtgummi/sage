@@ -207,35 +207,6 @@ cdef class pAdicFixedModElement(FMElement):
         """
         return self.lift_c()
 
-    def residue(self, absprec=1):
-        r"""
-        Reduce this element mod `p^{\mbox{absprec}}`.
-
-        INPUT:
-
-        - ``absprec`` - an integer (default: 1)
-
-        OUTPUT:
-
-        element of Z/(p^prec Z) -- self reduced mod p^prec
-
-        EXAMPLES::
-
-            sage: R = Zp(7,4,'fixed-mod'); a = R(8); a.residue(1)
-            1
-        """
-        cdef Integer selfvalue, modulus
-        if not PY_TYPE_CHECK(absprec, Integer):
-            absprec = Integer(absprec)
-        if mpz_sgn((<Integer>absprec).value) < 0:
-            raise ValueError, "cannot reduce modulo a negative power of p"
-        cdef long aprec = mpz_get_ui((<Integer>absprec).value)
-        modulus = PY_NEW(Integer)
-        mpz_set(modulus.value, self.prime_pow.pow_mpz_t_tmp(aprec)[0])
-        selfvalue = PY_NEW(Integer)
-        mpz_set(selfvalue.value, self.value)
-        return Mod(selfvalue, modulus)
-
     def multiplicative_order(self):
         r"""
         Returns the minimum possible multiplicative order of this element.
