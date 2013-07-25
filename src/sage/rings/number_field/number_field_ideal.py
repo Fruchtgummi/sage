@@ -422,7 +422,7 @@ class NumberFieldIdeal(Ideal_generic):
             sage: I   # random sign in output
             Fractional ideal (-2*a^2 - 1)
         """
-        return self.coordinates(self.number_field()(x)).denominator() == 1
+        return self.number_field()(x).is_zero() or self.coordinates(self.number_field()(x)).denominator() == 1 # TODO: hackish fix to make augmented valuations work
 
     def __elements_from_hnf(self, hnf):
         """
