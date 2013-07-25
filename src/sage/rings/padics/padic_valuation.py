@@ -123,6 +123,9 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
         """
         return self._prime
 
+    def value_group(self):
+        return self._value_group(1)
+
     def _repr_(self):
         """
         Return a printable representation of this valuation.

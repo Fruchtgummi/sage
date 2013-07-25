@@ -114,7 +114,7 @@ class GaussValuation(DevelopingValuation):
             Fractional ideal (1)
 
         """
-        return self._value_group(1)
+        return self._base_valuation.value_group()
 
     def _repr_(self):
         """

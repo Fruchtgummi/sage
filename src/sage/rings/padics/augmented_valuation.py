@@ -393,6 +393,15 @@ class AugmentedValuation(DevelopingValuation):
         elif self(f) > 0:
             return self.residue_ring().zero()
 
+        # if this extends a trivial valuation, then this is very easy: just
+        # return the constant coefficient in the phi-adic expansion; everything
+        # else must have positive valuation
+        if self._base_valuation.value_group() == 0:
+            assert self.valuations(f)[0] == 0
+            if self.value_group() == 0:
+                raise NotImplementedError
+            return self.residue_ring()(self.coefficients(f)[0])
+
         CV = zip(self.coefficients(f), self.valuations(f))
         # rewrite as sum of f_i phi^{i tau}, i.e., drop most coefficients
         assert not any([v==0 for i,(c,v) in enumerate(CV) if i % self.tau() != 0])
@@ -614,6 +623,10 @@ class AugmentedValuation(DevelopingValuation):
 
         """
         from sage.rings.all import ZZ
+
+        if self._base_valuation.value_group() == 0:
+            return ZZ.zero()
+
         assert self.value_group().numerator() == 1
         assert self._base_valuation.value_group().numerator() == 1
         return ZZ(self.value_group().denominator().gen(0)) // ZZ(self._base_valuation.value_group().denominator().gen(0))
