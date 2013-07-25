@@ -400,7 +400,7 @@ class AugmentedValuation(DevelopingValuation):
             assert self.valuations(f)[0] == 0
             if self.value_group() == 0:
                 raise NotImplementedError
-            return self.residue_ring()(self.coefficients(f)[0])
+            return self.residue_ring()(self.coefficients(f)[0])(self.residue_field().gen())
 
         CV = zip(self.coefficients(f), self.valuations(f))
         # rewrite as sum of f_i phi^{i tau}, i.e., drop most coefficients
