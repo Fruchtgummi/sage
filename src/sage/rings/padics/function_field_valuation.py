@@ -28,7 +28,8 @@ class RationalFunctionFieldValuation(DiscreteValuation):
         return self._base_valuation.value_group()
 
     def residue_field(self):
-        return self._base_valuation.residue_field()
+        from sage.rings.all import FunctionField
+        return FunctionField(self._base_valuation.residue_field(), names=self.domain().variable_names())
 
     def reduce(self, f):
         if f.parent() is not self.domain():
@@ -38,13 +39,24 @@ class RationalFunctionFieldValuation(DiscreteValuation):
         if self(f) < 0:
             raise ValueError
 
-        return self._base_valuation.reduce(f.numerator()) / self._base_valuation.reduce(f.denominator())
+        base = self._base_valuation
+
+        num = f.numerator()
+        den = f.denominator()
+
+        assert base(num) == base(den)
+        shift = base.element_with_valuation(-base(num))
+        num *= shift
+        den *= shift
+        ret = base.reduce(num) / base.reduce(den)
+        assert not ret.is_zero()
+        return self.residue_field()(ret)
 
     def lift(self, F):
         if F.parent() is not self.residue_field():
             raise ValueError
 
-        return self.domain()(self._base_valuation.lift(self._base_valuation.residue_ring()(F)))
+        return self.domain()(self._base_valuation.lift(F.numerator()) / self._base_valuation.lift(F.denominator()))
 
     def mac_lane_approximants(self, G, precision_cap=None, assume_squarefree=False):
         """
