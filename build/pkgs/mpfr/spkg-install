@@ -98,6 +98,8 @@ mpfr_patch()
     # Further patches for Sage should get applied here, i.e., after all
     # upstream patches have been applied, which also means they should be
     # based on the already (upstream-)patched upstream sources.
+
+    return 0
 }
 
 mpfr_get_upstream_selected_cflags() # Get MPFR's choice on empty CC and CFLAGS.
