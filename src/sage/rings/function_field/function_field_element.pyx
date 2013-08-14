@@ -241,6 +241,9 @@ cdef class FunctionFieldElement(FieldElement):
 
         return list(chain.from_iterable(result))
 
+    def _vector_(self):
+        return self.parent().vector_space()[2](self)
+
     def trace(self):
         """
         Return the trace of this function field element.
