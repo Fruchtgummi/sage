@@ -839,6 +839,22 @@ class DevelopingValuation(DiscreteValuation):
         return self.domain().change_ring(self.residue_field())
 
     def mac_lane_step(self, G, assume_squarefree=False):
+        r"""
+
+        TESTS::
+
+            sage: K.<x>=FunctionField(QQ)
+            sage: S.<y>=K[]
+            sage: F=y^2-x^2-x^3-3
+            sage: v0=GaussValuation(K._ring,pAdicValuation(QQ,3))
+            sage: v1=v0.extension(K._ring.gen(),1/3)
+            sage: from sage.rings.padics.function_field_valuation import RationalFunctionFieldValuation
+            sage: mu0=RationalFunctionFieldValuation(K,v1)
+            sage: eta0=GaussValuation(S,mu0)
+            sage: eta1=eta0.mac_lane_step(F)[0]
+            sage: eta2=eta1.mac_lane_step(F)[0]
+
+        """
         assert not G.is_constant()
         R = G.parent()
         if R is not self.domain():
