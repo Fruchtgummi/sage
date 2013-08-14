@@ -301,6 +301,17 @@ class FunctionField(Field):
             return True
         return False
 
+    def _factor_univariate_polynomial(self, f):
+        if self.degree() == 1:
+            # shortcut for trivial extensions
+            assert all([c.element().is_constant() for c in f.coeffs()])
+            g = f.map_coefficients(lambda c:c.element()[0], self.base_field())
+            G = g.factor()
+            from sage.structure.factorization import Factorization
+            return Factorization([(fac.map_coefficients(lambda c:c, self),e) for fac,e in G], unit=G.unit())
+
+        raise NotImplementedError
+
 class FunctionField_polymod(FunctionField):
     """
     A function field defined by a univariate polynomial, as an
