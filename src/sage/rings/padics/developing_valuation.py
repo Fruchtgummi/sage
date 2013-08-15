@@ -203,7 +203,7 @@ class DevelopingValuation(DiscreteValuation):
             sage: v = v.extension(x^2 + x + u, 1)
             sage: f = 2*x + u
             sage: h = v.equivalence_reciprocal(f); h
-            (u*2 + (u + 1)*2^2 + 2^3 + u*2^4 + 2^5 + O(2^6))*x + (u + 1) + (u + 1)*2 + 2^2 + u*2^3 + 2^4 + O(2^5)
+            (u + 1) + (u + 1)*2 + 2^2 + u*2^3 + 2^4 + O(2^5)
             sage: v.is_equivalent(f*h, 1)
             True
 
@@ -211,7 +211,7 @@ class DevelopingValuation(DiscreteValuation):
 
             sage: v = v.extension((x^2 + x + u)^2 + 2*x*(x^2 + x + u) + 4*x, 3)
             sage: h = v.equivalence_reciprocal(f); h
-            ((u + 1)*2^3 + 2^5 + 2^6 + (u + 1)*2^7 + O(2^8))*x^3 + (2^2 + u*2^4 + (u + 1)*2^5 + (u + 1)*2^6 + O(2^7))*x^2 + (u*2 + u*2^2 + u*2^3 + u*2^4 + 2^5 + O(2^6))*x + (u + 1) + (u + 1)*2 + (u + 1)*2^2 + (u + 1)*2^3 + u*2^4 + O(2^5)
+            (u + 1) + (u + 1)*2 + (u + 1)*2^2 + (u + 1)*2^3 + u*2^4 + O(2^5)
             sage: v.is_equivalent(f*h, 1)
             True
 
