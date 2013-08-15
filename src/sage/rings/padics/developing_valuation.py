@@ -233,6 +233,18 @@ class DevelopingValuation(DiscreteValuation):
         assert self(f*h) == 0
         assert self(f*h - 1) > 0
 
+        # We do not actually need g*phi + h*e0 = 1, it is only important that
+        # the RHS is 1 in reduction.
+        # This allows us to do two things:
+        # - we may lift h to arbitrary precision
+        # - we can add anything which times e0 has positive valuation, e.g., we
+        # may drop coefficients of positive valuation
+        h = h.map_coefficients(lambda c:_lift_to_maximal_precision(c))
+        h = h.parent()([ c if self(e0*c) <= 0 else c.parent().zero() for c in h.coeffs()])
+
+        assert self(f*h) == 0
+        assert self(f*h - 1) > 0
+
         return h
 
     def extension(self, phi, mu, check=True):
