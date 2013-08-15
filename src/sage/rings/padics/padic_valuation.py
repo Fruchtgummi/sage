@@ -516,6 +516,28 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
             sage: v.mac_lane_approximants(G, precision_cap=5)
             [[ Gauss valuation induced by 5-adic valuation, v(x + 14557) = 6 ], [ Gauss valuation induced by 5-adic valuation, v(x + 32318) = 7 ]]
 
+        TESTS:
+
+        Initial versions ran into problems with the trivial residue field
+        extensions in this case::
+
+            sage: K = Qp(3,20)
+            sage: R.<T> = K[]
+
+            sage: alpha = T^3/4
+            sage: G = 3^3*T^3*(alpha^4 - alpha)^2 - (4*alpha^3 - 1)^3
+            sage: G = G/G.leading_coefficient()
+            sage: pAdicValuation(K).mac_lane_approximants(G) # long time
+            [[ Gauss valuation induced by 3-adic valuation, v((1 + O(3^20))*T + (2 + O(3^20))) = 1/9, v((1 + O(3^20))*T^9 + (2*3 + 2*3^2 + O(3^21))*T^8 + (3 + 3^5 + O(3^21))*T^7 + (2*3 + 2*3^2 + 3^3 + 2*3^4 + 2*3^5 + 3^6 + O(3^21))*T^6 + (2*3 + 2*3^2 + 3^4 + 3^6 + 2*3^7 + O(3^21))*T^5 + (3 + 3^2 + 3^3 + 2*3^6 + 2*3^7 + 3^8 + O(3^21))*T^4 + (2*3 + 2*3^2 + 3^3 + 2*3^5 + 2*3^6 + 2*3^7 + 2*3^8 + O(3^21))*T^3 + (2*3 + 2*3^2 + 3^3 + 2*3^4 + 3^5 + 2*3^6 + 2*3^7 + 2*3^8 + O(3^21))*T^2 + (3 + 2*3^2 + 2*3^3 + 2*3^4 + 2*3^7 + 3^8 + O(3^21))*T + (2 + 2*3 + 2*3^2 + 2*3^4 + 2*3^5 + 3^7 + O(3^20))) = 55/27 ]]
+
+        A similar example::
+
+            sage: R.<x> = QQ[]
+            sage: v = pAdicValuation(QQ, 3)
+            sage: G = (x^3 + 3)^3 - 81
+            sage: v.mac_lane_approximants(G)
+            [[ Gauss valuation induced by 3-adic valuation, v(x) = 1/3, v(x^3 + 3*x + 3) = 13/9 ]]
+
         OUTPUT:
 
         A list of valuations over the parent of ``G``.

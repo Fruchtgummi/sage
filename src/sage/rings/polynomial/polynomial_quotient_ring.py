@@ -493,7 +493,15 @@ class PolynomialQuotientRing_generic(sage.rings.commutative_ring.CommutativeRing
 
         if self.is_finite():
             if self.base_ring().is_prime_field():
-                raise NotImplementedError
+                if self.modulus().degree() == 1:
+                    ret = self.base_ring()
+                    from sage.categories.homset import Hom
+                    from sage.categories.morphism import SetMorphism
+                    to_ret = SetMorphism(Hom(self, ret), lambda x: x.lift()[0])
+                    from_ret = self.coerce_map_from(ret)
+                    return from_ret, to_ret, ret
+                else:
+                    raise NotImplementedError
 
             if isinstance(self.base_ring(), PolynomialQuotientRing_generic):
                 abs_base_to_base, base_to_abs_base, abs_base = self.base_ring().absolute_extension()
