@@ -594,9 +594,13 @@ class Polynomial_generic_domain(Polynomial, IntegralDomainElement):
             return False
         return self[0].is_unit()
 
-class Polynomial_generic_field(Polynomial_singular_repr,
-                               Polynomial_generic_domain,
+class Polynomial_generic_field(Polynomial_generic_domain,
                                EuclideanDomainElement):
+
+    def __cinit__(self, *args, **kwargs):
+        # TODO: this is just to make sure that no subclass missed the move away
+        # from singular - do not commit this anywhere
+        assert isinstance(self, Polynomial_singular_repr) == can_convert_to_singular(self.parent()), "%s which is a %s is not a Polynomial_singular_repr but %s"%(self,type(self),self.base_ring())
 
     @coerce_binop
     def quo_rem(self, other):
