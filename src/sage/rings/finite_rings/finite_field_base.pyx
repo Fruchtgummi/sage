@@ -810,7 +810,7 @@ cdef class FiniteField(Field):
             if isinstance(modulus, (list, tuple)):
                 return GF(self.characteristic()**(len(modulus) - 1), name=name, modulus=modulus, prefix=prefix)
             elif is_Polynomial(modulus):
-                if modulus.change_ring(self).is_irreducible():
+                if modulus.change_ring(self).is_irreducible() and modulus.degree() > 1:
                     return GF(self.characteristic()**(modulus.degree()), name=name, modulus=modulus, prefix=prefix)
                 else:
                     return Field.extension(self, modulus, name=name, embedding=embedding)
