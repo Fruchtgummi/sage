@@ -91,6 +91,24 @@ class AugmentedValuation(DevelopingValuation):
         if check and not self.residue_field().has_coerce_map_from(v.residue_field()):
             raise ValueError("the residue field `%s` does not embed into `%s`"%(v.residue_field(), self.residue_field()))
 
+    @cached_method
+    def Q(self):
+        if self._mu is infinity or self.tau().is_zero():
+            raise NotImplementedError
+
+        return self.equivalence_unit(self._mu * self.tau())
+
+    @cached_method
+    def Q_(self):
+        ret = self.equivalence_reciprocal(self.Q())
+
+        assert self.is_equivalence_unit(ret)
+        # esentially this checks that the reduction of Q'*phi^tau is the
+        # generator of the residue field
+        assert self._base_valuation.reduce(self.Q()*ret)(self.residue_field().gen()).is_one()
+
+        return ret
+
     def equivalence_unit(self, s):
         """
         Return an equivalence unit of minimal degree and valuation ``s``.
@@ -409,14 +427,13 @@ class AugmentedValuation(DevelopingValuation):
 
         # replace f_i by f_i Q^{i tau}
         vQ = self._mu * self.tau()
-        Q = self.equivalence_unit(vQ)
-        CV = [(c*Q**i, v - vQ*i) for i,(c,v) in enumerate(CV)]
+        CV = [(c*self.Q()**i, v - vQ*i) for i,(c,v) in enumerate(CV)]
         assert all([self._base_valuation(c)>=0 for c,v in CV])
 
         # recursively reduce the f_i Q^{i tau}
         C = [self._base_valuation.reduce(c)(self.residue_field().gen()) for c,v in CV]
 
-        # reduce the Q^{-i} phi^i
+        # reduce the Q'^i phi^i
         return self.residue_ring()(C)
 
     def lift(self, F):
@@ -510,9 +527,7 @@ class AugmentedValuation(DevelopingValuation):
         # now the coefficients correspond to the expansion with (f_iQ^i)(Q^{-1} phi)^i
 
         # now we undo the factors of Q^i
-        Q = self.equivalence_unit(self._mu * self.tau())
-        Q_ = self.equivalence_reciprocal(Q)
-        coeffs = [ (c*Q_**i).map_coefficients(lambda d:_lift_to_maximal_precision(d)) for i,c in enumerate(coeffs) ]
+        coeffs = [ (c*self.Q_()**i).map_coefficients(lambda d:_lift_to_maximal_precision(d)) for i,c in enumerate(coeffs) ]
 
         RR = self.domain().change_ring(self.domain())
         ret = RR(coeffs)(self.phi()**self.tau())
@@ -585,8 +600,7 @@ class AugmentedValuation(DevelopingValuation):
         assert self(f) == 0
         assert self.reduce(f) == F
 
-        Q = self.equivalence_unit(self._mu * self.tau())
-        f *= Q**F.degree()
+        f *= self.Q()**F.degree()
         CV = zip(self.coefficients(f), self.valuations(f))
         vf = self(f)
         CV = [(c,v) if v==vf else (c.parent().zero(),infinity) for c,v in CV]
