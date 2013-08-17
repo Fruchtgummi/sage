@@ -994,7 +994,42 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
 
     @coerce_binop
     def quo_rem(self, right):
+        if self.degree() + 1 != len(self.list()):
+            raise ValueError("polynomial must not have leading zero coefficients")
+        if right.degree() + 1 != len(right.list()):
+            raise ValueError("polynomial must not have leading zero coefficients")
+
+        q,r = self._quo_rem_hensel(right)
+
+        # the implementation of _quo_rem_hensel does not care too much about
+        # precision issues, in particular it may throw away leading zero
+        # coefficients of r
+        self_ = q*right + r
+        r = r.list()
+        K = self.parent().base_ring()
+        zeros = 0
+        for i in range(self.degree()+1):
+            if self_[i].precision_absolute() <= self[i].precision_absolute():
+                if i >= len(r):
+                    zeros += 1
+            else:
+                if i >= len(r):
+                    r.extend([K.zero()]*zeros)
+                    zeros = 0
+                    r.append(K(0,self[i].precision_absolute()))
+                else:
+                    r[i] = r[i].add_bigoh(self[i].precision_absolute())
+
+        r = self.parent()(r)
+
+        self_ = q*right + r
+        assert self == self_
+        # we did not gain any precision or loose too much of it
+        assert all([c_.precision_absolute() <= c.precision_absolute() for c,c_ in zip(self.list(),self_.list())]), "too much precision: %s =?= %s * %s + %s = %s"%(self,right,q,r,self_)
+
         return self._quo_rem_hensel(right)
+
+        return q,r
 
     def _quo_rem_naive(self, right):
         """

@@ -1775,15 +1775,15 @@ cdef class Polynomial(CommutativeAlgebraElement):
             k = 1
             while k < self.degree() - right.degree() + 1:
                 e = self.parent().one() - g*h
-                h = (h + s*e)#.truncate(2*k)
-                d = (s*g - 1)#.truncate(2*k)
-                s = (s*(1-d))#.truncate(2*k)
+                h = (h + s*e).truncate(2*k)
+                d = (s*g - 1).truncate(2*k)
+                s = (s*(1-d)).truncate(2*k)
                 k <<= 1
 
             #from sage.misc.all import save
             #save((self,right,f,g,h),"/tmp/sr")
             h = h#.truncate(self.degree() - right.degree() + 1)
-            assert (h*g).truncate(self.degree() - right.degree() + 1).is_one()
+            #assert (h*g).truncate(self.degree() - right.degree() + 1).is_one()
             q = (f*h).truncate(self.degree() - right.degree() + 1)
             q = q.truncate(q.degree()+1)
             q = reverse(q)
@@ -1791,7 +1791,9 @@ cdef class Polynomial(CommutativeAlgebraElement):
 
         r = self - right*q
         r = r.truncate(r.degree()+1)
-        assert r.degree() < right.degree(), "%s = %s * %s + %s"%(self,right,q,r)
+
+        # check correctness of the output
+        assert r.degree() < right.degree() and q*right + r == self, "incorrect quo_rem: %s =?= %s * %s + %s = %s"%(self,right,q,r,q*right + r)
         return q, r
 
     def _is_atomic(self):
