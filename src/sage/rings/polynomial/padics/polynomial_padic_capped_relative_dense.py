@@ -638,21 +638,52 @@ class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
             sage: a = t^4 + K(13,5)*t^2 + 13
             sage: K(13,7) * a
             (13 + O(13^7))*t^4 + (13^2 + O(13^6))*t^2 + (13^2 + O(13^8))
-        """
-        return None
-        # The code below has never been tested and is somehow subtly broken.
 
+        """
         if self._valaddeds is None:
             self._comp_valaddeds()
-        if left != 0:
-            val, unit = left.val_unit()
-            left_rprec = left.precision_relative()
-            relprecs = [min(left_rprec + self._valaddeds[i], self._relprecs[i]) for i in range(len(self._relprecs))]
-        elif left._is_exact_zero():
-            return Polynomial_padic_capped_relative_dense(self.parent(), [])
+
+        if left._is_exact_zero():
+            return self.parent().zero()
         else:
-            return Polynomial_padic_capped_relative_dense(self.parent(), (self._poly.parent()(0), self._valbase + left.valuation(), self._valaddeds, False, self._valaddeds, None), construct = True)
-        return Polynomial_padic_capped_relative_dense(self.parent(), (self._poly._rmul_(unit), self._valbase + val, relprecs, False, self._valaddeds, None), construct = True)
+            val = left.valuation()
+            if left.is_zero():
+                ret = self._poly.parent().zero()
+            else:
+                ret = self._poly._rmul_(left.unit_part().lift())
+
+            # the absolute precisions after multiplication are given like this:
+            # aprecs = [ min (self._aprecs[i] + val, self._val[i] + left.precisions_absolute()) ]
+            # this expands to
+            # aprecs = [ min (self._relprecs[i] + self._valbase + val, self._valaddeds[i] + self._valbase + val + left.precision_relative()) ]
+            # to turn them into relative precisions, we need to subtract the new base valuation
+            # aprecs = [ min (self._relprecs[i] + self._valbase + val  - self._valbase - val, self._valaddeds[i] + self._valbase + val + left.precision_relative() - self._valbase - val) ]
+            # this simplifies to:
+            relprecs = [ min( self._relprecs[i], self._valaddeds[i] + left.precision_relative() ) for i in range(len(self._relprecs)) ]
+
+            return Polynomial_padic_capped_relative_dense(self.parent(), (ret, self._valbase + val, relprecs, False, self._valaddeds, None), construct = True)
+
+    def _test_mul(self, **options):
+        """
+
+        sage: K = Qp(13, 7)
+        sage: R.<T> = K[]
+        sage: T._test_mul()
+
+        """
+        self = self.parent()
+        # TODO: move something like this to the appropriate place
+        K = self.base_ring()
+
+        tester = self._tester(**options)
+        scalars = [ K.random_element() for i in range(tester._max_runs) ]
+        polys = [ self.random_element() for i in range(tester._max_runs) ]
+
+        for s,p in zip(scalars, polys):
+            mul1 = s*p
+            mul2 = self(s)*p
+            tester.assertEqual(mul1, mul2)
+            tester.assertEqual(str(mul1), str(mul2))
 
     def _neg_(self):
         """
