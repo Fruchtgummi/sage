@@ -228,7 +228,7 @@ class DevelopingValuation(DiscreteValuation):
         if not self.is_equivalence_unit(f):
             raise ValueError("f must be an equivalence unit")
 
-        e0 = self.coefficients(f)[0]
+        e0 = self.coefficients(f).next()
         one,g,h = self.phi().xgcd(e0)
         assert one.is_one()
 
@@ -397,7 +397,7 @@ class DevelopingValuation(DiscreteValuation):
             # use the characterization of theorem 9.4 in [ML1936]
             if not f.is_monic():
                 raise NotImplementedError("is_minimal() only implemented for monic polynomials")
-            return self.valuations(f)[-1] == self(f)
+            return list(self.valuations(f))[-1] == self(f)
 
         raise NotImplementedError("is_minimal() only implemented for commensurable inductive values")
 
@@ -542,8 +542,8 @@ class DevelopingValuation(DiscreteValuation):
         f0 = f # used to check correctness of the output
 
         phi_divides = 0
-        while self.valuations(f)[0] > self(f):
-            f = f-self.coefficients(f)[0]
+        while self.valuations(f).next() > self(f):
+            f = f-self.coefficients(f).next()
             assert self.phi().divides(f)
             f,_ = f.quo_rem(self.phi())
             phi_divides += 1
@@ -643,7 +643,7 @@ class DevelopingValuation(DiscreteValuation):
             raise NotImplemented("only implemented for inductive valuations")
 
         f0 = f
-        e = self.coefficients(f)[self.effective_degree(f)]
+        e = list(self.coefficients(f))[self.effective_degree(f)]
         f *= self.equivalence_reciprocal(e).map_coefficients(lambda c:_lift_to_maximal_precision(c))
 
         coeffs = [c if v == self(f) else c.parent().zero() for v,c in zip(self.valuations(f),self.coefficients(f))]
@@ -687,17 +687,17 @@ class DevelopingValuation(DiscreteValuation):
             sage: S.<x> = R[]
             sage: v = GaussValuation(S)
             sage: g = x
-            sage: v.coefficients(g-g) # indirect doctest
+            sage: list(v.coefficients(g-g)) # indirect doctest
             []
             sage: (g-g).list()
             [0, O(2^5)]
             sage: f = x*R(0,1) + R(1,2); f
             (O(2))*x + (1 + O(2^2))
-            sage: v.coefficients(f) # indirect doctest
+            sage: list(v.coefficients(f)) # indirect doctest
             [(1 + O(2^2))]
             sage: f = x*R(0,1) + R(2,2); f
             (O(2))*x + (2 + O(2^2))
-            sage: v.coefficients(f) # indirect doctest
+            sage: list(v.coefficients(f)) # indirect doctest
             Traceback (most recent call last):
             ...
             ValueError: f must not have leading zero coefficients
@@ -726,8 +726,8 @@ class DevelopingValuation(DiscreteValuation):
 
         OUTPUT:
 
-        A list `[f_0,f_1,\dots]` of polynomials in the domain of this valuation
-        such that `f=\sum_i f_i\phi^i`
+        An iterator `[f_0,f_1,\dots]` of polynomials in the domain of this
+        valuation such that `f=\sum_i f_i\phi^i`
 
         EXAMPLES::
 
@@ -735,10 +735,10 @@ class DevelopingValuation(DiscreteValuation):
             sage: S.<x> = R[]
             sage: v = GaussValuation(S)
             sage: f = x^2 + 2*x + 3
-            sage: v.coefficients(f) # note that these constants are in the polynomial ring
+            sage: list(v.coefficients(f)) # note that these constants are in the polynomial ring
             [(1 + 2 + O(2^5)), (2 + O(2^6)), (1 + O(2^5))]
             sage: v = v.extension( x^2 + x + 1, 1)
-            sage: v.coefficients(f)
+            sage: list(v.coefficients(f))
             [(1 + O(2^5))*x + (2 + O(2^5)), (1 + O(2^5))]
 
         """
@@ -746,11 +746,38 @@ class DevelopingValuation(DiscreteValuation):
             raise ValueError("f must be in the domain of the valuation")
         f = self._normalize_leading_coefficients(f)
 
-        ret = []
+        if self.phi().degree() == 1:
+            return iter(f(self.phi().parent().gen() - self.phi()[0]))
+        else:
+            return self.__coefficients(f)
+
+    def __coefficients(self, f):
+        """
+        Helper method for :meth:`coefficients` to create an iterator if `\phi`
+        is not linear.
+
+        INPUT:
+
+        - ``f`` -- a monic polynomial in the domain of this valuation
+
+        OUTPUT:
+
+        An iterator `[f_0,f_1,\dots]` of polynomials in the domain of this
+        valuation such that `f=\sum_i f_i\phi^i`
+
+        EXAMPLES::
+
+            sage: R = Qp(2,5)
+            sage: S.<x> = R[]
+            sage: v = GaussValuation(S)
+            sage: v = v.extension( x^2 + x + 1, 1)
+            sage: f = x^2 + 2*x + 3
+            sage: list(v.coefficients(f)) # indirect doctest
+            [(1 + O(2^5))*x + (2 + O(2^5)), (1 + O(2^5))]
+        """
         while f.degree() >= 0:
             f,r = self.__quo_rem(f)
-            ret.append(r)
-        return ret
+            yield r
 
     def __quo_rem(self, f):
         qr = [ self.__quo_rem_monomial(i) for i in range(f.degree()+1) ]

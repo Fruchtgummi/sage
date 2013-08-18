@@ -211,7 +211,7 @@ class GaussValuation(DevelopingValuation):
             sage: S.<x> = R[]
             sage: v = GaussValuation(S, pAdicValuation(R))
             sage: f = x^2 + 2*x + 16
-            sage: v.valuations(f)
+            sage: list(v.valuations(f))
             [4, 1, 0]
 
         TESTS:
@@ -219,15 +219,15 @@ class GaussValuation(DevelopingValuation):
         The treatment of (inexact) zero values is slightly complicated, see
         :meth:`DevelopingValuation._normalize_leading_coefficients`::
 
-            sage: v.valuations(S.zero())
+            sage: list(v.valuations(S.zero()))
             []
-            sage: v.valuations(S([R(0,1),R(0,2)]))
+            sage: list(v.valuations(S([R(0,1),R(0,2)])))
             []
-            sage: v.valuations(S([R(0,2),R(0,1)]))
+            sage: list(v.valuations(S([R(0,2),R(0,1)])))
             []
-            sage: v.valuations(S([R(1,1),R(0,1)]))
+            sage: list(v.valuations(S([R(1,1),R(0,1)])))
             [0]
-            sage: v.valuations(S([R(4,3),R(0,1)]))
+            sage: list(v.valuations(S([R(4,3),R(0,1)])))
             Traceback (most recent call last):
             ...
             ValueError: f must not have leading zero coefficients
@@ -236,7 +236,8 @@ class GaussValuation(DevelopingValuation):
         if f.parent() is not self.domain():
             raise ValueError("f must be in the domain of this valuation")
 
-        return [self._base_valuation(self.domain().base_ring()(c)) for c in self.coefficients(f)]
+        for c in self.coefficients(f):
+            yield self._base_valuation(self.domain().base_ring()(c))
 
     @cached_method
     def residue_field(self):

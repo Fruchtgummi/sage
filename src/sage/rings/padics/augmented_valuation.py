@@ -296,7 +296,7 @@ class AugmentedValuation(DevelopingValuation):
 
         OUTPUT:
 
-        A list of rational numbers, `[v(f_0), v(f_1\phi), \dots]`
+        An iterator over rational numbers, `[v(f_0), v(f_1\phi), \dots]`
 
         EXAMPLES::
 
@@ -304,16 +304,16 @@ class AugmentedValuation(DevelopingValuation):
             sage: S.<x> = R[]
             sage: v = GaussValuation(S)
             sage: w = v.extension(x^2 + x + u, 1/2)
-            sage: w.valuations( x^2 + 1 )
+            sage: list(w.valuations( x^2 + 1 ))
             [0, 1/2]
             sage: w = w.extension((x^2 + x + u)^2 + 2, 5/3)
-            sage: w.valuations( ((x^2 + x + u)^2 + 2)^3 )
+            sage: list(w.valuations( ((x^2 + x + u)^2 + 2)^3 ))
             [+Infinity, +Infinity, +Infinity, 5]
 
         TESTS::
 
             sage: w = v.extension(x, infinity)
-            sage: w.valuations( x^2 + 1 )
+            sage: list(w.valuations( x^2 + 1 ))
             [0, +Infinity, +Infinity]
 
         """
@@ -321,9 +321,13 @@ class AugmentedValuation(DevelopingValuation):
             raise ValueError("f must be in the domain of this valuation")
 
         if self._mu is infinity:
-            return [self._base_valuation(c) if i == 0 else infinity for i,c in enumerate(self.coefficients(f))]
+            num_infty_coefficients = f.degree() // self.phi().degree()
+            yield self._base_valuation(self.coefficients(f).next())
+            for i in range(num_infty_coefficients):
+                yield infinity
         else:
-            return [self._base_valuation(c)+i*self._mu for i,c in enumerate(self.coefficients(f))]
+            for i,c in enumerate(self.coefficients(f)):
+                yield self._base_valuation(c) + i*self._mu
 
     def reduce(self, f):
         r"""
@@ -415,10 +419,10 @@ class AugmentedValuation(DevelopingValuation):
         # return the constant coefficient in the phi-adic expansion; everything
         # else must have positive valuation
         if self._base_valuation.value_group() == 0:
-            assert self.valuations(f)[0] == 0
+            assert self.valuations(f).next() == 0
             if self.value_group() == 0:
                 raise NotImplementedError
-            return self.residue_ring()(self.coefficients(f)[0])(self.residue_field().gen())
+            return self.residue_ring()(self.coefficients(f).next())(self.residue_field().gen())
 
         CV = zip(self.coefficients(f), self.valuations(f))
         # rewrite as sum of f_i phi^{i tau}, i.e., drop most coefficients
