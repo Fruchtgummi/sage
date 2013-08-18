@@ -30,6 +30,8 @@ polynomial rings. Transactions of the American Mathematical Society, 40(3),
 from discrete_valuation import DiscreteValuation
 from sage.misc.abstract_method import abstract_method
 
+from sage.misc.cachefunc import cached_method
+
 def _lift_to_maximal_precision(c):
     """
     Lift ``c`` to maximal precision if the parent is not exact.
@@ -746,9 +748,20 @@ class DevelopingValuation(DiscreteValuation):
 
         ret = []
         while f.degree() >= 0:
-            f,r = f.quo_rem(self._phi)
+            f,r = self.__quo_rem(f)
             ret.append(r)
         return ret
+
+    def __quo_rem(self, f):
+        qr = [ self.__quo_rem_monomial(i) for i in range(f.degree()+1) ]
+        q = [ f[i]*g for i,(g,_) in enumerate(qr) ]
+        r = [ f[i]*h for i,(_,h) in enumerate(qr) ]
+        return sum(q), sum(r)
+
+    @cached_method
+    def __quo_rem_monomial(self, degree):
+        f = self.domain().one() << degree
+        return f.quo_rem(self.phi())
 
     def newton_polygon(self, f):
         """
