@@ -172,7 +172,14 @@ class DevelopingValuation(DiscreteValuation):
         if f.is_constant():
             raise ValueError("f must not be constant")
 
-        if self.equivalence_decomposition.is_in_cache(f):
+        key = f
+        try:
+            hash(key)
+        except TypeError: # not hashable
+            from sage.structure.factory import create_cache_key
+            key = create_cache_key(key)
+
+        if self.equivalence_decomposition.is_in_cache(key):
             F = self.equivalence_decomposition(f)
             return len(F) <= 1 and (len(F) == 0 or F[0][1] == 1)
 
