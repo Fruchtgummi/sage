@@ -118,6 +118,13 @@ class AugmentedValuation(DevelopingValuation):
         if f.parent() is not self.domain():
             raise ValueError("f must be in the domain of the valuation %s but is in %s"%(self.domain(),f.parent()))
 
+        from sage.rings.all import infinity
+        if f.is_zero():
+            return infinity
+
+        if f.degree() < self.phi().degree():
+            return self._base_valuation(f)
+
         # We can slightly optimize the approach of DevelopingValuation._call_
         # We know that self(f) >= self._base_valuation(f)
         # as soon as we find a coefficient of f with self._base_valuation(c) ==
@@ -127,16 +134,9 @@ class AugmentedValuation(DevelopingValuation):
         if f.degree() // self.phi().degree() <= 3:
             return DevelopingValuation._call_(self, f)
 
-        from sage.rings.all import infinity
         ret = infinity
 
-        if f.is_zero():
-            return ret
-
         lower_bound = self._base_valuation(f)
-
-        if f.degree() < self.phi().degree():
-            return lower_bound
 
         for v in self.valuations(f):
             ret = min(ret, v)

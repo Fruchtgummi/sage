@@ -144,6 +144,7 @@ class DevelopingValuation(DiscreteValuation):
         v = self(f)
         return [i for i,w in enumerate(self.valuations(f)) if w == v][-1]
 
+    @cached_method
     def is_equivalence_irreducible(self, f):
         """
         Return whether the polynomial ``f`` is equivalence irreducible, i.e.,
@@ -170,6 +171,10 @@ class DevelopingValuation(DiscreteValuation):
             raise ValueError("f must be in the domain of the valuation")
         if f.is_constant():
             raise ValueError("f must not be constant")
+
+        if self.equivalence_decomposition.is_in_cache(f):
+            F = self.equivalence_decomposition(f)
+            return len(F) <= 1 and (len(F) == 0 or F[0][1] == 1)
 
         if self.is_commensurable_inductive():
             # use the characterization of Theorem 13.1 in [ML1936]
@@ -300,6 +305,7 @@ class DevelopingValuation(DiscreteValuation):
 
         return h
 
+    @cached_method
     def extension(self, phi, mu, check=True):
         """
         Return the inductive valuation which extends this valuation by mapping
@@ -452,6 +458,7 @@ class DevelopingValuation(DiscreteValuation):
 
         raise NotImplementedError("is_minimal() only implemented for commensurable inductive values")
 
+    @cached_method
     def equivalence_decomposition(self, f):
         """
         Return an equivalence decomposition of ``f``, i.e., a polynomial
@@ -750,7 +757,7 @@ class DevelopingValuation(DiscreteValuation):
 
         if self.phi().degree() == 1:
             from itertools import imap
-            return iter(f(self.phi().parent().gen() - self.phi()[0]).map_coefficients(lambda x:x,f.parent()))
+            return imap(f.parent(), f(self.phi().parent().gen() - self.phi()[0]).coeffs())
         else:
             return self.__coefficients(f)
 
