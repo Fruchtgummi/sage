@@ -209,7 +209,7 @@ class AugmentedValuation(DevelopingValuation):
             :meth:`effective_degree`, :meth:`is_equivalence_unit`
 
         """
-        if not self.domain().base_ring().is_field():
+        if s < 0 and not self.domain().base_ring().is_field():
             raise NotImplementedError("only implemented for polynomial rings over fields")
 
         ret = self._base_valuation.element_with_valuation(s)
@@ -254,7 +254,7 @@ class AugmentedValuation(DevelopingValuation):
         """
         if s not in self.value_group():
             raise ValueError("s must be in the value group of the valuation")
-        if not self.domain().base_ring().is_field():
+        if s < 0 and not self.domain().base_ring().is_field():
             raise NotImplementedError("only implemented for polynomial rings over fields")
 
         ret = self.domain().one()
