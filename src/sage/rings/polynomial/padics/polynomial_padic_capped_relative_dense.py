@@ -26,6 +26,8 @@ Polynomial_generic_domain = sage.rings.polynomial.polynomial_element_generic.Pol
 Polynomial_integer_dense = sage.rings.polynomial.polynomial_integer_dense_ntl.Polynomial_integer_dense_ntl
 
 class Polynomial_padic_capped_relative_dense(Polynomial_generic_domain):
+    __hash__ = None
+
     def __init__(self, parent, x=None, check=True, is_gen=False, construct = False, absprec = infinity, relprec = infinity):
         """
         TESTS::
