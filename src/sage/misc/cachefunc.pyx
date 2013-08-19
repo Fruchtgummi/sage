@@ -1447,9 +1447,18 @@ cdef class CachedMethodCaller(CachedFunction):
         try:
             return cache[k]
         except KeyError:
-            w = self._cachedmethod._instance_call(self._instance, *args, **kwds)
-            cache[k] = w
-            return w
+            pass
+        except TypeError: # k is not hashable
+            from sage.structure.factory import create_cache_key
+            k = create_cache_key(k)
+            try:
+                return cache[k]
+            except KeyError:
+                pass
+
+        w = self._cachedmethod._instance_call(self._instance, *args, **kwds)
+        cache[k] = w
+        return w
 
     def get_key(self, *args, **kwds):
         """
