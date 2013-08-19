@@ -91,6 +91,59 @@ class AugmentedValuation(DevelopingValuation):
         if check and not self.residue_field().has_coerce_map_from(v.residue_field()):
             raise ValueError("the residue field `%s` does not embed into `%s`"%(v.residue_field(), self.residue_field()))
 
+    def _call_(self, f):
+        """
+        Evaluate this valuation at ``f``.
+
+        INPUT::
+
+        - ``f`` -- a polynomial in the domain of this valuation
+
+        EXAMPLES::
+
+            sage: R = Qp(2,5)
+            sage: S.<x> = R[]
+            sage: v = GaussValuation(S)
+            sage: f = x^2 + 2*x + 3
+
+            sage: v = v.extension( x^2 + x + 1, 1)
+            sage: v(f)
+            0
+            sage: v(f * v.phi()^3 )
+            3
+            sage: v(S.zero())
+            +Infinity
+
+        """
+        if f.parent() is not self.domain():
+            raise ValueError("f must be in the domain of the valuation %s but is in %s"%(self.domain(),f.parent()))
+
+        # We can slightly optimize the approach of DevelopingValuation._call_
+        # We know that self(f) >= self._base_valuation(f)
+        # as soon as we find a coefficient of f with self._base_valuation(c) ==
+        # self._base_valuation(f) we know that this is the valuation of f
+
+        # this optimization does only pay off for polynomials of large degree:
+        if f.degree() // self.phi().degree() <= 3:
+            return DevelopingValuation._call_(self, f)
+
+        from sage.rings.all import infinity
+        ret = infinity
+
+        if f.is_zero():
+            return ret
+
+        lower_bound = self._base_valuation(f)
+
+        if f.degree() < self.phi().degree():
+            return lower_bound
+
+        for v in self.valuations(f):
+            ret = min(ret, v)
+            if ret == lower_bound:
+                return ret
+        return ret
+
     @cached_method
     def Q(self):
         if self._mu is infinity or self.tau().is_zero():
