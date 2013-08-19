@@ -89,6 +89,18 @@ class RationalFunctionFieldValuation(DiscreteValuation):
          [ Gauss valuation induced by Valuation on rational function field induced by [ Gauss valuation induced by Trivial valuation, v(x^3 + x^2 + 1) = 1 ], v(y^4 + (x^8 + x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1)*y^3 + (x^8 + x^5 + x^4 + x^3 + x^2 + x + 1)*y^2 + (x^8 + x^7 + x^6 + x^5 + x^3 + x^2 + 1)*y + x^8 + x^7 + x^6 + x^5 + x^3 + 1) = 3 ],
          [ Gauss valuation induced by Valuation on rational function field induced by [ Gauss valuation induced by Trivial valuation, v(x^3 + x^2 + 1) = 1 ], v(y^7 + (x^8 + x^5 + x^4 + x)*y^6 + (x^7 + 1)*y^5 + (x^4 + x^2)*y^4 + (x^8 + x^3 + x + 1)*y^3 + (x^7 + x^6 + x^4 + x^2 + x + 1)*y^2 + (x^8 + x^7 + x^5 + x^3 + 1)*y + x^7 + x^6 + x^5 + x^4 + x^3 + x^2) = 3 ]]
 
+        Some cases with trivial residue field extensions::
+
+            sage: K.<x> = FunctionField(QQ)
+            sage: S.<y> = K[]
+            sage: F = y^2 - x^2 - x^3 - 3
+            sage: v0 = GaussValuation(K._ring,pAdicValuation(QQ,3))
+            sage: v1 = v0.extension(K._ring.gen(),1/3)
+            sage: mu0 = RationalFunctionFieldValuation(K, v1)
+            sage: mu0.mac_lane_approximants(F)
+            [[ Gauss valuation induced by Valuation on rational function field induced by [ Gauss valuation induced by 3-adic valuation, v(x) = 1/3 ], v(y + x) = 2/3 ],
+             [ Gauss valuation induced by Valuation on rational function field induced by [ Gauss valuation induced by 3-adic valuation, v(x) = 1/3 ], v(y + 2*x) = 2/3 ]]
+
         """
         # TODO: move this to discrete valuation
         R = G.parent()

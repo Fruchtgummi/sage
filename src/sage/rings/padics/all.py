@@ -7,4 +7,5 @@ from pow_computer import PowComputer
 from pow_computer_ext import PowComputer_ext_maker
 from padic_valuation import pAdicValuation
 from gauss_valuation import GaussValuation
+from function_field_valuation import RationalFunctionFieldValuation
 from newton_polygon import NewtonPolygon
