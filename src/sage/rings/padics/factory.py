@@ -1179,6 +1179,18 @@ class GenericExtensionFactory(AbstractFactory):
         sage: QpExtensionFactory(base=K, premodulus=x^2+x+1, unram_name="u")
         Unramified Extension in u defined by (1 + O(2^20))*x^2 + (1 + O(2^20))*x + (1 + O(2^20)) of 2-adic Field with capped relative precision 20
 
+    TESTS:
+
+    A difficult totally ramified case::
+
+        sage: K = Qp(3,60)
+        sage: R.<T> = K[]
+        sage: alpha = T^3/4
+        sage: G = 3^3*T^3*(alpha^4 - alpha)^2 - (4*alpha^3 - 1)^3
+        sage: G = G/G.leading_coefficient()
+        sage: L.<a> = K.extension(G); L # long time
+        Totally ramified extension in a defined by (1 + O(3^60))*T^27 + (2*3 + 3^4 + 2*3^6 + 3^9 + 3^10 + 2*3^11 + 3^14 + 3^15 + 2*3^16 + 3^19 + 3^20 + 2*3^21 + 3^24 + 3^25 + 2*3^26 + 3^29 + 3^30 + 2*3^31 + 3^34 + 3^35 + 2*3^36 + 3^39 + 3^40 + 2*3^41 + 3^44 + 3^45 + 2*3^46 + 3^49 + 3^50 + 2*3^51 + 3^54 + 3^55 + 2*3^56 + 3^59 + O(3^60))*T^18 + (3 + 3^2 + 3^5 + 3^6 + 2*3^7 + 3^9 + 3^11 + 3^12 + 2*3^13 + 3^16 + 3^17 + 2*3^18 + 3^21 + 3^22 + 2*3^23 + 3^26 + 3^27 + 2*3^28 + 3^31 + 3^32 + 2*3^33 + 3^36 + 3^37 + 2*3^38 + 3^41 + 3^42 + 2*3^43 + 3^46 + 3^47 + 2*3^48 + 3^51 + 3^52 + 2*3^53 + 3^56 + 3^57 + 2*3^58 + O(3^60))*T^9 + (2 + 2*3 + 2*3^4 + 2*3^5 + 3^6 + 3^7 + 2*3^8 + 2*3^10 + 2*3^11 + 3^12 + 3^13 + 2*3^15 + 2*3^16 + 3^17 + 3^18 + 2*3^20 + 2*3^21 + 3^22 + 3^23 + 2*3^25 + 2*3^26 + 3^27 + 3^28 + 2*3^30 + 2*3^31 + 3^32 + 3^33 + 2*3^35 + 2*3^36 + 3^37 + 3^38 + 2*3^40 + 2*3^41 + 3^42 + 3^43 + 2*3^45 + 2*3^46 + 3^47 + 3^48 + 2*3^50 + 2*3^51 + 3^52 + 3^53 + 2*3^55 + 2*3^56 + 3^57 + 3^58 + O(3^60)) of 3-adic Field with capped relative precision 60
+
     """
     @staticmethod
     def krasner_check(poly, names=None):
