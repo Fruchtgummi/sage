@@ -667,7 +667,7 @@ class AugmentedValuation(DevelopingValuation):
         CV[-1] = (CV[-1][0].parent().one(), vf)
         ret = self.domain().change_ring(self.domain())([c for c,v in CV])(self.phi())
         ret = ret.map_coefficients(lambda c:_lift_to_maximal_precision(c))
-        #assert self.is_key(ret) -- causes an infinite loop since this uses equivalence_decomposition
+        assert self.is_key(ret)
         return ret
 
     def tau(self):

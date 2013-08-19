@@ -144,6 +144,57 @@ class DevelopingValuation(DiscreteValuation):
         v = self(f)
         return [i for i,w in enumerate(self.valuations(f)) if w == v][-1]
 
+    def is_equivalence_irreducible(self, f):
+        """
+        Return whether the polynomial ``f`` is equivalence irreducible, i.e.,
+        whether its :meth:`equivalence_decomposition` is irreducible.
+
+        INPUT:
+
+        - ``f`` -- a polynomial in the domain of this valuation
+
+        EXAMPLES::
+
+            sage: R.<u> = Qq(4,5)
+            sage: S.<x> = R[]
+            sage: v = GaussValuation(S)
+            sage: v.is_equivalence_irreducible(x)
+            True
+            sage: v.is_equivalence_irreducible(x^2)
+            False
+            sage: v.is_equivalence_irreducible(x^2 + 2)
+            False
+
+        """
+        if f.parent() is not self.domain():
+            raise ValueError("f must be in the domain of the valuation")
+        if f.is_constant():
+            raise ValueError("f must not be constant")
+
+        if self.is_commensurable_inductive():
+            # use the characterization of Theorem 13.1 in [ML1936]
+            if not f.is_monic():
+                raise NotImplementedError("is_equivalence_irreducible() only implemented for monic polynomials")
+
+            # special case: phi is factor of f
+            if self.valuations(f).next() > self(f):
+                f = f-self.coefficients(f).next()
+                assert self.phi().divides(f)
+                f,_ = f.quo_rem(self.phi())
+                return f.is_constant()
+
+            R = self.equivalence_unit(-self(f))
+
+            # check irreducibility in reduction
+            F = self.reduce(f*R)
+            F = F.factor()
+            if len(F) > 1 or (len(F) and F[0][1] > 1):
+                return False
+
+            return True
+
+        raise NotImplementedError("is_equivalence_irreducible() only implemented for inductive values")
+
     def is_equivalence_unit(self, f):
         """
         Return whether ``f`` is an equivalence unit, i.e., an element of
@@ -401,43 +452,7 @@ class DevelopingValuation(DiscreteValuation):
 
         raise NotImplementedError("is_minimal() only implemented for commensurable inductive values")
 
-    def is_equivalence_irreducible(self, f):
-        """
-        Return whether the polynomial ``f`` is equivalence irreducible, i.e.,
-        whether its :meth:`equivalence_decomposition` is irreducible.
-
-        INPUT:
-
-        - ``f`` -- a polynomial in the domain of this valuation
-
-        EXAMPLES::
-
-            sage: R.<u> = Qq(4,5)
-            sage: S.<x> = R[]
-            sage: v = GaussValuation(S)
-            sage: v.is_equivalence_irreducible(x)
-            True
-            sage: v.is_equivalence_irreducible(x^2)
-            False
-            sage: v.is_equivalence_irreducible(x^2 + 2)
-            False
-
-        """
-        if f.parent() is not self.domain():
-            raise ValueError("f must be in the domain of the valuation")
-        if f.is_constant():
-            raise ValueError("f must not be constant")
-
-        if self.is_commensurable_inductive():
-            # use the characterization of Theorem 13.1 in [ML1936]
-            if not f.is_monic():
-                raise NotImplementedError("is_equivalence_irreducible() only implemented for monic polynomials")
-            F = self.equivalence_decomposition(f, lift_to_keys=True) # OUCH: do something smarter here - there has to be a way to make this work with lift_to_keys=False
-            return len(F)==1 and F[0][1]==1 and F.unit().degree()==0
-
-        raise NotImplementedError("is_equivalence_irreducible() only implemented for inductive values")
-
-    def equivalence_decomposition(self, f, lift_to_keys=True):
+    def equivalence_decomposition(self, f):
         """
         Return an equivalence decomposition of ``f``, i.e., a polynomial
         `g(x)=e(x)\prod_i \phi_i(x)` with `e(x)` an equivalence unit (see
@@ -447,11 +462,6 @@ class DevelopingValuation(DiscreteValuation):
         INPUT:
 
         - ``f`` -- a polynomial in the domain of this valuation
-
-        - ``lift_to_keys`` -- a boolean (default: ``True``), if ``False``, only
-          return the factorization of `Rf` in the residue field (see
-          description of the algorithm below), and do not lift it to an
-          equivalence decomposition
 
         ALGORITHM:
 
@@ -549,28 +559,20 @@ class DevelopingValuation(DiscreteValuation):
             phi_divides += 1
 
         R = self.equivalence_unit(-self(f))
+        R_ = self.equivalence_reciprocal(R)
+
         F = self.reduce(f*R)
         F = F.factor()
         unit = F.unit()
+
         F = list(F)
-
-        # used to speed up is_equivalence_irreducible()
-        if not lift_to_keys:
-            for i,(g,e) in enumerate(F):
-                if g == self.residue_ring().gen():
-                    F[i] = (g, e+phi_divides)
-                    break
-            else:
-                F.append((self.residue_ring().gen(), phi_divides))
-            return Factorization(F)
-
         unit = self.lift( self.residue_ring()(unit) )
 
         from sage.misc.all import prod
         unit *= self.lift(self.residue_ring()(prod([ psi.leading_coefficient()**e for psi,e in F ])))
         F = [(self.lift_to_key(psi/psi.leading_coefficient()),e) for psi,e in F]
 
-        unit *= self.equivalence_reciprocal(R) * prod([self.equivalence_unit(-self(g))**e for g,e in F])
+        unit *= R_ * prod([self.equivalence_unit(-self(g))**e for g,e in F])
 
         if phi_divides:
             for i,(g,e) in enumerate(F):
@@ -747,7 +749,8 @@ class DevelopingValuation(DiscreteValuation):
         f = self._normalize_leading_coefficients(f)
 
         if self.phi().degree() == 1:
-            return iter(f(self.phi().parent().gen() - self.phi()[0]))
+            from itertools import imap
+            return iter(f(self.phi().parent().gen() - self.phi()[0]).map_coefficients(lambda x:x,f.parent()))
         else:
             return self.__coefficients(f)
 
