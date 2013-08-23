@@ -81,7 +81,7 @@ Unramified extension over Eisenstein extension::
 
 A splitting field::
 
-    sage: K = Qp(2, 3)
+    sage: K = Qp(2)
     sage: R.<x> = K[]
     sage: f = x^4+2*x^3+2*x^2-2*x+2
     sage: f.is_irreducible()
@@ -94,7 +94,7 @@ A splitting field::
     sage: h = g.change_ring(M)//(x-b)
     sage: h.is_irreducible()
     True
-    sage: N.<c> = M.extension(h) # long time
+    sage: N.<c> = M.extension(h, check=False) # check is False for speed
     sage: len(f.change_ring(N).roots(multiplicities=False)) # long time
     4
     sage: len(f.change_ring(N).factor()) # long time
