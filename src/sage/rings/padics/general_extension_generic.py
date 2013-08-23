@@ -498,7 +498,8 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
                         bfs[nnum] = bfs[onum]+[key]
 
         # a uniformizer and its minpoly
-        uniformizer = modulus.parent().quo(modulus).one()
+        from sage.rings.polynomial.polynomial_quotient_ring import PolynomialQuotientRing_field
+        uniformizer = PolynomialQuotientRing_field(modulus.parent(), modulus, (modulus.variable_name()+'bar',)).one()
         for key in bfs[1]:
             uniformizer*=key
         epoly = uniformizer.minpoly()
