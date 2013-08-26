@@ -1604,7 +1604,15 @@ class RationalFunctionField(FunctionField):
             True
         """
         F, d = self._to_bivariate_polynomial(f)
-        fac = F.factor()
+
+        if hasattr(F.base_ring(), "absolute_extension"):
+            l_to_k,k_to_l,l = F.base_ring().absolute_extension()
+            G = F.map_coefficients(k_to_l)
+            fac = G.factor()
+            from sage.structure.factorization import Factorization
+            fac = Factorization([(g.map_coefficients(l_to_k),e) for g,e in fac], unit=fac.unit().map_coefficients(l_to_k))
+        else:
+            fac = F.factor()
         x = f.parent().gen()
         t = f.parent().base_ring().gen()
         phi = F.parent().hom([x, t])
