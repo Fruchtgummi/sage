@@ -574,6 +574,17 @@ class AugmentedValuation(DevelopingValuation):
             if F.is_one():
                 return self.domain().one()
 
+        if self.tau().is_zero():
+            if not self._mu > 0:
+                raise NotImplementedError
+            if not F.is_constant():
+                raise ValueError("any reduction is constant in this valuation")
+            if self.phi() != self.domain().gen():
+                raise NotImplementedError
+            constant = F[0].lift()
+            assert constant.is_constant()
+            return self.domain()(constant[0])
+
         R0 = self._base_valuation.residue_ring()
 
         # in the last step of reduce, the f_iQ^i are reduced, and evaluated at
