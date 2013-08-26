@@ -1558,8 +1558,8 @@ class MPolynomial_polydict(Polynomial_singular_repr, MPolynomial_element):
         if base_ring.is_finite():
             if base_ring.characteristic() > 1<<29:
                 raise NotImplementedError, "Factorization of multivariate polynomials over prime fields with characteristic > 2^29 is not implemented."
-        if proof:
-            raise NotImplementedError, "proof = True factorization not implemented.  Call factor with proof=False."
+        #if proof:
+        #    raise NotImplementedError, "proof = True factorization not implemented.  Call factor with proof=False."
 
         R._singular_().set_ring()
         S = self._singular_().factorize()
