@@ -744,7 +744,7 @@ class DevelopingValuation(DiscreteValuation):
             m = min([self.constant_valuation()(c) for c in f.list()[f.degree()+1:]])
             if f.is_zero():
                 f= f.parent().zero()
-            elif m is infinity or m >= max([self.constant_valuation()(c) for c in f.list()[:f.degree()+1]]):
+            elif m is infinity or m > max([self.constant_valuation()(c) for c in f.list()[:f.degree()+1]]):
                 f= self.domain()(f.list()[:f.degree()+1])
             else:
                 raise ValueError("f must not have leading zero coefficients")
