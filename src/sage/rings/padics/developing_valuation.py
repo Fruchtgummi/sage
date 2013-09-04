@@ -280,6 +280,20 @@ class DevelopingValuation(DiscreteValuation):
             sage: v.is_equivalent(f*h, 1)
             True
 
+        TESTS::
+
+            sage: K = Qp(2, 4)
+            sage: R.<x> = K[]
+            sage: L.<a> = K.extension(x^4 + 4*x^3 + 6*x^2 + 4*x + 2)
+            sage: R.<t> = L[]
+            sage: v = GaussValuation(R)
+            sage: w = v.extension(t + 1, 5/4)
+            sage: w = w.extension(t^4 + (a^8 + a^12 + a^14 + a^16 + a^17 + a^19 + a^20 + a^23)*t^3 + (a^6 + a^9 + a^13 + a^15 + a^18 + a^19 + a^21)*t^2 + a^10*t + 1 + a^4 + a^5 + a^8 + a^13 + a^14 + a^15, 17/2)
+            sage: f = a^-15*t^2 + (a^-11 + a^-9 + a^-6 + a^-5 + a^-3 + a^-2)*t + a^-15
+            sage: w.equivalence_reciprocal(f)
+            sage: f = a^-15*t^2 + (a^-11 + a^-9 + a^-6 + a^-5 + a^-3 + a^-2).add_bigoh(1)*t + a^-15
+            sage: w.equivalence_reciprocal(f)
+
         .. SEEALSO::
 
             :meth:`is_equivalence_unit`
@@ -295,8 +309,9 @@ class DevelopingValuation(DiscreteValuation):
         one,g,h = self.phi().xgcd(e0)
         assert one.is_one()
 
-        assert self(f*h) == 0
-        assert self(f*h - 1) > 0
+        # it might be the case that f*h has non-zero valuation because h has
+        # insufficient precision, so we must not assert that here but only
+        # until we lifted to higher precision
 
         # We do not actually need g*phi + h*e0 = 1, it is only important that
         # the RHS is 1 in reduction.
