@@ -1365,7 +1365,7 @@ class GenericExtensionFactory(AbstractFactory):
             sage: ZpExtensionFactory.is_totally_ramified(f)
             False
             sage: f = x^2 + 5*x + 25
-            sage: ZpExtensionFactory.is_totally_ramified(f)
+            sage: ZpExtensionFactory.is_totally_ramified(f) # not tested, not implemented for rings
             False
 
         """
