@@ -414,6 +414,8 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
         R = G.parent()
         if R.base_ring() is not self.domain():
             raise ValueError("G must be defined over the domain of this valuation")
+        if not G.is_monic():
+            raise ValueError("G must be monic")
 
         from sage.rings.all import infinity
         ret = [ v.phi() for v in self.mac_lane_approximants(G, precision_cap=infinity, assume_squarefree=assume_squarefree) ]
@@ -560,6 +562,8 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
             raise ValueError("G must be defined over the domain of this valuation")
         if not assume_squarefree and not G.is_squarefree():
             raise ValueError("G must be squarefree")
+        if not G.is_monic():
+            raise ValueError("G must be monic")
 
         from sage.rings.all import infinity
         from gauss_valuation import GaussValuation

@@ -133,7 +133,6 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         """
         return [self.gen()]
 
-    @cached_method
     def valuation(self):
         from padic_valuation import pAdicValuation
         return pAdicValuation(self)
@@ -158,6 +157,21 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             ret.extend(self.valuation().montes_factorization(g))
 
         return Factorization(ret)
+
+    def _test_factor_univariate_polynomial(self, **options):
+        tester = self._tester(**options)
+
+        from sage.rings.all import PolynomialRing
+        R = PolynomialRing(self, 'x')
+
+        # test some polynomials of low degree
+        coefficients = tester.some_elements()
+        for degree in range(1,7):
+            coefficients_grouped = zip(*[coefficients[i::degree] for i in range(degree+1)])
+            for c in coefficients_grouped:
+                f = R(list(c))
+                F = f.factor()
+                tester.assertEqual(F.prod(), f)
 
     def _is_irreducible_univariate_polynomial(self, f):
         from factory import GenericExtensionFactory
