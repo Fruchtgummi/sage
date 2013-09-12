@@ -145,7 +145,16 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             sage: Rx.<x> = R[]
             sage: Rx.zero().factor()
             Traceback (most recent call last):
-            ValueError: Factorization of 0 not defined
+            ...
+            ValueError: factorization of 0 not defined
+
+            sage: K = Qp(3)
+            sage: R.<x> = K[]
+            sage: f = x^2 + 1/3
+            sage: f.factor()
+            Traceback (most recent call last):
+            ...
+            ValueError: f must be integral
 
         """
         from sage.structure.factorization import Factorization
@@ -153,25 +162,11 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
         if len(F)==1 and F[0][1] == 1:
             F = [(f,1)] # squarefree decomposition sometimes introduces precision problems in trivial factorizations
         ret = []
+        unit = f.parent().one()
         for g,e in F:
             ret.extend(self.valuation().montes_factorization(g))
 
-        return Factorization(ret)
-
-    def _test_factor_univariate_polynomial(self, **options):
-        tester = self._tester(**options)
-
-        from sage.rings.all import PolynomialRing
-        R = PolynomialRing(self, 'x')
-
-        # test some polynomials of low degree
-        coefficients = tester.some_elements()
-        for degree in range(1,7):
-            coefficients_grouped = zip(*[coefficients[i::degree] for i in range(degree+1)])
-            for c in coefficients_grouped:
-                f = R(list(c))
-                F = f.factor()
-                tester.assertEqual(F.prod(), f)
+        return Factorization(ret, unit=unit)
 
     def _is_irreducible_univariate_polynomial(self, f):
         from factory import GenericExtensionFactory

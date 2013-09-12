@@ -418,9 +418,14 @@ class pAdicValuation_base(UniqueRepresentation, DiscreteValuation):
             raise ValueError("G must be monic")
 
         from sage.rings.all import infinity
-        ret = [ v.phi() for v in self.mac_lane_approximants(G, precision_cap=infinity, assume_squarefree=assume_squarefree) ]
+        # W contains approximate factors of G
+        W = self.mac_lane_approximants(G, precision_cap=infinity,assume_squarefree=assume_squarefree)
+        ret = [w.phi() for w in W]
+
+        # the polynomials in ret give "a" factorization; there is no guarantee
+        # that every factorization is of this form... TODO
         from sage.structure.factorization import Factorization
-        return Factorization([ (g,1) for g in ret ])
+        return Factorization([ (g,1) for g in ret ], simplify=False)
 
     def mac_lane_approximants(self, G, precision_cap=None, assume_squarefree=False):
         """
