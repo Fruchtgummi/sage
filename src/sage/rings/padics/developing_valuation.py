@@ -985,7 +985,28 @@ class DevelopingValuation(DiscreteValuation):
 
             w = self.extension(phi, self(phi), check=False)
             NP = w.newton_polygon(G).principal_part()
-            assert len(NP)
+            # assert len(NP)
+            if not NP:
+                q,r = G.quo_rem(phi)
+                assert not r.is_zero()
+                phi = phi.coeffs()
+                for i,c in enumerate(r.coeffs()):
+                    if not c.is_zero():
+                        v = c.valuation()
+                        # for a correct result we need to add O(pi^v) in degree i
+                        # we try to find the coefficient of phi where such an error can be introduced without losing much absolute precision on phi
+                        best = i
+                        for j in range(i):
+                            if q[j].valuation() < q[best].valuation():
+                                best = j
+                        # now add the right O() to phi in degree i-best
+                        phi[i-best] = phi[i-best].add_bigoh(c.valuation()-q[best].valuation())
+
+                phi = G.parent()(phi)
+                w = self._base_valuation.extension(phi, infinity)
+                ret.append(w)
+                continue
+
             for i in range(len(NP.slopes())):
                 slope = NP.slopes()[i]
                 side = NP.sides()[i]
@@ -1001,8 +1022,5 @@ class DevelopingValuation(DiscreteValuation):
                 assert slope is -infinity or 0 in new_leaf.newton_polygon(G).slopes()
                 ret.append(new_leaf)
 
-        # something strange can happen if we do not work over fixed-mod rings:
-        # G might not be a key over self, however, 
-        # if len(ret)==0:
         assert ret
         return ret
