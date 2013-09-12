@@ -5724,6 +5724,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
             for k from 0 <= k <= self.degree():
                 if self[k]:
                     return ZZ(k)
+            raise ValueError("valuation() not defined for inexact zero polynomial.")
         if isinstance(p, Polynomial):
             p = self.parent().coerce(p)
         elif is_Ideal(p) and p.ring() is self.parent(): # eventually need to handle fractional ideals in the fraction field
@@ -6613,12 +6614,15 @@ cdef class Polynomial_generic_dense(Polynomial):
         return make_generic_polynomial, (self._parent, self.__coeffs)
 
     def __nonzero__(self):
-        return len(self.__coeffs) > 0
+        if self.parent().is_exact():
+            return len(self.__coeffs) > 0
+        else:
+            return any([not c.is_zero() for c in self.__coeffs])
 
     cdef void __normalize(self):
         x = self.__coeffs
         cdef Py_ssize_t n = len(x) - 1
-        while n >= 0 and not x[n]:
+        while n >= 0 and not x[n] and (self.parent().is_exact() or x[n]._is_exact_zero()):
             del x[n]
             n -= 1
 
