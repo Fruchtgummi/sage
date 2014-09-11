@@ -353,7 +353,11 @@ class GeneralExtensionGeneric(pAdicExtensionGeneric):
 
         # we find the image of the uniformizer of base in implementation_ring
         # by factoring its minpoly
-        base_uniformizer = base.modulus().change_ring(implementation_ring).any_root()
+        base_uniformizer = None
+        for root in base.modulus().change_ring(implementation_ring).roots(multiplicities=False):
+            if not g(root, implementation_ring.gen()):
+                base_uniformizer = root
+        assert base_uniformizer is not None
         from sage.categories.rings import Rings
         from sage.categories.homset import Hom
         from sage.categories.morphism import SetMorphism
