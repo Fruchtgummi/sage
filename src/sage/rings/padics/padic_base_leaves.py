@@ -864,7 +864,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             self._label = None
         else:
             self._label = str(label)
-        self._prec_cap = prec
+        (self._prec_cap_relative, self._prec_cap_absolute) = prec
         self._precision = PrecisionLattice(p, label)
         # We do not use the standard attribute element_class 
         # because we need to be careful with precision
@@ -881,6 +881,76 @@ class pAdicLatticeGeneric(pAdicGeneric):
             'lattice'
         """
         return 'lattice'
+
+    def precision_cap(self):
+        """
+        Return the relative precision cap for this ring if it is finite.
+        Otherwise return the absolute precision cap.
+
+        EXAMPLES::
+
+            sage: R = ZpLP(3)
+            sage: R.precision_cap()
+            20
+            sage: R.precision_cap_relative()
+            20
+
+            sage: R = ZpLP(3, absprec=20)
+            sage: R.precision_cap()
+            20
+            sage: R.precision_cap_relative()
+            +Infinity
+            sage: R.precision_cap_absolute()
+            20
+
+        .. SEEALSO::
+
+            :meth:`precision_cap_relative`, :meth:`precision_cap_absolute`
+        """
+        if self._prec_cap_relative is not Infinity:
+            return self._prec_cap_relative
+        else:
+            return self._prec_cap_absolute
+
+    def precision_cap_relative(self):
+        """
+        Return the relative precision cap for this ring
+
+        EXAMPLES::
+
+            sage: R = ZpLP(3)
+            sage: R.precision_cap_relative()
+            20
+
+            sage: R = ZpLP(3, absprec=20)
+            sage: R.precision_cap_relative()
+            +Infinity
+
+        .. SEEALSO::
+
+            :meth:`precision_cap`, :meth:`precision_cap_absolute`
+        """
+        return self._prec_cap_relative
+
+    def precision_cap_absolute(self):
+        """
+        Return the absolute precision cap for this ring
+
+        EXAMPLES::
+
+            sage: R = ZpLP(3)
+            sage: R.precision_cap_absolute()
+            40
+
+            sage: R = ZpLP(3, absprec=20)
+            sage: R.precision_cap_absolute()
+            20
+
+        .. SEEALSO::
+
+            :meth:`precision_cap`, :meth:`precision_cap_relative`
+        """
+        return self._prec_cap_absolute
 
     def precision(self):
         """
@@ -900,7 +970,6 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
             :class:`sage.rings.padics.lattice_precision.PrecisionLattice`
         """
-
         return self._precision
 
     def label(self):
@@ -969,7 +1038,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         same parent, the software remembers that the created element
         is actually equal to ``x`` (at infinite precision)::
 
-            sage: R = ZpLP(2, prec=50)
+            sage: R = ZpLP(2, absprec=50)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = R(x)   # indirect doctest
@@ -1111,7 +1180,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         INPUT:
 
         - ``p`` -- prime
-        - ``prec`` -- precision cap
+        - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
         - ``print_mode`` -- dictionary with print options
         - ``names`` -- how to print the prime
         - ``label`` -- the label of this ring
@@ -1131,7 +1200,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             :meth:`label`
         """
         pAdicLatticeGeneric.__init__(self, p, prec, label, proof)
-        pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, None)
+        pAdicRingBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
 
     def _repr_(self, do_latex=False):
         """
@@ -1178,15 +1247,18 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
             sage: R = ZpLP(2)
             sage: R.random_element()    # random
-            2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + O(2^20)
+            2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^21 + O(2^23)
 
             sage: R.random_element(prec=10)    # random
             1 + 2^3 + 2^4 + 2^7 + O(2^10)
         """
         if prec is None:
-            prec = self._prec_cap
+            prec = self._prec_cap_absolute
         p = self.prime()
         x = ZZ.random_element(p**prec)
+        relcap = x.valuation(p) + self._prec_cap_relative
+        if prec < relcap:
+            prec = relcap
         return self._element_class(self, x, prec=prec)
 
     def integer_ring(self, print_mode=None):
@@ -1280,7 +1352,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         INPUT:
 
         - ``p`` -- prime
-        - ``prec`` -- precision cap
+        - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
         - ``print_mode`` -- dictionary with print options
         - ``names`` -- how to print the prime
         - ``label`` -- the label of this ring
@@ -1300,7 +1372,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             :meth:`label`
         """
         pAdicLatticeGeneric.__init__(self, p, prec, label, proof)
-        pAdicFieldBaseGeneric.__init__(self, p, prec, print_mode, names, None)
+        pAdicFieldBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
 
     def _repr_(self, do_latex=False):
         """
@@ -1331,7 +1403,6 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         EXAMPLES::
 
         """
-
         if isinstance(R, (pAdicRingLattice, pAdicFieldLattice)) and R.precision() is self.precision():
             return True
 
@@ -1355,10 +1426,13 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         """
         # TODO: do not pick only among integers
         if prec is None:
-            prec = self._prec_cap
+            prec = self._prec_cap_absolute
         p = self.prime()
         x = ZZ.random_element(p**prec)
-        return self._element_class(self, x, prec)
+        relcap = x.valuation(p) + self._prec_cap_relative
+        if prec < relcap:
+            prec = relcap
+        return self._element_class(self, x, prec=prec)
 
     def integer_ring(self, print_mode=None):
         """

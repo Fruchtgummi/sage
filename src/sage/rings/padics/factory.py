@@ -22,6 +22,7 @@ from __future__ import absolute_import, print_function
 
 from sage.structure.factory import UniqueFactory
 from sage.rings.integer import Integer
+from sage.rings.infinity import Infinity
 from sage.structure.factorization import Factorization
 from sage.rings.integer_ring import ZZ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
@@ -97,7 +98,7 @@ def _default_show_prec(type, print_mode):
     else:
         return False
 
-def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_non_lazy_types, label=None):
+def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_non_lazy_types, label=None, absprec=None, relprec=None):
     """
     This implements create_key for Zp and Qp: moving it here prevents code duplication.
 
@@ -121,15 +122,58 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
          True,
          None)
     """
-    if prec is None:
-        prec = DEFAULT_PREC
     if check:
         if not isinstance(p, Integer):
             p = Integer(p)
-        if not isinstance(prec, Integer):
-            prec = Integer(prec)
         if not p.is_prime():
             raise ValueError("p must be prime")
+        if type == 'lattice':
+            relative_cap = absolute_cap = None
+            if prec is not None:
+                # We first try to unpack
+                try:
+                    relative_cap, absolute_cap = prec
+                except (ValueError, TypeError):
+                    relative_cap = prec
+            if absprec is not None:
+                if absolute_cap is None:
+                    absolute_cap = absprec
+                else:
+                    raise ValueError("absolute cap specified twice")
+            if relprec is not None:
+                if relative_cap is None:
+                    relative_cap = relprec
+                else:
+                    raise ValueError("relative cap specified twice")
+            if relative_cap is not None:
+                if relative_cap is not Infinity:
+                    try:
+                        relative_cap = Integer(relative_cap)
+                    except TypeError:
+                        raise TypeError("relative cap must be either a positive integer or infinity")
+                    if relative_cap <= 0:
+                        raise ValueError("relative cap must be positive")
+            if absolute_cap is not None:
+                try:
+                    absolute_cap = Integer(absolute_cap)
+                except TypeError:
+                    raise TypeError("absolute cap must be an integer")
+            if relative_cap is None and absolute_cap is None:
+                relative_cap = DEFAULT_PREC
+                absolute_cap = 2 * DEFAULT_PREC
+            elif relative_cap is None:
+                relative_cap = Infinity
+            elif absolute_cap is None:
+                absolute_cap = 2 * relative_cap
+            prec = (relative_cap, absolute_cap)
+        else:
+            if prec is not None:
+                prec = Integer(prec)
+    if prec is None:
+        if type == 'lattice':
+            prec = (DEFAULT_PREC, 2*DEFAULT_PREC)
+        else:
+            prec = DEFAULT_PREC
     print_ram_name = ram_name
     if isinstance(print_mode, dict):
         if 'pos' in print_mode:
@@ -548,7 +592,8 @@ class Qp_class(UniqueFactory):
     """
     def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None,
                    names = None, ram_name = None, print_pos = None,
-                   print_sep = None, print_alphabet = None, print_max_terms = None, show_prec = None, check = True, label = None):
+                   print_sep = None, print_alphabet = None, print_max_terms = None, show_prec = None, check = True,
+                   label = None, relprec = None, absprec = None):   # specific to Lattice precision
         """
         Creates a key from input parameters for ``Qp``.
 
@@ -567,7 +612,7 @@ class Qp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
-        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice'], label)
+        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice'], label, relprec, absprec)
 
     def create_object(self, version, key):
         """
@@ -1662,7 +1707,8 @@ class Zp_class(UniqueFactory):
     """
     def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None,
                    names = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet = None,
-                   print_max_terms = None, show_prec = None, check = True, label = None):
+                   print_max_terms = None, show_prec = None, check = True,
+                   label = None, relprec = None, absprec = None):
         """
         Creates a key from input parameters for ``Zp``.
 
@@ -1694,7 +1740,8 @@ class Zp_class(UniqueFactory):
             print_max_terms = check
             check = True
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
-                            print_max_terms, show_prec, check, ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice'], label=label)
+                            print_max_terms, show_prec, check, ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice'], 
+                            label=label, relprec=relprec, absprec=absprec)
 
     def create_object(self, version, key):
         """

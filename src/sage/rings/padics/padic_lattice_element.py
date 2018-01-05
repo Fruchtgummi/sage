@@ -17,6 +17,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     """
     def __init__(self, parent, x, prec=None, dx=[], dx_mode='linear_combinaison', valuation=None, check=True, reduce=True):
         self._parent = parent
+        p = parent.prime()
         pAdicGenericElement.__init__(self, parent)
         self._precision = parent.precision()
         if check:
@@ -28,18 +29,21 @@ class pAdicLatticeElement(pAdicGenericElement):
                 else:
                     prec = min(prec, x.precision_absolute())
             x = QQ(x)
-            cap = parent.precision_cap()
-            if prec is None or prec > cap:
-                prec = cap
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
         if isinstance(x, pRational):
             self._value = x
         else:
-            self._value = pRational(parent.prime(), QQ(x))
+            self._value = pRational(p, QQ(x))
+        cap = min(parent.precision_cap_absolute(), parent.precision_cap_relative() + self._value.valuation())
+        if prec is None or prec > cap:
+            capped = True
+            prec = cap
+        else:
+            capped = False
+        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
         if reduce:
             self._value = self._value.reduce(prec)
-        self._approx_one = pRational(parent.prime(), 1)
-        self._approx_minusone = pRational(parent.prime(), -1)
+        self._approx_one = pRational(p, 1)
+        self._approx_minusone = pRational(p, -1)
 
     def __hash__(self):
         """
@@ -153,6 +157,43 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         return self._precision.precision_absolute(self)
 
+    def is_precision_capped(self):
+        """
+        Return whether the absolute precision on the given element
+        results from a cap coming from the parent
+
+        INPUT:
+
+        - ``x`` -- the element
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`is_precision_capped`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLP(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: x.is_precision_capped()
+            False
+
+            sage: y = x-x; y
+            O(2^40)
+            sage: y.is_precision_capped()
+            True
+
+            sage: y = x << 35; y
+            2^35 + O(2^40)
+            sage: y.is_precision_capped()
+            True
+            sage: z = y >> 35; z
+            1 + O(2^5)
+            sage: z.is_precision_capped()
+            True
+        """
+        return self._precision.is_precision_capped(self)
+
     def valuation(self, secure=False):
         """
         Return the valuation if this element
@@ -174,9 +215,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             2
 
             sage: y = x - x; y
-            O(2^20)
+            O(2^40)
             sage: y.valuation()
-            20
+            40
             sage: y.valuation(secure=True)
             Traceback (most recent call last):
             ...
@@ -213,7 +254,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             8
 
             sage: y = x - x; y
-            O(2^20)
+            O(2^40)
             sage: y.precision_relative()
             0
             sage: y.precision_relative(secure=True)
@@ -253,7 +294,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         x = self._value + other._value
         dx = [  [self, self._approx_one], 
                [other, self._approx_one] ]
-        return self.__class__(self._parent, x, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(self._parent, x, dx=dx, check=False)
 
     def _sub_(self, other):
         """
@@ -272,7 +313,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         x = self._value - other._value
         dx = [  [self, self._approx_one], 
                [other, self._approx_minusone] ]
-        return self.__class__(self._parent, x, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(self._parent, x, dx=dx, check=False)
 
     def _mul_(self, other):
         """
@@ -306,7 +347,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         x = x_self * x_other
         dx = [  [self, x_other],
                [other, x_self ] ]
-        return self.__class__(self._parent, x, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(self._parent, x, dx=dx, check=False)
 
     def _div_(self, other):
         """
@@ -344,14 +385,13 @@ class pAdicLatticeElement(pAdicGenericElement):
         if other.is_zero():
             raise PrecisionError("cannot divide by something indistinguishable from zero")
         p = self._parent.prime()
-        cap = self._parent.precision_cap()
         x_self = self._value
         x_other = other._value
         x = x_self / x_other
         # dx = (1/other)*dself - (self/other^2)*dother
         dx = [  [self, self._approx_one/x_other],
                [other, -x_self/(x_other*x_other)] ]
-        return self.__class__(self._parent.fraction_field(), x, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(self._parent.fraction_field(), x, dx=dx, check=False)
 
     def __invert__(self):
         """
@@ -383,12 +423,11 @@ class pAdicLatticeElement(pAdicGenericElement):
         if self.is_zero():
             raise PrecisionError("cannot invert something indistinguishable from zero")
         p = self._parent.prime()
-        cap = self._parent.precision_cap()
         x_self = self._value
         x = self._approx_one / x_self
         # dx = -(1/self^2)*dself
         dx = [  [self, self._approx_minusone/(x_self*x_self)] ]
-        return self.__class__(self._parent.fraction_field(), x, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(self._parent.fraction_field(), x, dx=dx, check=False)
 
     def add_bigoh(self, prec):
         """
@@ -503,14 +542,13 @@ class pAdicLatticeElement(pAdicGenericElement):
         #from warnings import warn
         #warn("use lift_to_precision with extreme caution in the framework of lattice precision")
         parent = self._parent
-        if prec is None:
-            prec = parent.precision_cap()
         if infer_precision:
+            cap = min(parent.precision_cap_absolute(), parent.precision_cap_relative() + self._value.valuation())
+            if prec is None or prec > cap:
+                prec = cap
             lift = self.copy()
             parent.precision().lift_to_precision(lift, prec)
         else:
-            if prec < self.precision_absolute():
-                prec = self.precision_absolute()
             lift = self.__class__(parent, self._value, prec, check=False)
         return lift
 
@@ -611,7 +649,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: R = ZpLP(997, 7)
             sage: a = R(123456878908); a
-            964*997 + 572*997^2 + 124*997^3 + O(997^7)
+            964*997 + 572*997^2 + 124*997^3 + O(997^8)
 
             sage: S = ZpLP(5)
             sage: b = S(17); b
@@ -621,7 +659,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         terms with negative valuation::
 
             sage: a >> 3
-            124 + O(997^4)
+            124 + O(997^5)
             sage: b >> 1
             3 + O(5^19)
             sage: b >> 40
@@ -638,9 +676,9 @@ class pAdicLatticeElement(pAdicGenericElement):
         A negative shift multiplies by that power of `p`::
 
             sage: a >> -3
-            964*997^4 + 572*997^5 + 124*997^6 + O(997^7)
+            964*997^4 + 572*997^5 + 124*997^6 + O(997^11)
             sage: b >> -5
-            2*5^5 + 3*5^6 + O(5^20)
+            2*5^5 + 3*5^6 + O(5^25)
         """
         return self << (-n)
 
@@ -655,9 +693,9 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: R = ZpLP(5)
             sage: a = R(1000); a
-            3*5^3 + 5^4 + O(5^20)
+            3*5^3 + 5^4 + O(5^23)
             sage: a >> 1
-            3*5^2 + 5^3 + O(5^19)
+            3*5^2 + 5^3 + O(5^22)
 
             sage: S = Zp(5); b = S(1000); b
             3*5^3 + 5^4 + O(5^23)
@@ -672,7 +710,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         if isinstance(parent, pAdicRingBaseGeneric):
             x -= x.reduce(0)
         dx = [ [self, powp] ]
-        return self.__class__(parent, x, parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(parent, x, dx=dx, check=False)
 
     def unit_part(self):
         """
@@ -775,7 +813,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: x - y
             O(2^20)
             sage: a - b
-            O(2^20)
+            O(2^21)
 
         If a parent is given, it must share the same precision object::
 
@@ -812,7 +850,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
                 raise ValueError("element of negative valuation cannot be convert to the integer ring")
         dx = [ [ self, self._approx_one ] ]
-        return self.__class__(parent, self._value, self._parent.precision_cap(), dx=dx, check=False)
+        return self.__class__(parent, self._value, dx=dx, check=False)
 
     def __copy__(self):
         """
@@ -823,7 +861,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: R = ZpLP(2)
             sage: x = R(1,10); x
             1 + O(2^10)
-            sage: y = x   # indirect doctest
+            sage: y = copy(x)   # indirect doctest
             sage: y
             1 + O(2^10)
 
@@ -844,8 +882,6 @@ class pAdicLatticeElement(pAdicGenericElement):
             4 + 2*5 + 5^2 + 4*5^3 + 5^5 + 5^6 + 5^8 + 3*5^9 + O(5^10)
             sage: x.expansion()
             [4, 2, 1, 4, 0, 1, 1, 0, 1, 3]
-            sage: (5*x).expansion()
-            [4, 2, 1, 4, 0, 1, 1, 0, 1]
 
         If any, final are included in the expansion::
 

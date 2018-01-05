@@ -210,7 +210,6 @@ def list_of_padics(elements):
          <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
          <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
          <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>]
-
     """
     from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
     if isinstance(elements, pAdicLatticeElement):
@@ -277,11 +276,10 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
     #    (its columns are indexed by self._elements)
     #  . self._absolute_precisions
     def __init__(self, p, label):
-        """
-        """
         self._p = p
         self._label = label
         self._elements = [ ]
+        self._capped = { }
         self._lattice = { }
         self._absolute_precisions = { }
         self._marked_for_deletion = [ ]
@@ -419,7 +417,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             if self._history is not None:
                 self._history.append(('full reduce', index, walltime(tme)))
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison'):
+    def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison', capped=False):
         """
         Update the lattice when a new element is created.
 
@@ -435,6 +433,9 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
           or `values`
+
+        - ``capped`` -- a boolean, whether this element has been capped 
+          according to the parent's cap
 
         If ``dx_mode`` is ``linear_combinaison``, the dictionary ``dx`` 
         encodes the expression of the differential of ``x``. 
@@ -492,9 +493,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             col[i] = col[i].reduce(bigoh)
         col.append(pRational(p, ZZ(1), bigoh))
         self._lattice[x_ref] = col
-
-        # We compute the absolute precision of the new element and cache it
-        self._absolute_precisions[x_ref] = min([ c.valuation() for c in col ])
+        self._capped[x_ref] = capped
 
         # We update history
         if self._history is not None:
@@ -704,11 +703,27 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             if w < prec:
                 rows_by_val[w].append(piv)
 
-        # We update the cached absolute precisions
-        for x_ref in self._elements:
-            col = self._lattice[x_ref]
-            self._absolute_precisions[x_ref] = min([ c.valuation() for c in col ])
+        # We clear the cached absolute precisions
+        self._absolute_precisions = { }
 
+
+    def _compute_precision_absolute(self, ref):
+        """
+        Compute the absolute precision of the given element and cache it
+
+        For internal use.
+        """
+        col = self._lattice[ref]
+        absprec = Infinity
+        capped = False
+        for i in range(len(col)):
+            v = col[i].valuation()
+            if v < absprec:
+                absprec = v
+                capped = self._capped[self._elements[i]]
+            elif v == absprec:
+                capped = capped and self._capped[self._elements[i]]
+        self._absolute_precisions[ref] = [absprec, capped]
 
     def precision_absolute(self, x):
         """
@@ -738,11 +753,44 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             1 + O(2^5)
             sage: z = x + y; z
             2 + O(2^5)
-            sage: z.precision_absolute()
+            sage: z.precision_absolute()  # indirect doctest
             5
         """
         ref = weakref.ref(x)
-        return self._absolute_precisions[ref]
+        if not self._absolute_precisions.has_key(ref):
+            self._compute_precision_absolute(ref)
+        return self._absolute_precisions[ref][0]
+
+    def is_precision_capped(self, x):
+        """
+        Return whether the absolute precision on the given 
+        results from a cap coming from the parent
+
+        INPUT:
+
+        - ``x`` -- the element
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`is_precision_capped`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLP(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: x.is_precision_capped()  # indirect doctest
+            False
+
+            sage: y = x-x; y
+            O(2^40)
+            sage: y.is_precision_capped()  # indirect doctest
+            True
+        """
+        ref = weakref.ref(x)
+        if not self._absolute_precisions.has_key(ref):
+            self._compute_precision_absolute(ref)
+        return self._absolute_precisions[ref][1]
 
     def precision_lattice(self, elements=None, echelon=True):
         """
@@ -764,10 +812,10 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             sage: u = x + y
             sage: v = x - y
             sage: prec.precision_lattice()
-            [   1024       0    1024    1024]
-            [      0      32      32 1048544]
-            [      0       0 1048576       0]
-            [      0       0       0 1048576]
+            [         1024             0          1024          1024]
+            [            0            32            32 1099511627744]
+            [            0             0       2097152             0]
+            [            0             0             0 1099511627776]
             sage: prec.precision_lattice([u,v])
             [  32 2016]
             [   0 2048]
@@ -792,14 +840,14 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
         We can give a list of matrices as well::
 
             sage: prec.precision_lattice([M,N])
-            [     32       0       0       0  671744  319488  794624 1015808]
-            [      0      32       0       0  794624  131072  294912  204800]
-            [      0       0      32       0  319488  819200  131072  385024]
-            [      0       0       0       2  980992  941568  733696  900096]
-            [      0       0       0       0 1048576       0       0       0]
-            [      0       0       0       0       0 1048576       0       0]
-            [      0       0       0       0       0       0 1048576       0]
-            [      0       0       0       0       0       0       0 1048576]
+            [       32         0         0         0 226115584  96788480  52174848  82804736]
+            [        0        32         0         0  52174848 121765888  11829248  28516352]
+            [        0         0        32         0  96788480  42762240 121765888 199614464]
+            [        0         0         0         2   5175296  12475904   1782272   4045824]
+            [        0         0         0         0 268435456         0         0         0]
+            [        0         0         0         0         0 268435456         0         0]
+            [        0         0         0         0         0         0 268435456         0]
+            [        0         0         0         0         0         0         0 268435456]
         """
         if elements is None:
             elements = self._elements
