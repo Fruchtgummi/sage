@@ -51,7 +51,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         TESTS::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10)
             sage: hash(x)   # somewhat random
         """
@@ -72,7 +72,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, print_mode='terse')
+            sage: R = ZpLC(2, print_mode='terse')
             sage: x = R(1234,10); x
             210 + O(2^10)
             sage: x.approximation()
@@ -92,7 +92,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, print_mode='terse')
+            sage: R = ZpLC(2, print_mode='terse')
             sage: x = R(1234,10); x
             210 + O(2^10)
             sage: x.approximation()
@@ -117,7 +117,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='precision')
+            sage: R = ZpLC(2, label='precision')
             sage: x = R.random_element()
             sage: y = R.random_element()
             sage: x.precision_lattice()
@@ -138,7 +138,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, print_mode='terse')
+            sage: R = ZpLC(2, print_mode='terse')
             sage: x = R(1234,10); x
             210 + O(2^10)
             sage: x.precision_absolute()
@@ -172,7 +172,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: x.is_precision_capped()
@@ -208,7 +208,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(12,10); x
             2^2 + 2^3 + O(2^10)
             sage: x.valuation()
@@ -247,7 +247,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(12,10); x
             2^2 + 2^3 + O(2^10)
             sage: x.precision_relative()
@@ -276,7 +276,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(19,5)
+            sage: R = ZpLC(19,5)
             sage: a = R(-1); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
             sage: b = R(-5/2); b
@@ -302,7 +302,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-           sage: R = ZpLP(19,5)
+           sage: R = ZpLC(19,5)
            sage: a = R(-1); a
            18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
            sage: b = R(-5/2); b
@@ -321,7 +321,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(19,5)
+            sage: R = ZpLC(19,5)
             sage: a = R(-1); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
             sage: b = R(-5/2); b
@@ -360,7 +360,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(19)
+            sage: R = ZpLC(19)
             sage: a = R(-1,5); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
             sage: b = R(-5/2,5); b
@@ -404,7 +404,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(19)
+            sage: R = ZpLC(19)
             sage: x = R(-5/2,5); x
             7 + 9*19 + 9*19^2 + 9*19^3 + 9*19^4 + O(19^5)
 
@@ -440,13 +440,13 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-           sage: R = ZpLP(7)
+           sage: R = ZpLC(7)
            sage: a = R(8); a.add_bigoh(1)
            1 + O(7)
            sage: b = R(0); b.add_bigoh(3)
            O(7^3)
 
-           sage: R = QpLP(7,4)
+           sage: R = QpLC(7,4)
            sage: a = R(8); a.add_bigoh(1)
            1 + O(7)
            sage: b = R(0); b.add_bigoh(3)
@@ -493,7 +493,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: x.lift_to_precision(15)
@@ -563,7 +563,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(5)
+            sage: R = ZpLC(5)
             sage: R(0)._is_exact_zero()
             False
             sage: R(1)._is_exact_zero()
@@ -577,7 +577,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(5)
+            sage: R = ZpLC(5)
             sage: R(0)._is_inexact_zero()
             True
             sage: R(1)._is_inexact_zero()
@@ -597,7 +597,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(2/5,10); x
             2 + 2^3 + 2^4 + 2^7 + 2^8 + O(2^10)
             sage: x.is_zero()
@@ -628,11 +628,11 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES:
 
-           sage: R = ZpLP(7)
+           sage: R = ZpLC(7)
            sage: a = R(8); a.lift()
            8
 
-           sage: R = QpLP(7)
+           sage: R = QpLC(7)
            sage: a = R(8); a.lift()
            8
            sage: b = R(8/7); b.lift()
@@ -647,11 +647,11 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(997, 7)
+            sage: R = ZpLC(997, 7)
             sage: a = R(123456878908); a
             964*997 + 572*997^2 + 124*997^3 + O(997^8)
 
-            sage: S = ZpLP(5)
+            sage: S = ZpLC(5)
             sage: b = S(17); b
             2 + 3*5 + O(5^20)
 
@@ -667,7 +667,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         If the parent is a field no truncation is performed::
 
-            sage: K = QpLP(5)
+            sage: K = QpLC(5)
             sage: b = K(17); b
             2 + 3*5 + O(5^20)
             sage: b >> 1
@@ -691,7 +691,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(5)
+            sage: R = ZpLC(5)
             sage: a = R(1000); a
             3*5^3 + 5^4 + O(5^23)
             sage: a >> 1
@@ -718,7 +718,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(17)
+            sage: R = ZpLC(17)
             sage: a = R(18*17, 4)
             sage: a.unit_part()
             1 + 17 + O(17^3)
@@ -747,7 +747,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(17)
+            sage: R = ZpLC(17)
             sage: a = R(18*17, 4)
             sage: a.val_unit()
             (1, 1 + 17 + O(17^3))
@@ -777,7 +777,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = x.copy()
@@ -793,7 +793,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         This function can also be used for coersion/conversion as follows::
 
-            sage: K = QpLP(2)
+            sage: K = QpLC(2)
             sage: y = x.copy(K)
             sage: y
             1 + O(2^10)
@@ -817,7 +817,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         If a parent is given, it must share the same precision object::
 
-            sage: x.copy(ZpLP(5))
+            sage: x.copy(ZpLC(5))
             Traceback (most recent call last):
             ...
             TypeError: parent must share the same precision object
@@ -827,7 +827,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             ...
             TypeError: parent must share the same precision object
 
-            sage: x.copy(ZpLP(2, label='other'))
+            sage: x.copy(ZpLC(2, label='other'))
             Traceback (most recent call last):
             ...
             TypeError: parent must share the same precision object
@@ -858,7 +858,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         TESTS::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = copy(x)   # indirect doctest
@@ -877,7 +877,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLP(5,10)
+            sage: R = ZpLC(5,10)
             sage: x = R(123456789); x
             4 + 2*5 + 5^2 + 4*5^3 + 5^5 + 5^6 + 5^8 + 3*5^9 + O(5^10)
             sage: x.expansion()

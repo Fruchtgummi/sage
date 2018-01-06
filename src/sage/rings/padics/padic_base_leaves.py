@@ -877,10 +877,10 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: ZpLP(5)._prec_type()
-            'lattice'
+            sage: ZpLC(5)._prec_type()
+            'lattice-cap'
         """
-        return 'lattice'
+        return 'lattice-cap'
 
     def precision_cap(self):
         """
@@ -889,13 +889,13 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(3)
+            sage: R = ZpLC(3)
             sage: R.precision_cap()
             20
             sage: R.precision_cap_relative()
             20
 
-            sage: R = ZpLP(3, absprec=20)
+            sage: R = ZpLC(3, absprec=20)
             sage: R.precision_cap()
             20
             sage: R.precision_cap_relative()
@@ -918,11 +918,11 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(3)
+            sage: R = ZpLC(3)
             sage: R.precision_cap_relative()
             20
 
-            sage: R = ZpLP(3, absprec=20)
+            sage: R = ZpLC(3, absprec=20)
             sage: R.precision_cap_relative()
             +Infinity
 
@@ -938,11 +938,11 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(3)
+            sage: R = ZpLC(3)
             sage: R.precision_cap_absolute()
             40
 
-            sage: R = ZpLP(3, absprec=20)
+            sage: R = ZpLC(3, absprec=20)
             sage: R.precision_cap_absolute()
             20
 
@@ -958,7 +958,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(5,label='precision')
+            sage: R = ZpLC(5,label='precision')
             sage: R.precision()
             Precision Lattice on 0 object (label: precision)
 
@@ -990,10 +990,10 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES:
 
-            sage: R = ZpLP(5)
+            sage: R = ZpLC(5)
             sage: R.label()  # no label by default
 
-            sage: R = ZpLP(5, label='mylabel')
+            sage: R = ZpLC(5, label='mylabel')
             sage: R.label()
             'mylabel'
 
@@ -1001,14 +1001,14 @@ class pAdicLatticeGeneric(pAdicGeneric):
         For example, assume that we first want to do some calculations
         with matrices::
 
-            sage: R = ZpLP(5, label='matrices')
+            sage: R = ZpLC(5, label='matrices')
             sage: M = random_matrix(R, 4, 4)
             sage: M.determinant()     # somewhat random
 
         Now, if we want to do another unrelated computations, we can
         use a different label::
 
-            sage: R = ZpLP(5, label='polynomials')
+            sage: R = ZpLC(5, label='polynomials')
             sage: S.<x> = PolynomialRing(R)
             sage: P = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)
 
@@ -1038,7 +1038,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         same parent, the software remembers that the created element
         is actually equal to ``x`` (at infinite precision)::
 
-            sage: R = ZpLP(2, absprec=50)
+            sage: R = ZpLC(2, absprec=50)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = R(x)   # indirect doctest
@@ -1071,7 +1071,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); y = R(1,5)
             sage: x,y = x+y, x-y
 
@@ -1090,7 +1090,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         As a consequence, if we convert ``x`` and ``y`` separately, we
         loose some precision::
 
-            sage: R2 = ZpLP(2, label='copy')
+            sage: R2 = ZpLC(2, label='copy')
             sage: x2 = R2(x); y2 = R2(y)
             sage: x2
             2 + O(2^5)
@@ -1187,11 +1187,11 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(next_prime(10^60)) # indirect doctest
+            sage: R = ZpLC(next_prime(10^60)) # indirect doctest
             sage: type(R)
             <class 'sage.rings.padics.padic_base_leaves.pAdicRingLattice_with_category'>
 
-            sage: R = ZpLP(2,label='init') # indirect doctest
+            sage: R = ZpLC(2,label='init') # indirect doctest
             sage: R
             2-adic Ring with lattice precision (label: init)
 
@@ -1208,7 +1208,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2); R   # indirect doctest
+            sage: R = ZpLC(2); R   # indirect doctest
             2-adic Ring with lattice precision
             sage: latex(R)
             \mathbb Z_{2}
@@ -1245,7 +1245,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: R.random_element()    # random
             2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^21 + O(2^23)
 
@@ -1257,7 +1257,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         p = self.prime()
         x = ZZ.random_element(p**prec)
         relcap = x.valuation(p) + self._prec_cap_relative
-        if prec < relcap:
+        if relcap < prec:
             prec = relcap
         return self._element_class(self, x, prec=prec)
 
@@ -1271,7 +1271,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2); R
+            sage: R = ZpLC(2); R
             2-adic Ring with lattice precision
             sage: R.integer_ring()
             2-adic Ring with lattice precision
@@ -1289,7 +1289,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         Labels are kept unchanged by this function::
 
-            sage: R = ZpLP(2, label='test'); R
+            sage: R = ZpLC(2, label='test'); R
             2-adic Ring with lattice precision (label: test)
             sage: R.integer_ring()
             2-adic Ring with lattice precision (label: test)
@@ -1302,7 +1302,8 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         if print_mode is None:
             return self
         from sage.rings.padics.factory import Zp
-        return Zp(self.prime(), self.precision_cap(), 'lattice', print_mode=self._modified_print_mode(print_mode), 
+        return Zp(self.prime(), (self._prec_cap_relative, self._prec_cap_absolute), 
+                  'lattice-cap', print_mode=self._modified_print_mode(print_mode), 
                   names=self._uniformizer_print(), label=self._label)
 
     def fraction_field(self, print_mode=None):
@@ -1315,7 +1316,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2); R
+            sage: R = ZpLC(2); R
             2-adic Ring with lattice precision
             sage: K = R.fraction_field(); K
             2-adic Field with lattice precision
@@ -1331,13 +1332,14 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
  
         Labels are kept unchanged by this function::
 
-            sage: R = ZpLP(2, label='test'); R
+            sage: R = ZpLC(2, label='test'); R
             2-adic Ring with lattice precision (label: test)
             sage: R.fraction_field()
             2-adic Field with lattice precision (label: test)
         """
         from sage.rings.padics.factory import Qp
-        return Qp(self.prime(), self.precision_cap(), 'lattice', print_mode=self._modified_print_mode(print_mode), 
+        return Qp(self.prime(), (self._prec_cap_relative, self._prec_cap_absolute),
+                  'lattice-cap', print_mode=self._modified_print_mode(print_mode), 
                   names=self._uniformizer_print(), label=self._label)
 
 
@@ -1359,11 +1361,11 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
-            sage: R = QpLP(next_prime(10^60)) # indirect doctest
+            sage: R = QpLC(next_prime(10^60)) # indirect doctest
             sage: type(R)
             <class 'sage.rings.padics.padic_base_leaves.pAdicFieldLattice_with_category'>
 
-            sage: R = QpLP(2,label='init') # indirect doctest
+            sage: R = QpLC(2,label='init') # indirect doctest
             sage: R
             2-adic Field with lattice precision (label: init)
 
@@ -1380,7 +1382,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
-            sage: K = QpLP(2); K   # indirect doctest
+            sage: K = QpLC(2); K   # indirect doctest
             2-adic Field with lattice precision
             sage: latex(K)
             \mathbb Q_{2}
@@ -1417,7 +1419,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
-            sage: K = QpLP(2)
+            sage: K = QpLC(2)
             sage: K.random_element()    # random
             2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + O(2^20)
 
@@ -1430,7 +1432,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         p = self.prime()
         x = ZZ.random_element(p**prec)
         relcap = x.valuation(p) + self._prec_cap_relative
-        if prec < relcap:
+        if relcap < prec:
             prec = relcap
         return self._element_class(self, x, prec=prec)
 
@@ -1444,7 +1446,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
-            sage: K = QpLP(2); K
+            sage: K = QpLC(2); K
             2-adic Field with lattice precision
             sage: R = K.integer_ring(); R
             2-adic Ring with lattice precision
@@ -1460,14 +1462,15 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         Labels are kept unchanged by this function::
 
-            sage: K = QpLP(2, label='test'); K
+            sage: K = QpLC(2, label='test'); K
             2-adic Field with lattice precision (label: test)
             sage: K.integer_ring()
             2-adic Ring with lattice precision (label: test)
 
         """
         from sage.rings.padics.factory import Zp
-        return Zp(self.prime(), self.precision_cap(), 'lattice', print_mode=self._modified_print_mode(print_mode), 
+        return Zp(self.prime(), (self._prec_cap_relative, self._prec_cap_absolute),
+                  'lattice-cap', print_mode=self._modified_print_mode(print_mode), 
                   names=self._uniformizer_print(), label=self._label)
 
     def fraction_field(self, print_mode=None):
@@ -1480,7 +1483,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
-            sage: K = QpLP(2); K
+            sage: K = QpLC(2); K
             2-adic Field with lattice precision
             sage: K.fraction_field()
             2-adic Field with lattice precision
@@ -1498,7 +1501,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
  
         Labels are kept unchanged by this function::
 
-            sage: K = QpLP(2, label='test'); K
+            sage: K = QpLC(2, label='test'); K
             2-adic Field with lattice precision (label: test)
             sage: K.fraction_field()
             2-adic Field with lattice precision (label: test)
@@ -1511,5 +1514,6 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         if print_mode is None:
             return self
         from sage.rings.padics.factory import Qp
-        return Qp(self.prime(), self.precision_cap(), 'lattice', print_mode=self._modified_print_mode(print_mode), 
+        return Qp(self.prime(), (self._prec_cap_relative, self._prec_cap_absolute),
+                  'lattice-cap', print_mode=self._modified_print_mode(print_mode), 
                   names=self._uniformizer_print(), label=self._label)

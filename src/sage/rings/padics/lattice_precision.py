@@ -203,7 +203,7 @@ def list_of_padics(elements):
     TESTS::
 
         sage: from sage.rings.padics.lattice_precision import list_of_padics
-        sage: R = ZpLP(2)
+        sage: R = ZpLC(2)
         sage: M = random_matrix(R,2,2)
         sage: list_of_padics(M)
         [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
@@ -259,7 +259,7 @@ def format_history(tme, status, timings):
 class PrecisionLattice(UniqueRepresentation, SageObject):
     """
     A class for handling precision lattices which are used to
-    track precision in the ZpLP model.
+    track precision in the ZpLC model.
 
     The precision lattice is stored as a triangular matrix whose
     rows are generators of the lattice.
@@ -295,7 +295,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLE::
 
-            sage: R = ZpLP(2, label="mylabel")
+            sage: R = ZpLC(2, label="mylabel")
             sage: R.precision().label()
             'mylabel'
         """
@@ -307,13 +307,13 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: R.precision()
             Precision Lattice on ... objects
 
         If a label has been specified, it is included in the representation
 
-            sage: R = ZpLP(2, label="mylabel")
+            sage: R = ZpLC(2, label="mylabel")
             sage: R.precision()
             Precision Lattice on 0 object (label: mylabel)
         """
@@ -335,7 +335,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLE::
 
-            sage: R = ZpLP(2, label="mylabel")
+            sage: R = ZpLC(2, label="mylabel")
             sage: R.precision().prime()
             2
         """
@@ -370,7 +370,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         TESTS::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R.random_element()
             sage: del x
             sage: R.precision().del_elements()   # indirect doctest
@@ -456,7 +456,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         TESTS::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R.random_element()
             sage: y = R.random_element()
             sage: z = x*y    # indirect doctest
@@ -529,7 +529,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='markdel')
+            sage: R = ZpLC(2, label='markdel')
             sage: prec = R.precision()
             sage: x = R(1,10)
             sage: prec
@@ -564,7 +564,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='delelts')
+            sage: R = ZpLC(2, label='delelts')
             sage: prec = R.precision()
 
             sage: x = R(1,10)
@@ -651,7 +651,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = R(1,5); y
@@ -746,7 +746,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: y = R(1,5); y
@@ -776,7 +776,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: x = R(1,10); x
             1 + O(2^10)
             sage: x.is_precision_capped()  # indirect doctest
@@ -806,7 +806,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='preclattice')
+            sage: R = ZpLC(2, label='preclattice')
             sage: prec = R.precision()
             sage: x = R(1,10); y = R(1,5)
             sage: u = x + y
@@ -896,7 +896,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2)
+            sage: R = ZpLC(2)
             sage: prec = R.precision()
             sage: x = R(1,10); y = R(1,5)
             sage: u = x + y
@@ -949,7 +949,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='count')
+            sage: R = ZpLC(2, label='count')
             sage: prec = R.precision()
             sage: x = R(1,10); y = R(1,5)
             sage: prec.number_of_tracked_elements()
@@ -995,7 +995,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='tracked')
+            sage: R = ZpLC(2, label='tracked')
             sage: prec = R.precision()
             sage: x = R(1,10); y = R(1,5)
             sage: prec.tracked_elements()
@@ -1050,7 +1050,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         TESTS::
 
-            sage: R = ZpLP(2, label='history_en')
+            sage: R = ZpLC(2, label='history_en')
             sage: prec = R.precision()
 
             sage: print(prec.history())  # history is disabled by default
@@ -1080,7 +1080,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         TESTS::
 
-            sage: R = ZpLP(2, label='history_dis')
+            sage: R = ZpLC(2, label='history_dis')
             sage: prec = R.precision()
 
             sage: print(prec.history())  # history is disabled by default
@@ -1114,7 +1114,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         TESTS::
 
-            sage: R = ZpLP(2, label='history_clear')
+            sage: R = ZpLC(2, label='history_clear')
             sage: prec = R.precision()
             sage: prec.history_enable()
 
@@ -1176,7 +1176,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='history_en')
+            sage: R = ZpLC(2, label='history_en')
             sage: prec = R.precision()
 
         We first enable history::
@@ -1331,7 +1331,7 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
         EXAMPLES::
 
-            sage: R = ZpLP(2, label='timings')
+            sage: R = ZpLC(2, label='timings')
             sage: prec = R.precision()
             sage: prec.history_enable()
             sage: M = random_matrix(R,5,5)

@@ -78,7 +78,7 @@ def _default_show_prec(type, print_mode):
 
     INPUT:
 
-    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'`` or ``'lattice'``
+    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'`` or ``'lattice-cap'``
     - ``print_mode`` -- a string: ``'series'``, ``'terse'``, ``'val-unit'``, ``'digits'``, ``'bars'``
 
     EXAMPLES::
@@ -127,7 +127,7 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
             p = Integer(p)
         if not p.is_prime():
             raise ValueError("p must be prime")
-        if type == 'lattice':
+        if type == 'lattice-cap':
             relative_cap = absolute_cap = None
             if prec is not None:
                 # We first try to unpack
@@ -170,7 +170,7 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
             if prec is not None:
                 prec = Integer(prec)
     if prec is None:
-        if type == 'lattice':
+        if type == 'lattice-cap':
             prec = (DEFAULT_PREC, 2*DEFAULT_PREC)
         else:
             prec = DEFAULT_PREC
@@ -612,7 +612,7 @@ class Qp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
-        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice'], label, relprec, absprec)
+        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap'], label, relprec, absprec)
 
     def create_object(self, version, key):
         """
@@ -665,7 +665,7 @@ class Qp_class(UniqueFactory):
             else:
                 return pAdicFieldFloatingPoint(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                                          'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name)
-        elif type == 'lattice':
+        elif type == 'lattice-cap':
             if print_mode == 'terse':
                 return pAdicFieldLattice(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                                    'ram_name': name, 'max_terse_terms': print_max_terms, 'show_prec': show_prec}, name, label)
@@ -1254,20 +1254,20 @@ def QpFP(p, prec = None, *args, **kwds):
 
 #    EXAMPLES::
 
-def QpLP(p, prec = None, *args, **kwds):
+def QpLC(p, prec = None, *args, **kwds):
     """
     A shortcut function to create `p`-adic fields with lattice precision.
 
-    See :func:`ZpLP` for more information about this model of precision.
+    See :func:`ZpLC` for more information about this model of precision.
 
     EXAMPLES::
 
-        sage: R = QpLP(2)
+        sage: R = QpLC(2)
         sage: R
         2-adic Field with lattice precision
 
     """
-    return Qp(p, prec, 'lattice', *args, **kwds)
+    return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
 def QqCR(q, prec = None, *args, **kwds):
     """
@@ -1299,20 +1299,20 @@ def QqFP(q, prec = None, *args, **kwds):
     """
     return Qq(q, prec, 'floating-point', *args, **kwds)
 
-def QpLP(p, prec = None, *args, **kwds):
+def QpLC(p, prec = None, *args, **kwds):
     """
     A shortcut function to create `p`-adic fields with lattice precision.
 
-    See :func:`ZpLP` for more information about this model of precision.
+    See :func:`ZpLC` for more information about this model of precision.
 
     EXAMPLES::
 
-        sage: R = QpLP(2)
+        sage: R = QpLC(2)
         sage: R
         2-adic Field with lattice precision
 
     """
-    return Qp(p, prec, 'lattice', *args, **kwds)
+    return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
 
 #######################################################################################################
@@ -1333,14 +1333,16 @@ class Zp_class(UniqueFactory):
     - ``p`` -- integer: the `p` in `\mathbb{Z}_p`
 
     - ``prec`` -- integer (default: ``20``) the precision cap of the
-      ring.  Except for the fixed modulus case, individual elements
+      ring.  In the lattice capped case, ``prec`` can either be a
+      pair (``relative_cap``, ``absolute_cap``).
+      Except for the fixed modulus case, individual elements
       keep track of their own precision.  See TYPES and PRECISION
       below.
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
       ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``,
-      ``'floating-point'`` and ``'lazy'`` (though lazy is not yet
-      implemented).  See TYPES and PRECISION below
+      ``'floating-point'`` and ``'lattice-cap'``.
+      See TYPES and PRECISION below
 
     - ``print_mode`` -- string (default: ``None``).  Valid modes are
       ``'series'``, ``'val-unit'``, ``'terse'``, ``'digits'``, and
@@ -1375,9 +1377,9 @@ class Zp_class(UniqueFactory):
 
     TYPES AND PRECISION:
 
-    There are two types of precision for a `p`-adic element.  The first
-    is relative precision, which gives the number of known `p`-adic
-    digits::
+    There are three types of precision.
+    The first is relative precision; it gives the number of known 
+    `p`-adic digits::
 
         sage: R = Zp(5, 20, 'capped-rel', 'series'); a = R(675); a
         2*5^2 + 5^4 + O(5^22)
@@ -1390,11 +1392,29 @@ class Zp_class(UniqueFactory):
         sage: a.precision_absolute()
         22
 
-    There are five types of `p`-adic rings: capped relative rings
+    The third one is lattice precision.
+    It is not attached to a single `p`-adic number but is a unique
+    object modeling the precision on a set of `p`-adics, which is 
+    typically the set of all elements within the same parent.
+
+        sage: R = ZpLC(17)
+        sage: x = R(1,10); y = R(1,5)
+        sage: R.precision()
+        Precision Lattice on 2 objects
+        sage: R.precision().precision_lattice()
+        [2015993900449             0]
+        [            0       1419857]
+
+    We refer to the documentation of the function :func:`ZpLC` for
+    more information about this precision model.
+
+    ::
+
+    There are six types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
-    floating point rings (type=``'floating-point'``),
-    and lazy rings (type= ``'lazy'``).
+    floating point rings (type=``'floating-point'``), lattice capped
+    rings (type=``'lattice-cap'``) and lazy rings (type= ``'lazy'``).
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -1441,10 +1461,16 @@ class Zp_class(UniqueFactory):
     in that elements do not trac their own precision.  However, relative
     precision is truncated with each operation rather than absolute precision.
 
+    On the contrary, the lattice type tracks precision using lattices 
+    and automatic differentiation. It is rather slow but provides sharp 
+    (often optimal) results regarding precision.
+    We refer to the documentation of the function :func:`ZpLC` for a
+    small demonstration of the capabilities of this precision model.
+
     The lazy case will eventually support elements that can increase
     their precision upon request.  It is not currently implemented.
 
-    PRINTING
+    PRINTING:
 
     There are many different ways to print `p`-adic elements.  The
     way elements of a given ring print is controlled by options
@@ -1740,7 +1766,7 @@ class Zp_class(UniqueFactory):
             print_max_terms = check
             check = True
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
-                            print_max_terms, show_prec, check, ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice'], 
+                            print_max_terms, show_prec, check, ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap'], 
                             label=label, relprec=relprec, absprec=absprec)
 
     def create_object(self, version, key):
@@ -1772,7 +1798,7 @@ class Zp_class(UniqueFactory):
             # keys changed in order to reduce irrelevant duplications: e.g. two Zps with print_mode 'series'
             # that are identical except for different 'print_alphabet' now return the same object.
             key = get_key_base(p, prec, type, print_mode, name, None, print_pos, print_sep, print_alphabet,
-                               print_max_terms, None, False, ['capped-rel', 'fixed-mod', 'capped-abs', 'lattice'])
+                               print_max_terms, None, False, ['capped-rel', 'fixed-mod', 'capped-abs', 'lattice-cap'])
             try:
                 obj = self._cache[version, key]()
                 if obj is not None:
@@ -1792,7 +1818,7 @@ class Zp_class(UniqueFactory):
         elif type == 'floating-point':
             return pAdicRingFloatingPoint(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                                      'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name)
-        elif type == 'lattice':
+        elif type == 'lattice-cap':
             return pAdicRingLattice(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                               'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name, label)
         else:
@@ -2463,13 +2489,16 @@ def ZqFP(q, prec = None, *args, **kwds):
     """
     return Zq(q, prec, 'floating-point', *args, **kwds)
 
-def ZpLP(p, prec = None, *args, **kwds):
+def ZpLC(p, prec=None, *args, **kwds):
     """
-    A shortcut function to create `p`-adic rings with lattice precision.
+    A shortcut function to create `p`-adic rings with lattice precision
+    with cap.
+
+    DEMONSTRATION:
 
     Below is a small demo of the features by this model of precision::
 
-        sage: R = ZpLP(3, print_mode='terse')
+        sage: R = ZpLC(3, print_mode='terse')
         sage: x = R(1,10)
 
     Of course, when we multiply by 3, we gain one digit of absolute
@@ -2498,7 +2527,7 @@ def ZpLP(p, prec = None, *args, **kwds):
     This comes more funny when we are working with elements given
     at different precisions::
 
-        sage: R = ZpLP(2, print_mode='terse')
+        sage: R = ZpLC(2, print_mode='terse')
         sage: x = R(1,10)
         sage: y = R(1,5)
         sage: z = x+y; z
@@ -2568,7 +2597,7 @@ def ZpLP(p, prec = None, *args, **kwds):
 
     If instead, we use the lattice precision, everything goes well::
 
-        sage: R = ZpLP(2, 30, print_mode='terse')
+        sage: R = ZpLC(2, 30, print_mode='terse')
         sage: a,b,c,d = R(1,15), R(1,15), R(1,15), R(3,15)
         sage: a,b,c,d = b,c,d,(b*d+c*c)/a; print(d)
         4 + O(2^15)
@@ -2612,10 +2641,9 @@ def ZpLP(p, prec = None, *args, **kwds):
     may share the same instance; this happens for instance for a
     `p`-adic ring and its field of fractions.)
 
-    This precision datum is accessible through the method
-    :meth:`precision`::
+    This precision datum is accessible through the method :meth:`precision`::
 
-        sage: R = ZpLP(5, print_mode='terse')
+        sage: R = ZpLC(5, print_mode='terse')
         sage: prec = R.precision()
         sage: prec
         Precision Lattice on 0 object
@@ -2661,8 +2689,8 @@ def ZpLP(p, prec = None, *args, **kwds):
     Observe that `5^10 = 9765625` and `5^5 = 3125`.
     The above matrix then reflects the precision on `x` and `y`.
 
-    Now, observe how the precision lattice changes while
-    performing computations::
+    Now, observe how the precision lattice changes while performing 
+    computations::
 
         sage: x, y = 3*x+2*y, 2*(x-y)
         sage: prec.del_elements()
@@ -2670,10 +2698,9 @@ def ZpLP(p, prec = None, *args, **kwds):
         [    3125 48825000]
         [       0 48828125]
 
-    The matrix we get is no longer diagonal, meaning that
-    some digits of precision are diffused among the two
-    new elements `x` and `y`. They nevertheless show up
-    when we compute for instance `x+y`::
+    The matrix we get is no longer diagonal, meaning that some digits 
+    of precision are diffused among the two new elements `x` and `y`. 
+    They nevertheless show up when we compute for instance `x+y`::
 
         sage: x
         1516 + O(5^5)
@@ -2682,9 +2709,9 @@ def ZpLP(p, prec = None, *args, **kwds):
         sage: x+y
         17565 + O(5^11)
 
-    It is these diffused digits of precision (which are
-    tracked but do not appear on the printing) that allow
-    to be always sharp on precision.
+    These diffused digits of precision (which are tracked but 
+    do not appear on the printing) allow to be always sharp on
+    precision.
 
     PERFORMANCES:
 
@@ -2709,7 +2736,7 @@ def ZpLP(p, prec = None, *args, **kwds):
     If enabled, it maintains an history of all actions and stores
     the wall time of each of them::
 
-        sage: R = ZpLP(3)
+        sage: R = ZpLC(3)
         sage: prec = R.precision()
         sage: prec.history_enable()
         sage: M = random_matrix(R, 5)
@@ -2763,7 +2790,7 @@ def ZpLP(p, prec = None, *args, **kwds):
          'partial reduce': 0.0917658805847168}
 
     """
-    return Zp(p, prec, 'lattice', *args, **kwds)
+    return Zp(p, prec, 'lattice-cap', *args, **kwds)
 
 #def ZpL(p, prec = DEFAULT_PREC, print_mode = None, halt = DEFAULT_HALT, names = None, print_pos = None,
 #         print_sep = None, print_alphabet = None, print_max_terms = None, check=True):
