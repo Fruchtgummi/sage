@@ -1412,23 +1412,149 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         self._thresold = 1
 
     def internal_prec(self):
+        """
+        Return the relative precision at which computations has handled
+        internally
+
+        It is slightly greater than the actual precision and increases
+        a bit (at a logarithmic rate) when new elements are created 
+        and/or computed
+
+        EXAMPLES::
+
+            sage: R = ZpLF(5, prec=20, label='internal_prec')
+            sage: prec = R.precision()
+
+            sage: prec.internal_prec()
+            25
+
+            sage: L = [ R.random_element() for _ in range(50) ]
+            sage: prec.internal_prec()
+            28
+        """
         return self._internal_prec
 
     def dimension(self):
+        """
+        Return the dimension of this precision module
+
+        EXAMPLES:
+
+        In general, the dimension increases by 1 when a new
+        element with a given precision is created::
+
+            sage: R = ZpLF(2, label='dimension')
+            sage: prec = R.precision()
+
+            sage: prec.dimension()
+            0
+            sage: x = R.random_element(prec=10)
+            sage: prec.dimension()
+            1
+            sage: y = R.random_element(prec=10)
+            sage: prec.dimension()
+            2
+
+        However in general it does not increase while
+        doing computations::
+
+            sage: u = x + y
+            sage: v = x^2 + 3*y + x*y + y^3
+            sage: prec.dimension()
+            2
+
+        How course, it may also decrease when a sufficient 
+        number of variables are collected::
+
+            sage: del x, y, u
+            sage: prec.del_elements()
+            sage: prec.dimension()
+            1
+
+            sage: del v
+            sage: prec.del_elements()
+            sage: prec.dimension()
+            0
+        """
         if len(self._elements) == 0:
             return 0
         return len(self._matrix[self._elements[-1]])
 
     def is_lattice(self):
+        """
+        Return ``True`` if this precision module is a lattice
+        (i.e. has maximal dimension)
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2, label='is_lattice')
+            sage: prec = R.precision()
+
+            sage: x = R(1,10)
+            sage: y = R(1,5)
+            sage: prec.is_lattice()
+            True
+
+            sage: u = x + y
+            sage: prec.is_lattice()
+            False
+
+        .. SEEALSO::
+
+            :meth:`dimension`
+        """
         return self.dimension() == len(self._elements)
 
     def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison'):
+        """
+        Update the lattice when a new element is created.
+
+        This function is not meant to be called manually.
+        It is automatically called by the parent when a new
+        element is created.
+
+        INPUT:
+
+        - ``x`` -- the newly created element
+
+        - ``dx`` -- a dictionary representing the differential of ``x``
+
+        - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+          or ``values``
+
+        - ``capped`` -- a boolean, whether this element has been capped 
+          according to the parent's cap
+
+        If ``dx_mode`` is ``linear_combinaison``, the dictionary ``dx`` 
+        encodes the expression of the differential of ``x``. 
+        For example, if ``x`` was defined as ``x = y*z`` then:
+
+        .. MATH::
+
+            dx = y dz + z dy
+
+        and the corresponding dictionary is ``{z: y, y: z}`` (except
+        that the keys are not the elements themselves but weak references
+        to them).
+
+        If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
+        specifies the entries that have to stored in the precision module.
+        This mode is only used for multiple conversion between different
+        parents (see :meth:`multiple_conversion`).
+
+        TESTS::
+
+            sage: R = ZpLF(2)
+            sage: x = R.random_element()
+            sage: y = R.random_element()
+            sage: z = x*y    # indirect doctest
+        """
         self.del_elements()
 
         # We first increase the internal prec
         self._count += 1
         if self._count > self._thresold:
-            self._internal_prec += 2
+            self._internal_prec += 1
             self._thresold *= self._p
 
         tme = walltime()
@@ -1474,6 +1600,38 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
 
     def mark_for_deletion(self, ref):
+        """
+        Mark an element for deletion.
+
+        This function is not meant to be called manually.
+        It is automatically called by the garbage collection when 
+        an element is collected.
+
+        INPUT:
+
+        - ``ref`` -- a weak reference to the destroyed element
+
+        NOTE::
+
+        This method may do not update the precision module.
+        The actual update is performed when the method :meth:`del_elements`
+        is called. This is automatically done at the creation of a new
+        element but can be done manually as well.
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2, label='markdel')
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: prec
+            Precision module on 1 object (label: markdel)
+            sage: del x   # indirect doctest: x is here marked for deletion
+            sage: prec
+            Precision module on 1 object (label: markdel)
+            sage: prec.del_elements()       # x is indeed deleted
+            sage: prec
+            Precision module on 0 object (label: markdel)
+        """
         tme = walltime()
         try:
             index = self._index(ref)
@@ -1500,6 +1658,40 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
 
     def del_elements(self, thresold=None):
+        """
+        Erase columns of the lattice precision matrix corresponding to
+        elements which are marked for deletion and reduce the matrix
+        in order to keep it in echelon form.
+
+        INPUT:
+
+        - ``thresold`` -- an integer or ``None`` (default: ``None``):
+          a column whose distance to the right at greater than the
+          thresold is not erased
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2, label='delelts')
+            sage: prec = R.precision()
+
+            sage: x = R(1,10)
+            sage: prec
+            Precision module on 1 object (label: delelts)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: del x
+            sage: prec
+            Precision module on 1 object (label: delelts)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: prec.del_elements()
+            sage: prec
+            Precision module on 0 object (label: delelts)
+            sage: prec.precision_lattice()
+            []
+        """
         p = self._p
         n = len(self._elements)
 
@@ -1579,12 +1771,103 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             self._absolute_precisions[ref] = min( [ c.valuation() for c in col ] )
 
     def precision_absolute(self, x):
+        """
+        Return the absolute precision of the given element
+
+        INPUT:
+
+        - ``x`` -- the element whose absolute precision is requested
+
+        NOTE:
+
+        The absolute precision is obtained by projecting the precision
+        module onto the line of coordinate ``dx``
+
+        NOTE:
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`precision_absolute`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2)
+            sage: prec = R.precision()
+
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+
+        In some cases, the absolute precision returned by this function
+        may be infinite::
+
+            sage: y = R(1)
+            sage: prec.precision_absolute(y)
+            +Infinity
+
+        However calling the method :meth:`absolute_precision` of the
+        element itself reintroduces a cap::
+
+            sage: y.precision_absolute()
+            20
+        """
         ref = weakref.ref(x)
         if not self._absolute_precisions.has_key(ref):
             self._compute_precision_absolute(ref)
         return self._absolute_precisions[ref]
 
     def precision_lattice(self, elements=None):
+        """
+        Return a matrix representing the precision lattice on a
+        subset of elements.
+
+        INPUT:
+
+        - ``elements`` -- a list of elements or ``None`` (default: ``None``)
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2, label='preclattice')
+            sage: prec = R.precision()
+            sage: x = R(1,10); y = R(1,5)
+            sage: prec.precision_lattice()
+            [1024    0]
+            [   0   32]
+
+            sage: u = x + y
+            sage: v = x - y
+            sage: prec.precision_lattice([u,v])
+            [  32 2016]
+            [   0 2048]
+
+        If the precision module does not project to a lattice,
+        an error is raised
+
+            sage: prec.precision_lattice([x,y,u,v])
+            Traceback (most recent call last):
+            ...
+            PrecisionError: the differential is not surjective
+
+        Here is another example with matrices::
+
+            sage: M = matrix(R, 2, 2, [R(3,5),R(7,5),R(1,5),R(11,1)])
+            sage: N = M^10
+
+        The next syntax provides as easy way to select an interesting
+        subset of variables (the selected subset consists of the four
+        entries of the matrix ``N``)::
+
+            sage: prec.precision_lattice(N)
+            [  2048    512  28160 230400]
+            [     0   2048  14336 258048]
+            [     0      0  65536  65536]
+            [     0      0      0 262144]
+        """
         if elements is None:
             elements = self._elements
         else:
@@ -1607,6 +1890,10 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         n = len(elements)
         if len(M.pivots()) < n:
             raise PrecisionError("the differential is not surjective")
+        for i in range(n):
+            v = M[i,i].valuation(self._p)
+            M[i,i] = self._p ** v
+        M.echelonize()
         M = M.submatrix(0,0,n,n)
         if val < 0:
             M *= self._p ** val

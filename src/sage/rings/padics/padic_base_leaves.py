@@ -1177,7 +1177,6 @@ class pAdicLatticeGeneric(pAdicGeneric):
         return ans
 
 
-
 class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
     """
     An implementation of the `p`-adic integers with lattice precision
@@ -1281,7 +1280,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             x = ZZ.random_element(p**cap)
             v = x.valuation(p)
             if prec is None and v > 0:
-                x += p**prec * ZZ.random_element(p**v)
+                x += p**cap * ZZ.random_element(p**v)
             return self._element_class(self, x, prec=prec)
 
 

@@ -33,17 +33,30 @@ class pAdicLatticeElement(pAdicGenericElement):
             self._value = x
         else:
             self._value = pRational(p, QQ(x))
-        cap = self._declare_new_element(dx, prec, dx_mode)
+        trunc = self._declare_new_element(dx, prec, dx_mode)
         if reduce:
-            self._value = self._value.reduce(cap)
+            self._value = self._value.reduce(trunc)
         self._approx_zero = pRational(p, 0)
         self._approx_one = pRational(p, 1)
         self._approx_minusone = pRational(p, -1)
 
     def _declare_new_element(self, dx, prec, dx_mode):
         """
-        Declare this element to the precision object
-        and return the precision at which this element can be capped safely
+        Declare this element to the precision object and 
+        return the precision at which this element can be truncated safely
+
+        Only for internal use!
+
+        TESTS::
+
+            sage: R = ZpLC(17)
+            sage: prec = R.precision()
+
+            sage: prec.del_elements()
+            sage: nb = prec.number_of_tracked_elements()
+            sage: x = R(1,10)    # indirect doctest
+            sage: prec.number_of_tracked_elements() == nb + 1
+            True
         """
         raise NotImplementError("implement this method in subclasses")
 
@@ -889,6 +902,23 @@ class pAdicLatticeElement(pAdicGenericElement):
 
 class pAdicLatticeCapElement(pAdicLatticeElement):
     def _declare_new_element(self, dx, prec, dx_mode):
+        """
+        Declare this element to the precision object and 
+        return the precision at which this element can be truncated safely
+
+        Only for internal use!
+
+        TESTS::
+
+            sage: R = ZpLC(17)
+            sage: prec = R.precision()
+
+            sage: prec.del_elements()
+            sage: nb = prec.number_of_tracked_elements()
+            sage: x = R(1,10)    # indirect doctest
+            sage: prec.number_of_tracked_elements() == nb + 1
+            True
+        """
         parent = self._parent
         cap = min(parent.precision_cap_absolute(), parent.precision_cap_relative() + self._value.valuation())
         if prec is None or prec > cap:
@@ -921,6 +951,23 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
 
 class pAdicLatticeFloatElement(pAdicLatticeElement):
     def _declare_new_element(self, dx, prec, dx_mode):
+        """
+        Declare this element to the precision object and 
+        return the precision at which this element can be truncated safely
+
+        Only for internal use!
+
+        TESTS::
+
+            sage: R = ZpLF(17)
+            sage: prec = R.precision()
+
+            sage: prec.del_elements()
+            sage: nb = prec.number_of_tracked_elements()
+            sage: x = R(1,10)    # indirect doctest
+            sage: prec.number_of_tracked_elements() == nb + 1
+            True
+        """
         self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
         cap = self._precision.internal_prec() + self._value.valuation()
         if prec is None:
@@ -929,5 +976,18 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             return min(cap,prec)
 
     def _is_exact_zero(self):
-        return self._value.is_zero() and self._precision.precision_absolute(self) is Infinity
+        """
+        Return ``True`` if this element is exactly zero
 
+        EXAMPLES::
+
+            sage: R = ZpLF(5)
+            sage: R(0)._is_exact_zero()
+            True
+            sage: R(0,10)._is_exact_zero()
+            False
+
+            sage: R(1)._is_exact_zero()
+            False
+        """
+        return self._value.is_zero() and self._precision.precision_absolute(self) is Infinity

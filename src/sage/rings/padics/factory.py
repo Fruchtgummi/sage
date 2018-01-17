@@ -1297,7 +1297,7 @@ def QpLC(p, prec = None, *args, **kwds):
 
         sage: R = QpLC(2)
         sage: R
-        2-adic Field with lattice precision
+        2-adic Field with lattice-cap precision
 
     """
     return Qp(p, prec, 'lattice-cap', *args, **kwds)
@@ -2787,6 +2787,23 @@ def ZpLC(p, prec=None, *args, **kwds):
     return Zp(p, prec, 'lattice-cap', *args, **kwds)
 
 def ZpLF(p, prec=None, *args, **kwds):
+    """
+    A shortcut function to create `p`-adic rings with precision
+    tracked through automatic differentiation.
+    Floating point `p`-adic numbers are used for the computation
+    of the differential (which is then not exact).
+
+    See documentation for ``Zp`` for a description of the input parameters.
+
+    EXAMPLES::
+
+        sage: ZpLF(5, 40)
+        5-adic Ring with lattice-float precision
+
+    .. SEEALSO::
+
+        :func:`ZpLC`
+    """
     return Zp(p, prec, 'lattice-float', *args, **kwds)
 
 #def ZpL(p, prec = DEFAULT_PREC, print_mode = None, halt = DEFAULT_HALT, names = None, print_pos = None,
