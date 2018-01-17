@@ -78,7 +78,8 @@ def _default_show_prec(type, print_mode):
 
     INPUT:
 
-    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'`` or ``'lattice-cap'``
+    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'``, 
+      ``'lattice-cap'`` or ``'lattice-float'``
     - ``print_mode`` -- a string: ``'series'``, ``'terse'``, ``'val-unit'``, ``'digits'``, ``'bars'``
 
     EXAMPLES::
@@ -272,8 +273,9 @@ class Qp_class(UniqueFactory):
       TYPES and PRECISION below.
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
-      ``'capped-rel'``, ``'floating-point'`` and ``'lazy'`` (though ``'lazy'`` currently
-      doesn't work).  See TYPES and PRECISION below
+      ``'capped-rel'``, ``'floating-point'``, ``'lattice-cap'``, ``'lattice-float'``
+      and ``'lazy'`` (though ``'lazy'`` currently doesn't work).
+      See TYPES and PRECISION below
 
     - ``print_mode`` -- string (default: ``None``).  Valid modes are 'series',
       'val-unit', 'terse', 'digits', and 'bars'. See PRINTING below
@@ -612,7 +614,7 @@ class Qp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
-        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap'], label, relprec, absprec)
+        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap', 'lattice-float'], label, relprec, absprec)
 
     def create_object(self, version, key):
         """
@@ -665,13 +667,14 @@ class Qp_class(UniqueFactory):
             else:
                 return pAdicFieldFloatingPoint(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                                          'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name)
-        elif type == 'lattice-cap':
+        elif type[:8] == 'lattice-':
+            subtype = type[8:]
             if print_mode == 'terse':
-                return pAdicFieldLattice(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
-                                                   'ram_name': name, 'max_terse_terms': print_max_terms, 'show_prec': show_prec}, name, label)
+                return pAdicFieldLattice(p, prec, subtype, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
+                                                            'ram_name': name, 'max_terse_terms': print_max_terms, 'show_prec': show_prec}, name, label)
             else:
-                return pAdicFieldLattice(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
-                                                   'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name, label)
+                return pAdicFieldLattice(p, prec, subtype, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
+                                                            'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name, label)
         else:
             raise ValueError("unexpected type")
 
@@ -1254,21 +1257,6 @@ def QpFP(p, prec = None, *args, **kwds):
 
 #    EXAMPLES::
 
-def QpLC(p, prec = None, *args, **kwds):
-    """
-    A shortcut function to create `p`-adic fields with lattice precision.
-
-    See :func:`ZpLC` for more information about this model of precision.
-
-    EXAMPLES::
-
-        sage: R = QpLC(2)
-        sage: R
-        2-adic Field with lattice precision
-
-    """
-    return Qp(p, prec, 'lattice-cap', *args, **kwds)
-
 def QqCR(q, prec = None, *args, **kwds):
     """
     A shortcut function to create capped relative unramified `p`-adic
@@ -1314,6 +1302,9 @@ def QpLC(p, prec = None, *args, **kwds):
     """
     return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
+def QpLF(p, prec = None, *args, **kwds):
+    return Qp(p, prec, 'lattice-float', *args, **kwds)
+
 
 #######################################################################################################
 #
@@ -1341,7 +1332,7 @@ class Zp_class(UniqueFactory):
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
       ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``,
-      ``'floating-point'`` and ``'lattice-cap'``.
+      ``'floating-point'``, ``'lattice-cap'``, ``'lattice-float'``
       See TYPES and PRECISION below
 
     - ``print_mode`` -- string (default: ``None``).  Valid modes are
@@ -1400,7 +1391,7 @@ class Zp_class(UniqueFactory):
         sage: R = ZpLC(17)
         sage: x = R(1,10); y = R(1,5)
         sage: R.precision()
-        Precision Lattice on 2 objects
+        Precision lattice on 2 objects
         sage: R.precision().precision_lattice()
         [2015993900449             0]
         [            0       1419857]
@@ -1410,11 +1401,12 @@ class Zp_class(UniqueFactory):
 
     ::
 
-    There are six types of `p`-adic rings: capped relative rings
+    There are seven types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
-    floating point rings (type=``'floating-point'``), lattice capped
-    rings (type=``'lattice-cap'``) and lazy rings (type= ``'lazy'``).
+    floating point rings (type=``'floating-point'``), lattice capped rings 
+    (type=``'lattice-cap'``), lattice float rings (type=``'lattice-float'``)
+    and lazy rings (type= ``'lazy'``).
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -1766,7 +1758,8 @@ class Zp_class(UniqueFactory):
             print_max_terms = check
             check = True
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
-                            print_max_terms, show_prec, check, ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap'], 
+                            print_max_terms, show_prec, check,
+                            ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap', 'lattice-float'], 
                             label=label, relprec=relprec, absprec=absprec)
 
     def create_object(self, version, key):
@@ -1798,7 +1791,7 @@ class Zp_class(UniqueFactory):
             # keys changed in order to reduce irrelevant duplications: e.g. two Zps with print_mode 'series'
             # that are identical except for different 'print_alphabet' now return the same object.
             key = get_key_base(p, prec, type, print_mode, name, None, print_pos, print_sep, print_alphabet,
-                               print_max_terms, None, False, ['capped-rel', 'fixed-mod', 'capped-abs', 'lattice-cap'])
+                               print_max_terms, None, False, ['capped-rel', 'fixed-mod', 'capped-abs', 'lattice-cap', 'lattice-float'])
             try:
                 obj = self._cache[version, key]()
                 if obj is not None:
@@ -1818,9 +1811,10 @@ class Zp_class(UniqueFactory):
         elif type == 'floating-point':
             return pAdicRingFloatingPoint(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
                                                      'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name)
-        elif type == 'lattice-cap':
-            return pAdicRingLattice(p, prec, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
-                                              'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name, label)
+        elif type[:8] == 'lattice-':
+            subtype = type[8:]
+            return pAdicRingLattice(p, prec, subtype, {'mode': print_mode, 'pos': print_pos, 'sep': print_sep, 'alphabet': print_alphabet,
+                                                       'ram_name': name, 'max_ram_terms': print_max_terms, 'show_prec': show_prec}, name, label)
         else:
             raise ValueError("unexpected type")
 
@@ -2646,7 +2640,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: R = ZpLC(5, print_mode='terse')
         sage: prec = R.precision()
         sage: prec
-        Precision Lattice on 0 object
+        Precision lattice on 0 object
 
     This instance knows about all elements of the parent, it is
     automatically updated when a new element (of this parent) is
@@ -2654,13 +2648,13 @@ def ZpLC(p, prec=None, *args, **kwds):
 
         sage: x = R(3513,10)
         sage: prec
-        Precision Lattice on 1 object
+        Precision lattice on 1 object
         sage: y = R(176,5)
         sage: prec
-        Precision Lattice on 2 objects
+        Precision lattice on 2 objects
         sage: z = R.random_element()
         sage: prec
-        Precision Lattice on 3 objects
+        Precision lattice on 3 objects
 
     The method :meth:`tracked_elements` provides the list of all
     tracked elements::
@@ -2674,10 +2668,10 @@ def ZpLC(p, prec=None, *args, **kwds):
 
         sage: z = 0
         sage: prec
-        Precision Lattice on 3 objects
+        Precision lattice on 3 objects
         sage: prec.del_elements()
         sage: prec
-        Precision Lattice on 2 objects
+        Precision lattice on 2 objects
 
     The method :meth:`precision_lattice` returns (a matrix defining)
     the lattice that models the precision. Here we have::
@@ -2791,6 +2785,9 @@ def ZpLC(p, prec=None, *args, **kwds):
 
     """
     return Zp(p, prec, 'lattice-cap', *args, **kwds)
+
+def ZpLF(p, prec=None, *args, **kwds):
+    return Zp(p, prec, 'lattice-float', *args, **kwds)
 
 #def ZpL(p, prec = DEFAULT_PREC, print_mode = None, halt = DEFAULT_HALT, names = None, print_pos = None,
 #         print_sep = None, print_alphabet = None, print_max_terms = None, check=True):

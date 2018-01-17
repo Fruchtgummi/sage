@@ -33,17 +33,19 @@ class pAdicLatticeElement(pAdicGenericElement):
             self._value = x
         else:
             self._value = pRational(p, QQ(x))
-        cap = min(parent.precision_cap_absolute(), parent.precision_cap_relative() + self._value.valuation())
-        if prec is None or prec > cap:
-            capped = True
-            prec = cap
-        else:
-            capped = False
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
+        cap = self._declare_new_element(dx, prec, dx_mode)
         if reduce:
-            self._value = self._value.reduce(prec)
+            self._value = self._value.reduce(cap)
+        self._approx_zero = pRational(p, 0)
         self._approx_one = pRational(p, 1)
         self._approx_minusone = pRational(p, -1)
+
+    def _declare_new_element(self, dx, prec, dx_mode):
+        """
+        Declare this element to the precision object
+        and return the precision at which this element can be capped safely
+        """
+        raise NotImplementError("implement this method in subclasses")
 
     def __hash__(self):
         """
@@ -121,7 +123,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: x = R.random_element()
             sage: y = R.random_element()
             sage: x.precision_lattice()
-            Precision Lattice on 2 objects (label: precision)
+            Precision lattice on 2 objects (label: precision)
 
         .. SEEALSO::
 
@@ -155,7 +157,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: (x+y).precision_absolute()
             11
         """
-        return self._precision.precision_absolute(self)
+        prec = self._precision.precision_absolute(self)
+        cap = self._value.valuation() + self._parent._prec_cap_relative
+        return min(prec,cap)
 
     def is_precision_capped(self):
         """
@@ -292,6 +296,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             True
         """
         x = self._value + other._value
+        if self._parent._zero_cap is not None:
+            if x.valuation() >= min(self._value.valuation(), other._value.valuation()) + self._parent._zero_cap:
+                x = self._approx_zero
         dx = [  [self, self._approx_one], 
                [other, self._approx_one] ]
         return self.__class__(self._parent, x, dx=dx, check=False)
@@ -311,6 +318,9 @@ class pAdicLatticeElement(pAdicGenericElement):
            11 + 9*19 + 9*19^2 + 9*19^3 + 9*19^4 + O(19^5)
         """
         x = self._value - other._value
+        if self._parent._zero_cap is not None:
+            if x.valuation() >= min(self._value.valuation(), other._value.valuation()) + self._parent._zero_cap:
+                x = self._approx_zero
         dx = [  [self, self._approx_one], 
                [other, self._approx_minusone] ]
         return self.__class__(self._parent, x, dx=dx, check=False)
@@ -370,7 +380,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: c
             8 + 11*19 + 7*19^2 + 11*19^3 + 7*19^4 + O(19^5)
             sage: c.parent()
-            19-adic Field with lattice precision
+            19-adic Field with lattice-cap precision
 
             sage: a / (19*b)
             8*19^-1 + 11 + 7*19 + 11*19^2 + 7*19^3 + O(19^4)
@@ -551,25 +561,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         else:
             lift = self.__class__(parent, self._value, prec, check=False)
         return lift
-
-    def _is_exact_zero(self):
-        """
-        Return ``True`` if this element is exactly zero
-
-        NOTE::
-
-        Since exact zeros are not supported in the precision lattice
-        model, this function always returns ``False``.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(5)
-            sage: R(0)._is_exact_zero()
-            False
-            sage: R(1)._is_exact_zero()
-            False
-        """
-        return False
 
     def _is_inexact_zero(self):
         """
@@ -798,7 +789,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: y
             1 + O(2^10)
             sage: y.parent()
-            2-adic Field with lattice precision
+            2-adic Field with lattice-cap precision
 
             sage: a = K(2,10); a
             2 + O(2^10)
@@ -806,7 +797,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: b
             2 + O(2^10)
             sage: b.parent()
-            2-adic Ring with lattice precision
+            2-adic Ring with lattice-cap precision
 
         In any case, precision is sharp::
 
@@ -894,3 +885,49 @@ class pAdicLatticeElement(pAdicGenericElement):
         p = self._parent.prime()
         prec = self.precision_absolute()
         return self._value.list(prec)
+
+
+class pAdicLatticeCapElement(pAdicLatticeElement):
+    def _declare_new_element(self, dx, prec, dx_mode):
+        parent = self._parent
+        cap = min(parent.precision_cap_absolute(), parent.precision_cap_relative() + self._value.valuation())
+        if prec is None or prec > cap:
+            capped = True
+            prec = cap
+        else:
+            capped = False
+        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
+        return prec
+
+    def _is_exact_zero(self):
+        """
+        Return ``True`` if this element is exactly zero
+
+        NOTE::
+
+        Since exact zeros are not supported in the precision lattice
+        model, this function always returns ``False``.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(5)
+            sage: R(0)._is_exact_zero()
+            False
+            sage: R(1)._is_exact_zero()
+            False
+        """
+        return False
+
+
+class pAdicLatticeFloatElement(pAdicLatticeElement):
+    def _declare_new_element(self, dx, prec, dx_mode):
+        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
+        cap = self._precision.internal_prec() + self._value.valuation()
+        if prec is None:
+            return cap
+        else:
+            return min(cap,prec)
+
+    def _is_exact_zero(self):
+        return self._value.is_zero() and self._precision.precision_absolute(self) is Infinity
+

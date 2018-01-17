@@ -8,6 +8,8 @@ from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
 from sage.rings.infinity import Infinity
 
+from sage.rings.padics.precision_error import PrecisionError
+
 
 # Class pRational
 #################
@@ -57,6 +59,12 @@ class pRational:
         else:
             val = self._valuation
         return self.__class__(self.p, x, exp, valuation=val)
+
+    def reduce_relative(self, prec):
+        v = self.valuation()
+        if v is Infinity:
+            return self
+        return self.reduce(prec+v)
 
     def normalize(self):
         if self.x == 0:
@@ -190,8 +198,8 @@ class pRational:
         return l
 
 
-# Class PrecisionLattice
-########################
+# Helper function
+#################
 
 def list_of_padics(elements):
     """
@@ -206,10 +214,10 @@ def list_of_padics(elements):
         sage: R = ZpLC(2)
         sage: M = random_matrix(R,2,2)
         sage: list_of_padics(M)
-        [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>]
+        [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
     """
     from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
     if isinstance(elements, pAdicLatticeElement):
@@ -256,32 +264,18 @@ def format_history(tme, status, timings):
     else:
         return status
 
-class PrecisionLattice(UniqueRepresentation, SageObject):
-    """
-    A class for handling precision lattices which are used to
-    track precision in the ZpLC model.
 
-    The precision lattice is stored as a triangular matrix whose
-    rows are generators of the lattice.
+class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     """
-    # Internal variables:
-    #  . self._cap
-    #    a cap for the (working) precision
-    #    meaning that the precision lattice always contains p^(self._cap)
-    #  . self._elements
-    #    list of weak references of elements in this parent
-    #  . self._lattice
-    #    an upper triangular matrix over ZZ representing the 
-    #    lattice of precision
-    #    (its columns are indexed by self._elements)
-    #  . self._absolute_precisions
-    def __init__(self, p, label):
+    A generic class for precision objects obtained by automatic
+    differentiation
+    """
+    def __init__(self, p, type, label):
         self._p = p
         self._label = label
-        self._elements = [ ]
-        self._capped = { }
-        self._lattice = { }
-        self._absolute_precisions = { }
+        self._type = type
+        self._elements = [ ]   # Probably better to use a double chained list
+        self._matrix = { }
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
         # History
@@ -309,25 +303,25 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
             sage: R = ZpLC(2)
             sage: R.precision()
-            Precision Lattice on ... objects
+            Precision lattice on ... objects
 
         If a label has been specified, it is included in the representation
 
             sage: R = ZpLC(2, label="mylabel")
             sage: R.precision()
-            Precision Lattice on 0 object (label: mylabel)
+            Precision lattice on 0 object (label: mylabel)
         """
         n = len(self._elements)
         if self._label is None:
             if n > 1:
-                return "Precision Lattice on %s objects" % len(self._elements)
+                return "Precision %s on %s objects" % (self._type, len(self._elements))
             else:
-                return "Precision Lattice on %s object" % len(self._elements)
+                return "Precision %s on %s object" % (self._type, len(self._elements))
         else:
             if n > 1:
-                return "Precision Lattice on %s objects (label: %s)" % (len(self._elements), self._label)
+                return "Precision %s on %s objects (label: %s)" % (self._type, len(self._elements), self._label)
             else:
-                return "Precision Lattice on %s object (label: %s)" % (len(self._elements), self._label)
+                return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
 
     def prime(self):
         """
@@ -341,539 +335,26 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
         """
         return self._p
 
-    def reduce(self, index=0, partial=False):
+    def _index(self, ref):
         """
-        Reduce the size of the entries above the diagonal of the precision matrix
-
-        INPUT:
-
-        - ``index`` -- an integer, the starting row for which the reduction
-          is performed
-
-        - ``partial`` -- a boolean (default: False) specifying whether a
-          partial or a full Hermite reduction should be performed
-
-        NOTE:
-
-        The partial reduction has cost `O(m^2)` where `m` is the number of 
-        rows that need to be reduced (that is the difference between the 
-        total number of rows and ``index``).
-
-        The full Hermite reduction has cost `O(m^3)`.
-
-        NOTE:
-
-        The software ensures that the precision lattice is always 
-        partially reduced.
-        Calling the function manually with the argument ``partial=True``
-        should then just do nothing.
-
-        TESTS::
-
-            sage: R = ZpLC(2)
-            sage: x = R.random_element()
-            sage: del x
-            sage: R.precision().del_elements()   # indirect doctest
+        Return the index of the element whose reference is ``ref``
         """
-        n = len(self._elements)
-        if index >= n-1:
-            return
-        if partial:
-            # Partial reduction
-            # Cost: O(m^2) with m = n-index
-            tme = walltime()
-            diffval = (n-index) * [0]
-            for j in range(n-1, index, -1):
-                col = self._lattice[self._elements[j]]
-                prec = col[j].valuation() - diffval[j-index]
-                for i in range(index,j):
-                    col[i] = col[i].reduce(prec)
-                    col[i].normalize()  # seems to be faster then
-                    dval = col[i].valuation() - prec
-                    if dval < diffval[i-index]:
-                        diffval[i-index] = dval
-            # We update history
-            if self._history is not None:
-                self._history.append(('partial reduce', index, walltime(tme)))
-        else:
-            # Full Hermite reduction
-            # Cost: O(m^3) with m = n-index
-            tme = walltime()
-            for j in range(index+1, n):
-                # In what follows, we assume that col[j] is a power of p
-                col = self._lattice[self._elements[j]]
-                valpivot = col[j].valuation()
-                for i in range(index, j):
-                    reduced = col[i].reduce(valpivot)
-                    scalar = (col[i] - reduced) >> valpivot
-                    if scalar.is_zero(): continue
-                    col[i] = reduced
-                    col[i].normalize()
-                    for j2 in range(j+1, n):
-                        col2 = self._lattice[self._elements[j2]]
-                        col2[i] -= scalar*col2[i]
-                        col2[i].normalize()
-            # We update history
-            if self._history is not None:
-                self._history.append(('full reduce', index, walltime(tme)))
+        return self._elements.index(ref)
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison', capped=False):
-        """
-        Update the lattice when a new element is created.
-
-        This function is not meant to be called manually.
-        It is automatically called by the parent when a new
-        element is created.
-
-        INPUT:
-
-        - ``x`` -- the newly created element
-
-        - ``dx`` -- a dictionary representing the differential of ``x``
-
-        - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
-          or `values`
-
-        - ``capped`` -- a boolean, whether this element has been capped 
-          according to the parent's cap
-
-        If ``dx_mode`` is ``linear_combinaison``, the dictionary ``dx`` 
-        encodes the expression of the differential of ``x``. 
-        For example, if ``x`` was defined as ``x = y*z`` then:
-
-        .. MATH::
-
-            dx = y dz + z dy
-
-        and the corresponding dictionary is ``{z: y, y: z}`` (except
-        that the keys are not the elements themselves but weak references
-        to them).
-
-        If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
-        specifies the entries that have to stored in the precision lattice.
-        This mode is only used for multiple conversion between different
-        parents (see :meth:`multiple_conversion`).
-
-        TESTS::
-
-            sage: R = ZpLC(2)
-            sage: x = R.random_element()
-            sage: y = R.random_element()
-            sage: z = x*y    # indirect doctest
-        """
-        # First we delete some elements marked for deletion
-        if self._marked_for_deletion:
-            self.del_elements(thresold=50)
-
-        # Then we add the new element
-        tme = walltime()
-        p = self._p
-        n = len(self._elements)
-        x_ref = weakref.ref(x, self.mark_for_deletion)
-        self._elements.append(x_ref)
-        col = n * [self._approx_zero]
-        if dx_mode == 'linear_combinaison':
-            for elt,scalar in dx:
-                ref = weakref.ref(elt)
-                if not isinstance(scalar, pRational):
-                    scalar = pRational(p, scalar)
-                c = self._lattice[ref]
-                for i in range(len(c)):
-                    col[i] += scalar * c[i]
-        elif dx_mode == 'values':
-            for elt,scalar in dx:
-                ref = weakref.ref(elt)
-                if not isinstance(scalar, pRational):
-                    scalar = pRational(p, scalar)
-                i = len(self._lattice[ref]) - 1
-                col[i] = scalar
-        else:
-            raise ValueError("dx_mode must be either 'linear_combinaison' or 'values'")
-        for i in range(n):
-            col[i] = col[i].reduce(bigoh)
-        col.append(pRational(p, ZZ(1), bigoh))
-        self._lattice[x_ref] = col
-        self._capped[x_ref] = capped
-
-        # We update history
-        if self._history is not None:
-            self._history.append(('add', None, walltime(tme)))
-
-    #def _set_precision(self, x, column={}):
-    #    p = self._p
-    #    x_ref = weakref.ref(x)
-    #    index = len(self._lattice[x_ref]) - 1
-    #    n = len(self._elements)
-    #    col = n * [self._approx_zero]
-    #    self._lattice[x_ref] = col
-    #    self._absolute_precisions[x_ref] = min([ c.valuation() for c in col ])
+    def new_element(self):
+        raise NotImplementedError("implement this function is subclasses")
 
     def mark_for_deletion(self, ref):
-        """
-        Mark an element for deletion.
-
-        This function is not meant to be called manually.
-        It is automatically called by the garbage collection when 
-        an element is collected.
-
-        INPUT:
-
-        - ``ref`` -- a weak reference to the destroyed element
-
-        NOTE::
-
-        This method does not update the precision lattice.
-        The actual update is performed when the method :meth:`del_elements`
-        is called. This is automatically done at the creation of a new
-        element but can be done manually as well.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='markdel')
-            sage: prec = R.precision()
-            sage: x = R(1,10)
-            sage: prec
-            Precision Lattice on 1 object (label: markdel)
-            sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
-            Precision Lattice on 1 object (label: markdel)
-            sage: prec.del_elements()       # x is indeed deleted
-            sage: prec
-            Precision Lattice on 0 object (label: markdel)
-        """
-        tme = walltime()
-        try:
-            index = len(self._lattice[ref]) - 1
-        except (IndexError, KeyError):
-            return
-        self._marked_for_deletion.append(index)
-        if self._history is not None:
-            self._history.append(('mark', index, walltime(tme)))
+        raise NotImplementedError("implement this function is subclasses")
 
     def del_elements(self, thresold=None):
-        """
-        Erase columns of the lattice precision matrix corresponding to
-        elements which are marked for deletion and reduce the matrix
-        in order to keep it upper triangular.
-
-        INPUT:
-
-        - ``thresold`` -- an integer or ``None`` (default: ``None``):
-          a column whose distance to the right at greater than the
-          thresold is not erased
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='delelts')
-            sage: prec = R.precision()
-
-            sage: x = R(1,10)
-            sage: prec
-            Precision Lattice on 1 object (label: delelts)
-            sage: prec.precision_lattice()
-            [1024]
-
-            sage: del x
-            sage: prec
-            Precision Lattice on 1 object (label: delelts)
-            sage: prec.precision_lattice()
-            [1024]
-
-            sage: prec.del_elements()
-            sage: prec
-            Precision Lattice on 0 object (label: delelts)
-            sage: prec.precision_lattice()
-            []
-        """
-        p = self._p
-        n = len(self._elements)
-
-        self._marked_for_deletion.sort(reverse=True)
-        count = 0
-        for index in self._marked_for_deletion:
-            if thresold is not None and index < n - thresold: break
-            n -= 1; count += 1
-
-            tme = walltime()
-            del self._lattice[self._elements[index]]
-            del self._elements[index]
-
-            # Now, we echelonize
-            for i in range(index,n):
-                col = self._lattice[self._elements[i]]
-                vali = col[i].valuation()
-                valj = col[i+1].valuation()
-                d, u, v = col[i].xgcd(col[i+1])
-                up, vp = col[i+1]/d, col[i]/d
-                col[i] = d
-                del col[i+1]
-                for j in range(i+1,n):
-                    col = self._lattice[self._elements[j]]
-                    col[i], col[i+1] = u*col[i] + v*col[i+1], up*col[i] - vp*col[i+1]
-
-            # We update history
-            if self._history is not None:
-                self._history.append(('del', index, walltime(tme)))
-
-            # And we reduce a bit
-            # (we do not perform a complete reduction because it is costly)
-            self.reduce(index, partial=True)
-
-        del self._marked_for_deletion[:count]
-
-    def lift_to_precision(self, x, prec):
-        """
-        Lift the specified element to the specified precision
-
-        INPUT:
-
-        - ``x`` -- the element whose precision has to be lifted
-
-        - ``prec`` -- the new precision
-
-        NOTE:
-
-        The new precision lattice is computed as the intersection
-        of the current precision lattice with the subspace
-
-        ..MATH::
-
-            p^{prec} \Z_p dx \oplus \bigoplus_{y \neq x} \Q_p dy
-
-        This function may change at the same time the precision of 
-        other elements having the same parent.
-
-        NOTE:
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`lift_to_precision`
-        of ``x`` instead.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2)
-            sage: x = R(1,10); x
-            1 + O(2^10)
-            sage: y = R(1,5); y
-            1 + O(2^5)
-            sage: z = x + y; z
-            2 + O(2^5)
-
-            sage: prec = R.precision()
-            sage: prec.lift_to_precision(z, 12)
-            sage: z
-            2 + O(2^12)
-            sage: y
-            1 + O(2^10)
-        """
-        ref = weakref.ref(x)
-        col = self._lattice[ref]
-        n = len(self._elements)
-
-        rows_by_val = { }
-        for i in range(len(col)):
-            v = col[i].valuation()
-            if v >= prec: continue
-            if rows_by_val.has_key(v):
-                rows_by_val[v].append(i)
-            else:
-                rows_by_val[v] = [i]
-        vals = rows_by_val.keys()
-        vals.sort()
-        vals.append(prec)
-
-        for t in range(len(vals)-1):
-            v, w = vals[t], vals[t+1]
-            rows = rows_by_val[v]
-            piv = max(rows)
-            alpha = col[piv].unit_part()
-            for i in rows:
-                if i == piv: continue
-                # We clear the entry on the i-th line
-                beta = col[i].unit_part()
-                for j in range(piv,n):
-                    col_cur = self._lattice[self._elements[j]]
-                    col_cur[i] = alpha*col_cur[i] - beta*col_cur[piv]
-            # We rescale the piv-th line
-            for j in range(piv,n):
-                col_cur = self._lattice[self._elements[j]]
-                col_cur[piv] = col_cur[piv] << (w-v)
-            # Now the entry on the piv-th line has valuation w
-            # We update the dictionary accordingly
-            if w < prec:
-                rows_by_val[w].append(piv)
-
-        # We clear the cached absolute precisions
-        self._absolute_precisions = { }
-
-
-    def _compute_precision_absolute(self, ref):
-        """
-        Compute the absolute precision of the given element and cache it
-
-        For internal use.
-        """
-        col = self._lattice[ref]
-        absprec = Infinity
-        capped = False
-        for i in range(len(col)):
-            v = col[i].valuation()
-            if v < absprec:
-                absprec = v
-                capped = self._capped[self._elements[i]]
-            elif v == absprec:
-                capped = capped and self._capped[self._elements[i]]
-        self._absolute_precisions[ref] = [absprec, capped]
+        raise NotImplementedError("implement this function in subclasses")
 
     def precision_absolute(self, x):
-        """
-        Return the absolute precision of the given element
+        raise NotImplementedError("implement this function in subclasses")
 
-        INPUT:
-
-        - ``x`` -- the element whose absolute precision is requested
-
-        NOTE:
-
-        The absolute precision is obtained by projecting the precision
-        lattice onto the line of coordinate ``dx``
-
-        NOTE:
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`precision_absolute`
-        of ``x`` instead.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2)
-            sage: x = R(1,10); x
-            1 + O(2^10)
-            sage: y = R(1,5); y
-            1 + O(2^5)
-            sage: z = x + y; z
-            2 + O(2^5)
-            sage: z.precision_absolute()  # indirect doctest
-            5
-        """
-        ref = weakref.ref(x)
-        if not self._absolute_precisions.has_key(ref):
-            self._compute_precision_absolute(ref)
-        return self._absolute_precisions[ref][0]
-
-    def is_precision_capped(self, x):
-        """
-        Return whether the absolute precision on the given 
-        results from a cap coming from the parent
-
-        INPUT:
-
-        - ``x`` -- the element
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`is_precision_capped`
-        of ``x`` instead.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2)
-            sage: x = R(1,10); x
-            1 + O(2^10)
-            sage: x.is_precision_capped()  # indirect doctest
-            False
-
-            sage: y = x-x; y
-            O(2^40)
-            sage: y.is_precision_capped()  # indirect doctest
-            True
-        """
-        ref = weakref.ref(x)
-        if not self._absolute_precisions.has_key(ref):
-            self._compute_precision_absolute(ref)
-        return self._absolute_precisions[ref][1]
-
-    def precision_lattice(self, elements=None, echelon=True):
-        """
-        Return a matrix representing the precision lattice on a
-        subset of elements.
-
-        INPUT:
-
-        - ``elements`` -- a list of elements or ``None`` (default: ``None``)
-
-        - ``echelon`` -- a boolean (default: ``True``); specify whether
-          the result should be in echelon form
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='preclattice')
-            sage: prec = R.precision()
-            sage: x = R(1,10); y = R(1,5)
-            sage: u = x + y
-            sage: v = x - y
-            sage: prec.precision_lattice()
-            [         1024             0          1024          1024]
-            [            0            32            32 1099511627744]
-            [            0             0       2097152             0]
-            [            0             0             0 1099511627776]
-            sage: prec.precision_lattice([u,v])
-            [  32 2016]
-            [   0 2048]
-
-        Here is another example with matrices::
-
-            sage: M = matrix(R, 2, 2, [R(3,5),R(7,5),R(1,5),R(11,1)])
-            sage: N = M^10
-            sage: prec.precision_lattice()
-            23 x 23 dense matrix over Integer Ring (use the '.str()' method to see the entries)
-
-        The next syntax provides as easy way to select an interesting
-        subset of variables (the selected subset consists of the four
-        entries of the matrix ``N``)::
-
-            sage: prec.precision_lattice(N)
-            [  2048    512  28160 230400]
-            [     0   2048  14336 258048]
-            [     0      0  65536  65536]
-            [     0      0      0 262144]
-
-        We can give a list of matrices as well::
-
-            sage: prec.precision_lattice([M,N])
-            [       32         0         0         0 226115584  96788480  52174848  82804736]
-            [        0        32         0         0  52174848 121765888  11829248  28516352]
-            [        0         0        32         0  96788480  42762240 121765888 199614464]
-            [        0         0         0         2   5175296  12475904   1782272   4045824]
-            [        0         0         0         0 268435456         0         0         0]
-            [        0         0         0         0         0 268435456         0         0]
-            [        0         0         0         0         0         0 268435456         0]
-            [        0         0         0         0         0         0         0 268435456]
-        """
-        if elements is None:
-            elements = self._elements
-        else:
-            elements = list_of_padics(elements)
-        n = len(self._elements)
-        rows = [ ]; val = 0
-        for ref in elements:
-            col = self._lattice[ref]
-            row = [ x.value() for x in col ]
-            valcol = min([ x.valuation() for x in col ])
-            if valcol < val: val = valcol
-            row += (n-len(row)) * [ZZ(0)]
-            rows.append(row)
-        from sage.matrix.constructor import matrix
-        M = matrix(rows).transpose()
-        if val < 0:
-            M *= self._p ** (-val)
-        if echelon:
-            M = M.change_ring(ZZ)
-            M.echelonize()
-            n = len(elements)
-            M = M.submatrix(0,0,n,n)
-        if val < 0:
-            M *= self._p ** val
-        return M
+    def precision_lattice(self, elements=None):
+        raise NotImplementedError("implement this function in subclasses")
 
     def number_of_diffused_digits(self, elements=None):
         """
@@ -926,6 +407,8 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
         """
         M = self.precision_lattice(elements)
         n = M.nrows()
+        if M.ncols() > n:
+            return Infinity
         p = self._p
         diffused = 0
         for j in range(n):
@@ -978,7 +461,6 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
                 if x_ref() is not None: count += 1
             return count
 
-
     def tracked_elements(self, values=True, dead=True):
         """
         Return the list of tracked elements
@@ -1001,30 +483,30 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
              <weakref at 0x...; dead>]
             sage: prec.tracked_elements(values=False, dead=False)
-            [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>]
+            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
 
             sage: u = x + y
             sage: v = x - y
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5), 2 + O(2^5), O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
              <weakref at 0x...; dead>]
 
             sage: del x; del y
             sage: prec.tracked_elements()
             [None, None, 2 + O(2^5), O(2^5), None]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
              <weakref at 0x...; dead>]
         """
         if values:
@@ -1260,7 +742,6 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
 
             :meth:`history_enable`, :meth:`history_disable`, :meth:`history_clear`
         """
-
         if self._history is None:
             raise ValueError("History is not tracked")
         total_time = 0
@@ -1297,7 +778,10 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
                     oldevent = event
                 total_time += tme
                 if event == 'add':
-                    status.append('o')
+                    if index is None:
+                        status.append('o')
+                    else:
+                        status = status[:index] + ['o'] + status[index:]
                 elif event == 'mark':
                     status[index] = '~'
                 elif event == 'del':
@@ -1360,3 +844,770 @@ class PrecisionLattice(UniqueRepresentation, SageObject):
             return tme_by_event[action]
         else:
             raise ValueError("invalid event")
+
+
+# class PrecisionLattice
+########################
+
+class PrecisionLattice(DifferentialPrecisionGeneric):
+    """
+    A class for handling precision lattices which are used to
+    track precision in the ZpLC model.
+
+    The precision lattice is stored as a triangular matrix whose
+    rows are generators of the lattice.
+    """
+    def __init__(self, p, label):
+        DifferentialPrecisionGeneric.__init__(self, p, 'lattice', label)
+        self._absolute_precisions = { }
+        self._capped = { }
+
+    def _index(self, ref):
+        """
+        Return the index of the element whose reference is ``ref``
+        """
+        return len(self._matrix[ref]) - 1
+
+    def reduce(self, index=0, partial=False):
+        """
+        Reduce the size of the entries above the diagonal of the precision matrix
+
+        INPUT:
+
+        - ``index`` -- an integer, the starting row for which the reduction
+          is performed
+
+        - ``partial`` -- a boolean (default: False) specifying whether a
+          partial or a full Hermite reduction should be performed
+
+        NOTE:
+
+        The partial reduction has cost `O(m^2)` where `m` is the number of 
+        rows that need to be reduced (that is the difference between the 
+        total number of rows and ``index``).
+
+        The full Hermite reduction has cost `O(m^3)`.
+
+        NOTE:
+
+        The software ensures that the precision lattice is always 
+        partially reduced.
+        Calling the function manually with the argument ``partial=True``
+        should then just do nothing.
+
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R.random_element()
+            sage: del x
+            sage: R.precision().del_elements()   # indirect doctest
+        """
+        n = len(self._elements)
+        if index >= n-1:
+            return
+        if partial:
+            # Partial reduction
+            # Cost: O(m^2) with m = n-index
+            tme = walltime()
+            diffval = (n-index) * [0]
+            for j in range(n-1, index, -1):
+                col = self._matrix[self._elements[j]]
+                prec = col[j].valuation() - diffval[j-index]
+                for i in range(index,j):
+                    col[i] = col[i].reduce(prec)
+                    col[i].normalize()  # seems to be faster then
+                    dval = col[i].valuation() - prec
+                    if dval < diffval[i-index]:
+                        diffval[i-index] = dval
+            # We update history
+            if self._history is not None:
+                self._history.append(('partial reduce', index, walltime(tme)))
+        else:
+            # Full Hermite reduction
+            # Cost: O(m^3) with m = n-index
+            tme = walltime()
+            for j in range(index+1, n):
+                # In what follows, we assume that col[j] is a power of p
+                col = self._matrix[self._elements[j]]
+                valpivot = col[j].valuation()
+                for i in range(index, j):
+                    reduced = col[i].reduce(valpivot)
+                    scalar = (col[i] - reduced) >> valpivot
+                    if scalar.is_zero(): continue
+                    col[i] = reduced
+                    col[i].normalize()
+                    for j2 in range(j+1, n):
+                        col2 = self._matrix[self._elements[j2]]
+                        col2[i] -= scalar*col2[i]
+                        col2[i].normalize()
+            # We update history
+            if self._history is not None:
+                self._history.append(('full reduce', index, walltime(tme)))
+
+    def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison', capped=False):
+        """
+        Update the lattice when a new element is created.
+
+        This function is not meant to be called manually.
+        It is automatically called by the parent when a new
+        element is created.
+
+        INPUT:
+
+        - ``x`` -- the newly created element
+
+        - ``dx`` -- a dictionary representing the differential of ``x``
+
+        - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+          or ``values``
+
+        - ``capped`` -- a boolean, whether this element has been capped 
+          according to the parent's cap
+
+        If ``dx_mode`` is ``linear_combinaison``, the dictionary ``dx`` 
+        encodes the expression of the differential of ``x``. 
+        For example, if ``x`` was defined as ``x = y*z`` then:
+
+        .. MATH::
+
+            dx = y dz + z dy
+
+        and the corresponding dictionary is ``{z: y, y: z}`` (except
+        that the keys are not the elements themselves but weak references
+        to them).
+
+        If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
+        specifies the entries that have to stored in the precision lattice.
+        This mode is only used for multiple conversion between different
+        parents (see :meth:`multiple_conversion`).
+
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R.random_element()
+            sage: y = R.random_element()
+            sage: z = x*y    # indirect doctest
+        """
+        # First we delete some elements marked for deletion
+        if self._marked_for_deletion:
+            self.del_elements(thresold=50)
+
+        # Then we add the new element
+        tme = walltime()
+        p = self._p
+        n = len(self._elements)
+        x_ref = weakref.ref(x, self.mark_for_deletion)
+        self._elements.append(x_ref)
+        col = n * [self._approx_zero]
+        if dx_mode == 'linear_combinaison':
+            for elt,scalar in dx:
+                ref = weakref.ref(elt)
+                if not isinstance(scalar, pRational):
+                    scalar = pRational(p, scalar)
+                c = self._matrix[ref]
+                for i in range(len(c)):
+                    col[i] += scalar * c[i]
+        elif dx_mode == 'values':
+            for elt,scalar in dx:
+                ref = weakref.ref(elt)
+                if not isinstance(scalar, pRational):
+                    scalar = pRational(p, scalar)
+                i = self._index(ref)
+                col[i] = scalar
+        else:
+            raise ValueError("dx_mode must be either 'linear_combinaison' or 'values'")
+        for i in range(n):
+            col[i] = col[i].reduce(bigoh)
+        col.append(pRational(p, ZZ(1), bigoh))
+        self._matrix[x_ref] = col
+        self._capped[x_ref] = capped
+
+        # We update history
+        if self._history is not None:
+            self._history.append(('add', None, walltime(tme)))
+
+    def mark_for_deletion(self, ref):
+        """
+        Mark an element for deletion.
+
+        This function is not meant to be called manually.
+        It is automatically called by the garbage collection when 
+        an element is collected.
+
+        INPUT:
+
+        - ``ref`` -- a weak reference to the destroyed element
+
+        NOTE::
+
+        This method does not update the precision lattice.
+        The actual update is performed when the method :meth:`del_elements`
+        is called. This is automatically done at the creation of a new
+        element but can be done manually as well.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='markdel')
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: prec
+            Precision lattice on 1 object (label: markdel)
+            sage: del x   # indirect doctest: x is here marked for deletion
+            sage: prec
+            Precision lattice on 1 object (label: markdel)
+            sage: prec.del_elements()       # x is indeed deleted
+            sage: prec
+            Precision lattice on 0 object (label: markdel)
+        """
+        tme = walltime()
+        try:
+            index = self._index(ref)
+        except (IndexError, KeyError):
+            return
+        self._marked_for_deletion.append(index)
+        if self._history is not None:
+            self._history.append(('mark', index, walltime(tme)))
+
+    def del_elements(self, thresold=None):
+        """
+        Erase columns of the lattice precision matrix corresponding to
+        elements which are marked for deletion and reduce the matrix
+        in order to keep it upper triangular.
+
+        INPUT:
+
+        - ``thresold`` -- an integer or ``None`` (default: ``None``):
+          a column whose distance to the right at greater than the
+          thresold is not erased
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='delelts')
+            sage: prec = R.precision()
+
+            sage: x = R(1,10)
+            sage: prec
+            Precision lattice on 1 object (label: delelts)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: del x
+            sage: prec
+            Precision lattice on 1 object (label: delelts)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: prec.del_elements()
+            sage: prec
+            Precision lattice on 0 object (label: delelts)
+            sage: prec.precision_lattice()
+            []
+        """
+        p = self._p
+        n = len(self._elements)
+
+        self._marked_for_deletion.sort(reverse=True)
+        count = 0
+        for index in self._marked_for_deletion:
+            if thresold is not None and index < n - thresold: break
+            n -= 1; count += 1
+
+            tme = walltime()
+            del self._matrix[self._elements[index]]
+            del self._elements[index]
+
+            # Now, we echelonize
+            for i in range(index,n):
+                col = self._matrix[self._elements[i]]
+                d, u, v = col[i].xgcd(col[i+1])
+                up, vp = col[i+1]/d, col[i]/d
+                col[i] = d
+                del col[i+1]
+                for j in range(i+1,n):
+                    col = self._matrix[self._elements[j]]
+                    col[i], col[i+1] = u*col[i] + v*col[i+1], up*col[i] - vp*col[i+1]
+
+            # We update history
+            if self._history is not None:
+                self._history.append(('del', index, walltime(tme)))
+
+            # And we reduce a bit
+            # (we do not perform a complete reduction because it is costly)
+            self.reduce(index, partial=True)
+
+        del self._marked_for_deletion[:count]
+
+    def lift_to_precision(self, x, prec):
+        """
+        Lift the specified element to the specified precision
+
+        INPUT:
+
+        - ``x`` -- the element whose precision has to be lifted
+
+        - ``prec`` -- the new precision
+
+        NOTE:
+
+        The new precision lattice is computed as the intersection
+        of the current precision lattice with the subspace
+
+        ..MATH::
+
+            p^{prec} \Z_p dx \oplus \bigoplus_{y \neq x} \Q_p dy
+
+        This function may change at the same time the precision of 
+        other elements having the same parent.
+
+        NOTE:
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`lift_to_precision`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+
+            sage: prec = R.precision()
+            sage: prec.lift_to_precision(z, 12)
+            sage: z
+            2 + O(2^12)
+            sage: y
+            1 + O(2^10)
+        """
+        ref = weakref.ref(x)
+        col = self._matrix[ref]
+        n = len(self._elements)
+
+        rows_by_val = { }
+        for i in range(len(col)):
+            v = col[i].valuation()
+            if v >= prec: continue
+            if rows_by_val.has_key(v):
+                rows_by_val[v].append(i)
+            else:
+                rows_by_val[v] = [i]
+        vals = rows_by_val.keys()
+        vals.sort()
+        vals.append(prec)
+
+        for t in range(len(vals)-1):
+            v, w = vals[t], vals[t+1]
+            rows = rows_by_val[v]
+            piv = max(rows)
+            alpha = col[piv].unit_part()
+            for i in rows:
+                if i == piv: continue
+                # We clear the entry on the i-th line
+                beta = col[i].unit_part()
+                for j in range(piv,n):
+                    col_cur = self._matrix[self._elements[j]]
+                    col_cur[i] = alpha*col_cur[i] - beta*col_cur[piv]
+            # We rescale the piv-th line
+            for j in range(piv,n):
+                col_cur = self._matrix[self._elements[j]]
+                col_cur[piv] = col_cur[piv] << (w-v)
+            # Now the entry on the piv-th line has valuation w
+            # We update the dictionary accordingly
+            if w < prec:
+                rows_by_val[w].append(piv)
+
+        # We clear the cached absolute precisions
+        self._absolute_precisions = { }
+
+    def _compute_precision_absolute(self, ref):
+        """
+        Compute the absolute precision of the given element and cache it
+
+        For internal use.
+        """
+        col = self._matrix[ref]
+        absprec = Infinity
+        capped = False
+        for i in range(len(col)):
+            v = col[i].valuation()
+            if v < absprec:
+                absprec = v
+                capped = self._capped[self._elements[i]]
+            elif v == absprec:
+                capped = capped and self._capped[self._elements[i]]
+        self._absolute_precisions[ref] = [absprec, capped]
+
+    def precision_absolute(self, x):
+        """
+        Return the absolute precision of the given element
+
+        INPUT:
+
+        - ``x`` -- the element whose absolute precision is requested
+
+        NOTE:
+
+        The absolute precision is obtained by projecting the precision
+        lattice onto the line of coordinate ``dx``
+
+        NOTE:
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`precision_absolute`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+        """
+        ref = weakref.ref(x)
+        if not self._absolute_precisions.has_key(ref):
+            self._compute_precision_absolute(ref)
+        return self._absolute_precisions[ref][0]
+
+    def is_precision_capped(self, x):
+        """
+        Return whether the absolute precision on the given 
+        results from a cap coming from the parent
+
+        INPUT:
+
+        - ``x`` -- the element
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`is_precision_capped`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: x.is_precision_capped()  # indirect doctest
+            False
+
+            sage: y = x-x; y
+            O(2^40)
+            sage: y.is_precision_capped()  # indirect doctest
+            True
+        """
+        ref = weakref.ref(x)
+        if not self._absolute_precisions.has_key(ref):
+            self._compute_precision_absolute(ref)
+        return self._absolute_precisions[ref][1]
+
+    def precision_lattice(self, elements=None):
+        """
+        Return a matrix representing the precision lattice on a
+        subset of elements.
+
+        INPUT:
+
+        - ``elements`` -- a list of elements or ``None`` (default: ``None``)
+
+        - ``echelon`` -- a boolean (default: ``True``); specify whether
+          the result should be in echelon form
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='preclattice')
+            sage: prec = R.precision()
+            sage: x = R(1,10); y = R(1,5)
+            sage: u = x + y
+            sage: v = x - y
+            sage: prec.precision_lattice()
+            [         1024             0          1024          1024]
+            [            0            32            32 1099511627744]
+            [            0             0       2097152             0]
+            [            0             0             0 1099511627776]
+            sage: prec.precision_lattice([u,v])
+            [  32 2016]
+            [   0 2048]
+
+        Here is another example with matrices::
+
+            sage: M = matrix(R, 2, 2, [R(3,5),R(7,5),R(1,5),R(11,1)])
+            sage: N = M^10
+            sage: prec.precision_lattice()
+            23 x 23 dense matrix over Integer Ring (use the '.str()' method to see the entries)
+
+        The next syntax provides as easy way to select an interesting
+        subset of variables (the selected subset consists of the four
+        entries of the matrix ``N``)::
+
+            sage: prec.precision_lattice(N)
+            [  2048    512  28160 230400]
+            [     0   2048  14336 258048]
+            [     0      0  65536  65536]
+            [     0      0      0 262144]
+
+        We can give a list of matrices as well::
+
+            sage: prec.precision_lattice([M,N])
+            [       32         0         0         0 226115584  96788480  52174848  82804736]
+            [        0        32         0         0  52174848 121765888  11829248  28516352]
+            [        0         0        32         0  96788480  42762240 121765888 199614464]
+            [        0         0         0         2   5175296  12475904   1782272   4045824]
+            [        0         0         0         0 268435456         0         0         0]
+            [        0         0         0         0         0 268435456         0         0]
+            [        0         0         0         0         0         0 268435456         0]
+            [        0         0         0         0         0         0         0 268435456]
+        """
+        if elements is None:
+            elements = self._elements
+        else:
+            elements = list_of_padics(elements)
+        n = len(self._elements)
+        rows = [ ]; val = 0
+        for ref in elements:
+            col = self._matrix[ref]
+            row = [ x.value() for x in col ]
+            valcol = min([ x.valuation() for x in col ])
+            if valcol < val: val = valcol
+            row += (n-len(row)) * [ZZ(0)]
+            rows.append(row)
+        from sage.matrix.constructor import matrix
+        M = matrix(rows).transpose()
+        if val < 0:
+            M *= self._p ** (-val)
+        M = M.change_ring(ZZ)
+        M.echelonize()
+        n = len(elements)
+        M = M.submatrix(0,0,n,n)
+        if val < 0:
+            M *= self._p ** val
+        return M
+
+
+# class PrecisionModule
+#######################
+
+STARTING_ADDITIONAL_PREC = 5
+
+class PrecisionModule(DifferentialPrecisionGeneric):
+    """
+    A class for handling precision modules which are used to
+    track precision in the ZpLF model.
+
+    The precision module (which is not necessarily a lattice)
+    is stored as a matrix whose rows are generators.
+    """
+    def __init__(self, p, label, prec):
+        DifferentialPrecisionGeneric.__init__(self, p, 'module', label)
+        self._absolute_precisions = { }
+        self._zero_cap = prec
+        self._internal_prec = prec + STARTING_ADDITIONAL_PREC
+        self._count = 0
+        self._thresold = 1
+
+    def internal_prec(self):
+        return self._internal_prec
+
+    def dimension(self):
+        if len(self._elements) == 0:
+            return 0
+        return len(self._matrix[self._elements[-1]])
+
+    def is_lattice(self):
+        return self.dimension() == len(self._elements)
+
+    def new_element(self, x, dx, bigoh, dx_mode='linear_combinaison'):
+        self.del_elements()
+
+        # We first increase the internal prec
+        self._count += 1
+        if self._count > self._thresold:
+            self._internal_prec += 2
+            self._thresold *= self._p
+
+        tme = walltime()
+        p = self._p
+        n = self.dimension()
+        x_ref = weakref.ref(x, self.mark_for_deletion)
+        col = n * [self._approx_zero]
+        if dx_mode == 'linear_combinaison':
+            expected_vals = n * [ Infinity ]
+            for elt,scalar in dx:
+                ref = weakref.ref(elt)
+                if not isinstance(scalar, pRational):
+                    scalar = pRational(p, scalar)
+                c = self._matrix[ref]
+                for i in range(len(c)):
+                    summand = scalar * c[i]
+                    expected_vals[i] = min(expected_vals[i], summand.valuation())
+                    col[i] += summand
+            for i in range(n):
+                if col[i].valuation() >= expected_vals[i] + self._zero_cap:
+                    col[i] = self._approx_zero
+        elif dx_mode == 'values':
+            for elt,scalar in dx:
+                ref = weakref.ref(elt)
+                if not isinstance(scalar, pRational):
+                    scalar = pRational(p, scalar)
+                i = self._index(ref)
+                col[i] = scalar
+        else:
+            raise ValueError("dx_mode must be either 'linear_combinaison' or 'values'")
+
+        for i in range(n):
+            col[i] = col[i].reduce_relative(self._internal_prec)
+        if bigoh is not None:
+            col.append(pRational(p, ZZ(1), bigoh))
+
+        self._elements.append(x_ref)
+        self._matrix[x_ref] = col
+
+        # We update history
+        if self._history is not None:
+            self._history.append(('add', None, walltime(tme)))
+
+
+    def mark_for_deletion(self, ref):
+        tme = walltime()
+        try:
+            index = self._index(ref)
+        except (IndexError, KeyError):
+            return
+        if index == 0:
+            length_before = 0
+        else:
+            length_before = len(self._matrix[self._elements[index-1]])
+        length = len(self._matrix[ref])
+        if length > length_before:
+            self._marked_for_deletion.append(index)
+            if self._history is not None:
+                self._history.append(('mark', index, walltime(tme)))
+        else:
+            # if the column is not a pivot, we erase it without delay
+            del self._elements[index]
+            def decr(i):
+                if i < index: return i
+                else: return i-1
+            self._marked_for_deletion = [ decr(i) for i in self._marked_for_deletion ]
+            if self._history is not None:
+                self._history.append(('del', index, walltime(tme)))
+
+
+    def del_elements(self, thresold=None):
+        p = self._p
+        n = len(self._elements)
+
+        self._marked_for_deletion.sort(reverse=True)
+        count = 0
+        for index in self._marked_for_deletion:
+            if thresold is not None and index < n - thresold: break
+            n -= 1; count += 1
+
+            tme = walltime()
+
+            length = len(self._matrix[self._elements[index]])
+            del self._matrix[self._elements[index]]
+            del self._elements[index]
+            start = index
+            while start < n:
+                i = start
+                val = Infinity
+                end = n
+                while i < n:
+                    col = self._matrix[self._elements[i]]
+                    if len(col) > length: 
+                        end = i
+                        break
+                    v = col[-1].valuation()
+                    if v < val:
+                        val = v
+                        piv = i
+                    i += 1
+                if val < Infinity:
+                    # another pivot has been found, we place it in front
+                    self._elements[start], self._elements[piv] = self._elements[piv], self._elements[start]
+                    break
+
+                # No pivot was found. We re-echelonize
+                for i in range(start, end):
+                    del self._matrix[self._elements[i]][-1]
+                if end == n: break
+                # col is the column of index "end"
+                # its size is (length + 1)
+                d, u, v = col[length-1].xgcd(col[length])
+                up, vp = col[length]/d, col[length-1]/d
+                col[length-1] = d.reduce_relative(self._internal_prec)
+                del col[length]
+                start = end + 1
+                for j in range(start, n):
+                    col = self._matrix[self._elements[j]]
+                    a1 = u*col[length-1]; a2 = v*col[length]; a = a1 + a2
+                    b1 = up*col[length-1]; b2 = vp*col[length]; b = b1 + b2
+                    if a.valuation() > min(a1.valuation(), a2.valuation()) + self._zero_cap:
+                        col[length-1] = self._approx_zero
+                    else:
+                        col[length-1] = a.reduce_relative(self._internal_prec)
+                    if b.valuation() > min(b1.valuation(), b2.valuation()) + self._zero_cap:
+                        col[length] = self._approx_zero
+                    else:
+                        col[length] = b.reduce_relative(self._internal_prec)
+                length += 1
+
+            # We update history
+            if self._history is not None:
+                self._history.append(('del', index, walltime(tme)))
+
+        del self._marked_for_deletion[:count]
+
+
+    def _compute_precision_absolute(self, ref):
+        """
+        Compute the absolute precision of the given element and cache it
+
+        For internal use.
+        """
+        col = self._matrix[ref]
+        if len(col) == 0:
+            self._absolute_precisions[ref] = Infinity
+        else:
+            self._absolute_precisions[ref] = min( [ c.valuation() for c in col ] )
+
+    def precision_absolute(self, x):
+        ref = weakref.ref(x)
+        if not self._absolute_precisions.has_key(ref):
+            self._compute_precision_absolute(ref)
+        return self._absolute_precisions[ref]
+
+    def precision_lattice(self, elements=None):
+        if elements is None:
+            elements = self._elements
+        else:
+            elements = list_of_padics(elements)
+        n = len(self._elements)
+        rows = [ ]; val = 0
+        for ref in elements:
+            col = self._matrix[ref]
+            row = [ x.value() for x in col ]
+            valcol = min([ x.valuation() for x in col ])
+            if valcol < val: val = valcol
+            row += (n-len(row)) * [ZZ(0)]
+            rows.append(row)
+        from sage.matrix.constructor import matrix
+        M = matrix(rows).transpose()
+        if val < 0:
+            M *= self._p ** (-val)
+        M = M.change_ring(ZZ)
+        M.echelonize()
+        n = len(elements)
+        if len(M.pivots()) < n:
+            raise PrecisionError("the differential is not surjective")
+        M = M.submatrix(0,0,n,n)
+        if val < 0:
+            M *= self._p ** val
+        return M
