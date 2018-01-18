@@ -107,7 +107,8 @@ ENV SAGE_FAT_BINARY yes
 # it shouldn't with a recent GCC package from the system and with gfortran)
 ENV SAGE_INSTALL_GCC no
 RUN make build \
-    && rm -r src/build/temp.*
+    && rm -r src/build/temp.* \
+    && rm -rf upstream/*
 
 ################################################################################
 # Image with a full build of sage and its documentation.                       #
