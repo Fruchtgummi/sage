@@ -11,6 +11,13 @@ from sage.rings.infinity import Infinity
 from sage.rings.padics.precision_error import PrecisionError
 
 
+# Global variables
+
+DEFAULT_THRESOLD_DELETION = 50
+STARTING_ADDITIONAL_PREC = 5
+
+
+
 # Class pRational
 #################
 
@@ -278,6 +285,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         self._matrix = { }
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
+        self._thresold_deletion = DEFAULT_THRESOLD_DELETION
         # History
         self._history_init = None
         self._history = None
@@ -323,6 +331,74 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             else:
                 return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
 
+    def thresold_deletion(self, thresold=None):
+        """
+        Return or set the thresold for column deletion
+
+        When a variable dies, the ambiant space in which the precision
+        module lives can be reduced (by projection onto the hyperplane
+        defined by the dead variable).
+        However this reduction has a cost because it leads to re-echonize
+        a part of the matrix that encodes the precision. The size of this
+        part is roughly the distance between the last column and the one
+        corresponding to the dead variable.
+
+        The thresold deletion is the maximal distance until which the
+        above reduction is performed. After the thresold, the column of
+        the dead variable is kept in this matrix as if the variable were
+        not destroyed.
+
+        INPUT:
+
+        - ``thresold`` -- a non negative integer, ``Infinity`` or ``None`` 
+          (default: ``None``): if ``None``, return the current thresold;
+          otherwise set the thresold to the given value
+
+        NOTE::
+
+        Setting the thresold to ``0`` disables the dimension reduction.
+
+        Setting the thresold to ``Infinity``
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='thresold_deletion')
+            sage: prec = R.precision()
+            sage: prec.thresold_deletion()
+            50
+
+            sage: prec.thresold_deletion(20)
+            sage: prec.thresold_deletion()
+            20
+
+            sage: prec.thresold_deletion(-2)
+            Traceback (most recent call last):
+            ...
+            ValueError: The thresold must be a nonnegative integer or Infinity
+
+        TESTS::
+
+            sage: L = [ R.random_element() for _ in range(100) ]
+            sage: prec.ambiant_dimension()
+            100
+
+            sage: del L[:10]
+            sage: s = sum(L)
+            sage: prec.ambiant_dimension()
+            102
+
+            sage: del L[-10:]
+            sage: s = sum(L)
+            sage: prec.ambiant_dimension()
+            93
+        """
+        if thresold is None:
+            return self._thresold_deletion
+        if thresold is Infinity or (thresold in ZZ and thresold >= 0):
+            self._thresold_deletion = thresold
+        else:
+            raise ValueError("The thresold must be a nonnegative integer or Infinity")
+
     def prime(self):
         """
         Return the underlying prime number attached to this precision lattice.
@@ -340,6 +416,55 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         Return the index of the element whose reference is ``ref``
         """
         return self._elements.index(ref)
+
+    def ambiant_dimension(self):
+        """
+        Return the dimension of the vector space in which the precision
+        module/lattice lives
+
+        EXAMPLES:
+
+            sage: R = ZpLC(2, label='ambient_dim')
+            sage: prec = R.precision()
+
+            sage: x,y = R(1,10), R(1,5)
+            sage: prec.ambiant_dimension()
+            2
+            sage: prec.dimension()
+            2
+
+            sage: u = x + y
+            sage: prec.ambiant_dimension()
+            3
+            sage: prec.dimension()
+            3
+
+        In the case of ``ZpLC`` (lattice-cap precision), it is always
+        equal to the dimension of the lattice.
+
+        In the case of ``ZpLF`` (lattice-float precision), the precision
+        object is not necessarily a lattice and then may have smaller
+        dimension::
+
+            sage: R = ZpLF(2, label='ambient_dim')
+            sage: prec = R.precision()
+
+            sage: x,y = R(1,10), R(1,5)
+            sage: prec.ambiant_dimension()
+            2
+            sage: prec.dimension()
+            2
+
+            sage: u = x + y
+            sage: prec.ambiant_dimension()
+            3
+            sage: prec.dimension()
+            2
+        """
+        return len(self._matrix)
+
+    def dimension(self):
+        raise NotImplementedError("implement this function is subclasses")
 
     def new_element(self):
         raise NotImplementedError("implement this function is subclasses")
@@ -868,6 +993,23 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         return len(self._matrix[ref]) - 1
 
+    def dimension(self):
+        """
+        Return the dimension of this lattice
+
+        EXAMPLES::
+
+            sage: R = ZpLC(5, label='dimension')
+            sage: prec = R.precision()
+            sage: prec.dimension()
+            0
+
+            sage: x = R(1,10)
+            sage: prec.dimension()
+            1
+        """
+        return len(self._matrix)
+
     def reduce(self, index=0, partial=False):
         """
         Reduce the size of the entries above the diagonal of the precision matrix
@@ -990,7 +1132,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         # First we delete some elements marked for deletion
         if self._marked_for_deletion:
-            self.del_elements(thresold=50)
+            self.del_elements(thresold=self._thresold_deletion)
 
         # Then we add the new element
         tme = walltime()
@@ -1393,8 +1535,6 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 # class PrecisionModule
 #######################
 
-STARTING_ADDITIONAL_PREC = 5
-
 class PrecisionModule(DifferentialPrecisionGeneric):
     """
     A class for handling precision modules which are used to
@@ -1463,7 +1603,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             sage: prec.dimension()
             2
 
-        How course, it may also decrease when a sufficient 
+        Of course, it may also decrease when a sufficient 
         number of variables are collected::
 
             sage: del x, y, u
@@ -1549,7 +1689,9 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             sage: y = R.random_element()
             sage: z = x*y    # indirect doctest
         """
-        self.del_elements()
+        # First we delete some elements marked for deletion
+        if self._marked_for_deletion:
+            self.del_elements(thresold=self._thresold_deletion)
 
         # We first increase the internal prec
         self._count += 1
