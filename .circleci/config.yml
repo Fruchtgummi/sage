@@ -1,0 +1,40 @@
+version: 2
+jobs:
+ build:
+   docker:
+     - image: alpine:latest
+   steps:
+     - run: apk add --no-cache ca-certificates curl openssl git openssh-client docker
+     - checkout
+     - setup_remote_docker
+     - run: |
+         DOCKER_TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
+         [[ "$DOCKER_TAG" = "master" ]] && DOCKER_TAG=latest
+         # run "make all" so can pull the built sage from there
+         docker build \
+            --tag make-all \
+            --target make-all \
+            -f docker/Dockerfile \
+            --build-arg MAKE="make -j3" \
+            .
+         # build the developer image with the build artifacts intact
+         docker build \
+            --tag ${DOCKER_USER:-sagemath}/sagemath-dev:$DOCKER_TAG \
+            --target dev \
+            -f docker/Dockerfile \
+            --build-arg MAKE="make -j3" \
+            --cache-from make-all \
+            .
+         # build the release image without build artifacts
+         docker build \
+            --tag ${DOCKER_USER:-sagemath}/sagemath:$DOCKER_TAG \
+            -f docker/Dockerfile \
+            --build-arg MAKE="make -j3" \
+            --cache-from make-all,${DOCKER_USER:-sagemath}/sagemath-dev:$DOCKER_TAG \
+            .
+
+         # push the built images to the docker hub
+         [[ -z "$DOCKER_USER" -o -z "$DOCKER_PASS" ]] || ( \
+           docker login -u $DOCKER_USER -p $DOCKER_PASS \
+           && docker push saraedum/sagemath-dev:$DOCKER_TAG  \
+           && docker push saraedum/sagemath:$DOCKER_TAG )
