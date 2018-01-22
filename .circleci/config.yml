@@ -10,7 +10,7 @@ jobs:
      - run: |
          DOCKER_TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
          [[ "$DOCKER_TAG" = "master" ]] && DOCKER_TAG=latest
-         # run "make all" so can pull the built sage from there
+         # run "make all" so the following builds can use the built sage
          docker build \
             --tag make-all \
             --target make-all \
