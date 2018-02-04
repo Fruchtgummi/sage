@@ -464,21 +464,53 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         return len(self._matrix)
 
     def dimension(self):
+        """
+        Return the dimension of this precision module
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function is subclasses")
 
-    def new_element(self):
+    def new_element(self, *args):
+        """
+        Insert a new element in this precision module
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function is subclasses")
 
     def mark_for_deletion(self, ref):
+        """
+        Mark for deletion an element of this precision module.
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function is subclasses")
 
     def del_elements(self, thresold=None):
+        """
+        Delete all elements marked for deletion up to the given thresold
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function in subclasses")
 
     def precision_absolute(self, x):
+        """
+        Return the absolute precision of the given element
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function in subclasses")
 
     def precision_lattice(self, elements=None):
+        """
+        Return a lattice modeling the precision on the given set of elements
+        or, if not given, on the whole set of elements tracked by the precision
+        module
+
+        This method must be implemented in subclasses
+        """
         raise NotImplementedError("implement this function in subclasses")
 
     def number_of_diffused_digits(self, elements=None):
