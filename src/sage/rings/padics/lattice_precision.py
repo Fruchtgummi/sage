@@ -1245,7 +1245,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
     def del_elements(self, thresold=None):
         """
         Erase columns of the lattice precision matrix corresponding to
-        elements which are marked for deletion and reduce the matrix
+        elements which are marked for deletion and echelonize the matrix
         in order to keep it upper triangular.
 
         INPUT:
@@ -1287,12 +1287,21 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             n -= 1; count += 1
 
             tme = walltime()
-            del self._matrix[self._elements[index]]
+            ref = self._elements[index]
             del self._elements[index]
+            del self._matrix[ref]
+            capped = self._capped[ref]
+            del self._capped[ref]
 
             # Now, we echelonize
             for i in range(index,n):
-                col = self._matrix[self._elements[i]]
+                ref = self._elements[i]
+                col = self._matrix[ref]
+                if col[i].valuation() < col[i+1].valuation():
+                    self._capped[ref], capped = capped, capped or self._capped[ref]
+                else:
+                    capped = capped or self._capped[ref]
+                      
                 d, u, v = col[i].xgcd(col[i+1])
                 up, vp = col[i+1]/d, col[i]/d
                 col[i] = d
