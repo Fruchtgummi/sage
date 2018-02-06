@@ -21,11 +21,39 @@ STARTING_ADDITIONAL_PREC = 5
 # Class pRational
 #################
 
-# It is a temporary class implementing rational numbers
-# as approximations of p-adic numbers
-
 class pRational:
+    """
+    This class implements rational numbers as approximations
+    of `p`-adic numbers.
+
+    Only for internal use.
+    """
     def __init__(self, p, x, exponent=0, valuation=None):
+        """
+        Construct the element ``x * p^exponent``
+
+        INPUT:
+
+        - ``p`` -- a prime number
+
+        - ``x`` -- a rational number
+
+        - ``exponent`` -- a relative integer (default: 0)
+
+        - ``valuation`` -- an integer or None (default: ``None``),
+          the ``p``-adic valuation of this element
+
+        If not ``None``, this method trusts the given value to the
+        attribute ``valuation``.
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: pRational(2, 5)
+            5
+            sage: pRational(2, 5/3, 2)
+            2^2 * 5/3
+        """
         self.p = p
         if x in ZZ:
             self.x = ZZ(x)
@@ -35,12 +63,41 @@ class pRational:
         self._valuation = valuation
 
     def __repr__(self):
+        """
+        Return a string representation of this element
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: pRational(2, 5, 2)  # indirect doctest
+            2^2 * 5
+        """
         if self.exponent == 0:
             return str(self.x)
         else:
             return "%s^%s * %s" % (self.p, self.exponent, self.x)
 
     def reduce(self, prec):
+        """
+        Return this element reduced modulo ``p^prec``
+
+        INPUT:
+
+        - ``prec`` -- a relative integer
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 1234567); x
+            1234567
+            sage: x.reduce(12)
+            1671
+
+            sage: x = pRational(2, 1234/567); x
+            1234/567
+            sage: x.reduce(12)
+            190
+        """
         if prec is Infinity:
             return self
         x = self.x
@@ -68,12 +125,44 @@ class pRational:
         return self.__class__(self.p, x, exp, valuation=val)
 
     def reduce_relative(self, prec):
+        """
+        Return this element reduced modulo ``p^n`` where ``n = prec + val(x)``
+
+        INPUT:
+
+        - ``prec`` -- a nonnegative integer
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 1234567); x
+            1234567
+            sage: x.reduce_relative(12)
+            1671
+
+            sage: x = pRational(2, 1234/567); x
+            1234/567
+            sage: x.reduce_relative(12)
+            190
+        """
         v = self.valuation()
         if v is Infinity:
             return self
         return self.reduce(prec+v)
 
     def normalize(self):
+        """
+        Normalize this element, i.e. write it as ``p^v * u`` where 
+        ``u`` is coprime to ``p``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x.normalize(); x
+            2^13 * 1929
+        """
         if self.x == 0:
             self.exponent = 0
         else:
@@ -85,19 +174,73 @@ class pRational:
             self.exponent = val
 
     def valuation(self):
+        """
+        Return the ``p``-adic valuation of this element
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x.valuation()
+            13
+        """
         if self._valuation is None:
             valx = self.x.valuation(self.p)
             self._valuation = self.exponent + valx
         return self._valuation
 
     def is_p_power(self):
+        """
+        Return true if this element is a power of ``p``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 1024, 2); x
+            2^2 * 1024
+            sage: x.is_p_power()
+            True
+
+            sage: y = pRational(2, 123456, 7); y
+            2^7 * 123456
+            sage: y.is_p_power()
+            False
+        """
         self.normalize()
         return self.x == 1
 
     def is_zero(self):
+        """
+        Return true if this element vanishes
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x.is_zero()
+            False
+
+            sage: (x-x).is_zero()
+            True
+        """
         return self.x == 0
 
     def __add__(self, other):
+        """
+        Return the sum of ``self`` and ``other``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: y = pRational(2, 891011, 12); y
+            2^12 * 891011
+            sage: x + y
+            2^7 * 28635808
+        """
         p = self.p
         sexp = self.exponent
         oexp = other.exponent
@@ -115,6 +258,19 @@ class pRational:
             return self.__class__(p, self.x * p**(sexp-oexp) + other.x, oexp, valuation=val)
 
     def __sub__(self, other):
+        """
+        Return the subtraction of ``self`` by ``other``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: y = pRational(2, 891011, 12); y
+            2^12 * 891011
+            sage: x - y
+            2^7 * -28388896
+        """
         p = self.p
         sexp = self.exponent
         oexp = other.exponent
@@ -132,9 +288,33 @@ class pRational:
             return self.__class__(p, self.x * p**(sexp-oexp) - other.x, oexp, valuation=val)
 
     def __neg__(self):
+        """
+        Return the opposite of this element
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: -x
+            2^7 * -123456
+        """
         return self.__class__(self.p, -self.x, self.exponent, valuation=self._valuation)
 
     def __mul__(self, other):
+        """
+        Return the product of ``self`` and ``other``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: y = pRational(2, 891011, 12); y
+            2^12 * 891011
+            sage: x * y
+            2^19 * 110000654016
+        """
         if self._valuation is None or other._valuation is None:
             val = None
         else:
@@ -142,6 +322,19 @@ class pRational:
         return self.__class__(self.p, self.x * other.x, self.exponent + other.exponent, valuation=val)
 
     def __div__(self, other):
+        """
+        Return the quotient of ``self`` by ``other``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: y = pRational(2, 891011, 12); y
+            2^12 * 891011
+            sage: x / y
+            2^-5 * 123456/891011
+        """
         if self._valuation is None or other._valuation is None:
             val = None
         else:
@@ -149,6 +342,21 @@ class pRational:
         return self.__class__(self.p, self.x / other.x, self.exponent - other.exponent, valuation=val)
 
     def __lshift__(self, n):
+        """
+        Return the product of this element by ``p^n``
+
+        INPUT:
+
+        - ``n`` -- a relative integer
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x << 10
+            2^17 * 123456
+        """
         if self._valuation is None:
             val = None
         else:
@@ -156,9 +364,36 @@ class pRational:
         return self.__class__(self.p, self.x, self.exponent + n, valuation=val)
 
     def __rshift__(self, n):
+        """
+        Return the quotient of this element by ``p^n``
+
+        INPUT:
+
+        - ``n`` -- a relative integer
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x >> 10
+            2^-3 * 123456
+        """
         return self << (-n)
 
     def unit_part(self):
+        """
+        Return the unit part of this element, that is the part ``u``
+        in the writing ``u * p^v`` with ``u`` coprime to ``p``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x.unit_part()
+            1929
+        """
         if self.is_zero():
             raise ValueError("the unit part of zero is not defined")
         p = self.p
@@ -167,6 +402,29 @@ class pRational:
         return self.__class__(p, x, 0, valuation=0)
 
     def xgcd(self,other):
+        """
+        Return the gcd of ``self`` and ``other`` together with two
+        element ``u`` and ``v`` such that ``u*self + v*other = gcd``
+
+        The ``gcd`` is normalized so that it is a power of ``p``
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: y = pRational(2, 891011, 12); y
+            2^12 * 891011
+
+            sage: d, u, v = x.xgcd(y)
+            sage: d
+            2^7 * 32
+            sage: d.normalize(); d
+            2^12 * 1
+
+            sage: u*x + v*y
+            2^7 * 32
+        """
         p = self.p
         sexp = self.exponent
         oexp = other.exponent
@@ -189,11 +447,43 @@ class pRational:
         return d, u, v
 
     def value(self):
+        """
+        Return this element as a rational number
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456, 7); x
+            2^7 * 123456
+            sage: x.value()
+            15802368
+        """
         return (self.p ** self.exponent) * self.x
 
     def list(self, prec):
+        """
+        Return the list of the digits of this element (written in radix 
+        ``p``) up to position ``prec``.
+
+        The first zeros are omitted.
+
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pRational
+            sage: x = pRational(2, 123456); x
+            123456
+            sage: x.list(5)
+            []
+            sage: x.list(20)
+            [1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0]
+
+            sage: y = pRational(2, 123/456); y
+            41/152
+            sage: y.list(10)
+            [1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1]
+        """
         if self.x not in ZZ:
-            raise NotImplementedError
+            self = self.reduce(prec)
         val = self.valuation()
         p = self.p
         x = ZZ(self.x * p**(self.exponent - val))
