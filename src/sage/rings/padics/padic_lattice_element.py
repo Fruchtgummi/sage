@@ -16,6 +16,36 @@ class pAdicLatticeElement(pAdicGenericElement):
     Constructs new element with given parent and value.
     """
     def __init__(self, parent, x, prec=None, dx=[], dx_mode='linear_combinaison', valuation=None, check=True, reduce=True):
+        """
+        Initialize this element
+
+        INPUT:
+
+        - ``parent`` -- the parent of this element
+
+        - ``x`` -- the newly created element
+
+        - ``dx`` -- a dictionary representing the differential of ``x``
+
+        - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+          or ``values``
+
+        - ``valuation`` -- an integer or ``None`` (default: ``None``), 
+          the valuation of this element
+
+        - ``check`` -- a boolean (default: ``True``), whether the function
+          should check that the given values are well formed and coherent
+
+        - ``reduce`` -- a boolean (default: ``True``), whether the given
+          values need to be reduced
+
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10)  # indirect doctest
+            sage: x
+            1 + O(2^10)
+        """
         self._parent = parent
         p = parent.prime()
         pAdicGenericElement.__init__(self, parent)

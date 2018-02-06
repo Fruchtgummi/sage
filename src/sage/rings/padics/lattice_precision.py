@@ -568,6 +568,34 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     differentiation
     """
     def __init__(self, p, type, label):
+        """
+        Initialize this precision module
+
+        INPUT:
+
+        - ``p`` -- a prime number
+
+        - ``type`` -- either ``lattice`` or ``module``
+
+        - ``label`` -- a string, the label of the parents to which belong
+          the elements tracked by this precision module
+
+        NOTE:
+
+        The precision module is automatically initialized at the 
+        creation of the parent.
+
+        TESTS::
+
+            sage: R = ZpLC(2, label='init')  # indirect doctest
+            sage: prec = R.precision()
+            sage: prec
+            Precision lattice on 0 object (label: init)
+            sage: prec._type
+            'lattice'
+            sage: prec.label()
+            'init'
+        """
         self._p = p
         self._label = label
         self._type = type
@@ -704,6 +732,8 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     def _index(self, ref):
         """
         Return the index of the element whose reference is ``ref``
+
+        Only for internal use!
         """
         return self._elements.index(ref)
 
@@ -1305,6 +1335,34 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
     rows are generators of the lattice.
     """
     def __init__(self, p, label):
+        """
+        Initialize this precision module
+
+        INPUT:
+
+        - ``p`` -- a prime number
+
+        - ``type`` -- either ``lattice`` or ``module``
+
+        - ``label`` -- a string, the label of the parents to which belong
+          the elements tracked by this precision module
+
+        NOTE:
+
+        The precision module is automatically initialized at the 
+        creation of the parent.
+
+        TESTS::
+
+            sage: R = ZpLC(2, label='init')
+            sage: prec = R.precision()
+            sage: prec
+            Precision lattice on 0 object (label: init)
+            sage: prec._type
+            'lattice'
+            sage: prec.label()
+            'init'
+        """
         DifferentialPrecisionGeneric.__init__(self, p, 'lattice', label)
         self._absolute_precisions = { }
         self._capped = { }
@@ -1312,6 +1370,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
     def _index(self, ref):
         """
         Return the index of the element whose reference is ``ref``
+
+        Only for internal use!
         """
         return len(self._matrix[ref]) - 1
 
@@ -1875,6 +1935,34 @@ class PrecisionModule(DifferentialPrecisionGeneric):
     is stored as a matrix whose rows are generators.
     """
     def __init__(self, p, label, prec):
+        """
+        Initialize this precision module
+
+        INPUT:
+
+        - ``p`` -- a prime number
+
+        - ``type`` -- either ``lattice`` or ``module``
+
+        - ``label`` -- a string, the label of the parents to which belong
+          the elements tracked by this precision module
+
+        NOTE:
+
+        The precision module is automatically initialized at the 
+        creation of the parent.
+
+        TESTS::
+
+            sage: R = ZpLF(2, label='init')
+            sage: prec = R.precision()
+            sage: prec
+            Precision module on 0 object (label: init)
+            sage: prec._type
+            'module'
+            sage: prec.label()
+            'init'
+        """
         DifferentialPrecisionGeneric.__init__(self, p, 'module', label)
         self._absolute_precisions = { }
         self._zero_cap = prec
