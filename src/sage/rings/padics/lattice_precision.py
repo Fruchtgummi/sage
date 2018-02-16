@@ -153,7 +153,7 @@ class pRational:
     def normalize(self):
         """
         Normalize this element, i.e. write it as ``p^v * u`` where 
-        ``u`` is coprime to ``p``
+        ``u`` is coprime to `p`
 
         TESTS::
 
@@ -175,7 +175,7 @@ class pRational:
 
     def valuation(self):
         """
-        Return the ``p``-adic valuation of this element
+        Return the `p`-adic valuation of this element
 
         TESTS::
 
@@ -192,7 +192,7 @@ class pRational:
 
     def is_p_power(self):
         """
-        Return true if this element is a power of ``p``
+        Return true if this element is a power of `p`
 
         TESTS::
 
@@ -384,7 +384,7 @@ class pRational:
     def unit_part(self):
         """
         Return the unit part of this element, that is the part ``u``
-        in the writing ``u * p^v`` with ``u`` coprime to ``p``
+        in the writing ``u * p^v`` with ``u`` coprime to `p`
 
         TESTS::
 
@@ -406,7 +406,7 @@ class pRational:
         Return the gcd of ``self`` and ``other`` together with two
         element ``u`` and ``v`` such that ``u*self + v*other = gcd``
 
-        The ``gcd`` is normalized so that it is a power of ``p``
+        The ``gcd`` is normalized so that it is a power of `p`
 
         TESTS::
 
@@ -463,7 +463,7 @@ class pRational:
     def list(self, prec):
         """
         Return the list of the digits of this element (written in radix 
-        ``p``) up to position ``prec``.
+        `p`) up to position ``prec``.
 
         The first zeros are omitted.
 
