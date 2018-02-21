@@ -520,7 +520,10 @@ def list_of_padics(elements):
     if isinstance(elements, pAdicLatticeElement):
         return [ weakref.ref(elements) ]
     if not isinstance(elements, list):
-        elements = list(elements)
+        try:
+            elements = elements.coefficients()
+        except AttributeError:
+            elements = list(elements)
     ans = [ ]
     for x in elements:
         ans += list_of_padics(x)
