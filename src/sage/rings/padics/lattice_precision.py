@@ -762,22 +762,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             Traceback (most recent call last):
             ...
             ValueError: The threshold must be a nonnegative integer or Infinity
-
-        TESTS::
-
-            sage: L = [ R.random_element() for _ in range(100) ]
-            sage: prec.ambient_dimension()
-            100
-
-            sage: del L[:10]
-            sage: s = sum(L)
-            sage: prec.ambient_dimension()
-            102
-
-            sage: del L[-10:]
-            sage: s = sum(L)
-            sage: prec.ambient_dimension()
-            93
         """
         if threshold is not None:
             if threshold is Infinity or (threshold in ZZ and threshold >= 0):
