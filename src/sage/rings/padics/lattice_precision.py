@@ -31,11 +31,11 @@ from sage.rings.infinity import Infinity
 from sage.rings.padics.precision_error import PrecisionError
 
 
-# Global variables
-##################
-
-# The default minimal size after which re-echelonization
-# are not performed
+# The default minimal size after which re-echelonization is not performed,
+# i.e., when a variable is not referenced anymore and could be deleted but its
+# corresponding column is further than this threshold from the right end of the
+# matrix representing the precision lattice, then the column is not removed
+# from the matrix because the re-echelonization would be too costly.
 DEFAULT_THRESHOLD_DELETION = 50
 
 # The number of additional digits used for internal computations
