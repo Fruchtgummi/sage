@@ -885,20 +885,16 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         pass
 
     @abstract_method
-    def new_element(self, *args, **kwargs):
+    def _new_element(self, *args, **kwargs):
         r"""
         Insert a new element in this precision module.
-
-        This function is not meant to be called manually.
-        It is automatically called by the parent when a new
-        element is created.
 
         TESTS::
 
             sage: R = ZpLC(2)
             sage: x = R.random_element()
             sage: y = R.random_element()
-            sage: z = x*y    # indirect doctest
+            sage: z = x*y # indirect doctest
         """
         pass
 
@@ -1760,7 +1756,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             if self._history is not None:
                 self._history.append(('full reduce', index, walltime(tme)))
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combination', capped=False):
+    def _new_element(self, x, dx, bigoh, dx_mode='linear_combination', capped=False):
         r"""
         Update the lattice when a new element is created.
 
@@ -2370,7 +2366,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         return self.dimension() == len(self._elements)
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combination'):
+    def _new_element(self, x, dx, bigoh, dx_mode='linear_combination'):
         r"""
         Update the lattice when a new element is created.
 
