@@ -1294,6 +1294,17 @@ def QpLC(p, prec = None, *args, **kwds):
     return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
 def QpLF(p, prec = None, *args, **kwds):
+    """
+    A shortcut function to create `p`-adic fields with lattice precision.
+
+    See :func:`ZpLC` for more information about this model of precision.
+
+    EXAMPLES::
+
+        sage: R = QpLF(2)
+        sage: R
+        2-adic Field with lattice-float precision
+    """
     return Qp(p, prec, 'lattice-float', *args, **kwds)
 
 

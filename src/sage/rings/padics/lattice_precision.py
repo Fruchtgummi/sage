@@ -1590,7 +1590,24 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         Return the index of the element whose reference is ``ref``
 
-        Only for internal use!
+        TESTS::
+
+            sage: import _weakref as weakref
+
+            sage: R = ZpLC(2, label="index")
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: y = R(1,5)
+
+            sage: prec._index(weakref.ref(x))
+            0
+            sage: prec._index(weakref.ref(y))
+            1
+
+            sage: del x
+            sage: prec.del_elements()
+            sage: prec._index(weakref.ref(y))
+            0
         """
         return len(self._matrix[ref]) - 1
 
@@ -1978,7 +1995,21 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         Compute the absolute precision of the given element and cache it
 
-        For internal use.
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+
+            sage: import _weakref as weakref
+            sage: R.precision()._absolute_precisions[weakref.ref(z)]
+            [5, False]
         """
         col = self._matrix[ref]
         absprec = Infinity
@@ -2542,7 +2573,23 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         Compute the absolute precision of the given element and cache it
 
-        For internal use.
+        Only for internal use!
+
+        TESTS::
+
+            sage: R = ZpLF(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+
+            sage: import _weakref as weakref
+            sage: R.precision()._absolute_precisions[weakref.ref(z)]
+            5
         """
         col = self._matrix[ref]
         if len(col) == 0:

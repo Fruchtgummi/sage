@@ -857,7 +857,48 @@ class pAdicFieldFloatingPoint(pAdicFieldBaseGeneric, pAdicFloatingPointFieldGene
 # Maybe the next class should go to sage.rings.padics.generic_nodes but I 
 # don't understand quite well the structure of all classes in this directory
 class pAdicLatticeGeneric(pAdicGeneric):
+    r"""
+    An implementation of the `p`-adic rationals with lattice precision
+
+    INPUT:
+
+    - `p` -- the underlying prime number
+
+    - ``prec`` -- the precision
+
+    - ``subtype`` -- either ``"cap"`` or ``"float"``, 
+      specifying the precision model used for tracking precision
+
+    - ``label`` -- a string or ``None`` (default: ``None``)
+
+    TESTS::
+
+        sage: R = ZpLC(17)   # indirect doctest
+        sage: R._prec_type()
+        'lattice-cap'
+
+        sage: R = ZpLF(17)   # indirect doctest
+        sage: R._prec_type()
+        'lattice-float'
+    """
     def __init__(self, p, prec, subtype, label=None):
+        """
+        Initialization.
+
+        TESTS::
+
+            sage: R = ZpLC(17)   # indirect doctest
+            sage: R._prec_type()
+            'lattice-cap'
+            sage: R._subtype
+            'cap'
+
+            sage: R = ZpLF(17)   # indirect doctest
+            sage: R._prec_type()
+            'lattice-float'
+            sage: R._subtype
+            'float'
+        """
         if label is None:
             self._label = None
         else:
@@ -1241,6 +1282,35 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
         EXAMPLES::
 
+            sage: R = ZpLC(2)
+            sage: R.has_coerce_map_from(ZZ)
+            True
+            sage: R.has_coerce_map_from(QQ)
+            False
+
+            sage: K = R.fraction_field()
+            sage: K.has_coerce_map_from(R)
+            True
+            sage: K.has_coerce_map_from(QQ)
+            True
+
+        Note that coerce map does not exist between ``p``-adic rings with
+        lattice precision and other ``p``-adic rings.
+
+            sage: S = Zp(2)
+            sage: R.has_coerce_map_from(S)
+            False
+            sage: S.has_coerce_map_from(R)
+            False
+
+        Similarly there is no coercion maps between ``p``-adic rings with
+        different labels.
+
+            sage: R2 = ZpLC(2, label='coerce')
+            sage: R.has_coerce_map_from(R2)
+            False
+            sage: R2.has_coerce_map_from(R)
+            False
         """
         if isinstance(R, pAdicRingLattice) and R.precision() is self.precision():
             return True
@@ -1438,6 +1508,35 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
         EXAMPLES::
 
+            sage: R = ZpLC(2)
+            sage: R.has_coerce_map_from(ZZ)
+            True
+            sage: R.has_coerce_map_from(QQ)
+            False
+
+            sage: K = R.fraction_field()
+            sage: K.has_coerce_map_from(R)
+            True
+            sage: K.has_coerce_map_from(QQ)
+            True
+
+        Note that coerce map does not exist between ``p``-adic fields with
+        lattice precision and other ``p``-adic rings.
+
+            sage: L = Qp(2)
+            sage: K.has_coerce_map_from(L)
+            False
+            sage: L.has_coerce_map_from(K)
+            False
+
+        Similarly there is no coercion maps between ``p``-adic rings with
+        different labels.
+
+            sage: K2 = QpLC(2, label='coerce')
+            sage: K.has_coerce_map_from(K2)
+            False
+            sage: K2.has_coerce_map_from(K)
+            False
         """
         if isinstance(R, (pAdicRingLattice, pAdicFieldLattice)) and R.precision() is self.precision():
             return True
