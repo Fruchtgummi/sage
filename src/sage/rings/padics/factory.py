@@ -2658,7 +2658,7 @@ def ZpLC(p, prec=None, *args, **kwds):
     might be delayed. We can force it with the method :meth:`del_elements`::
 
         sage: z = 0
-        sage: prec
+        sage: prec # random output, could be 2 objects if the garbage collector is fast
         Precision lattice on 3 objects
         sage: prec.del_elements()
         sage: prec
