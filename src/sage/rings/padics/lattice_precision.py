@@ -1058,7 +1058,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         jagged precision (that is a precision which is split over 
         all variables).
 
-        We refer to [] for a detail exposition of the notion of
+        We refer to [CRV2018]_ for a detail exposition of the notion of
         diffused digits.
 
         EXAMPLES::

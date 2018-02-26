@@ -99,7 +99,7 @@ def _default_show_prec(type, print_mode):
     else:
         return False
 
-def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_non_lazy_types, label=None, absprec=None, relprec=None):
+def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_non_lazy_types, label=None):
     """
     This implements create_key for Zp and Qp: moving it here prevents code duplication.
 
@@ -131,21 +131,10 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
         if type == 'lattice-cap':
             relative_cap = absolute_cap = None
             if prec is not None:
-                # We first try to unpack
                 try:
                     relative_cap, absolute_cap = prec
                 except (ValueError, TypeError):
                     relative_cap = prec
-            if absprec is not None:
-                if absolute_cap is None:
-                    absolute_cap = absprec
-                else:
-                    raise ValueError("absolute cap specified twice")
-            if relprec is not None:
-                if relative_cap is None:
-                    relative_cap = relprec
-                else:
-                    raise ValueError("relative cap specified twice")
             if relative_cap is not None:
                 if relative_cap is not Infinity:
                     try:
@@ -595,7 +584,7 @@ class Qp_class(UniqueFactory):
     def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None,
                    names = None, ram_name = None, print_pos = None,
                    print_sep = None, print_alphabet = None, print_max_terms = None, show_prec = None, check = True,
-                   label = None, relprec = None, absprec = None):   # specific to Lattice precision
+                   label = None):   # specific to Lattice precision
         """
         Creates a key from input parameters for ``Qp``.
 
@@ -614,7 +603,7 @@ class Qp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
-        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap', 'lattice-float'], label, relprec, absprec)
+        return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap', 'lattice-float'], label)
 
     def create_object(self, version, key):
         """
@@ -1727,7 +1716,7 @@ class Zp_class(UniqueFactory):
     def create_key(self, p, prec = None, type = 'capped-rel', print_mode = None,
                    names = None, ram_name = None, print_pos = None, print_sep = None, print_alphabet = None,
                    print_max_terms = None, show_prec = None, check = True,
-                   label = None, relprec = None, absprec = None):
+                   label = None):
         """
         Creates a key from input parameters for ``Zp``.
 
@@ -1761,7 +1750,7 @@ class Zp_class(UniqueFactory):
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
                             print_max_terms, show_prec, check,
                             ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap', 'lattice-float'], 
-                            label=label, relprec=relprec, absprec=absprec)
+                            label=label)
 
     def create_object(self, version, key):
         """
@@ -2626,7 +2615,8 @@ def ZpLC(p, prec=None, *args, **kwds):
 
     The precision is global.
     It is encoded by a lattice in a huge vector space whose dimension
-    is the number of elements having this parent.
+    is the number of elements having this parent. (see [CRV2014]_ and 
+    [CRV2018]_).
 
     Concretely, this precision datum is an instance of the class
     :class:`sage.rings.padic.lattice_precision.PrecisionLattice`.
