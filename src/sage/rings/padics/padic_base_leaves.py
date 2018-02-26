@@ -859,7 +859,7 @@ class pAdicFieldFloatingPoint(pAdicFieldBaseGeneric, pAdicFloatingPointFieldGene
 # don't understand quite well the structure of all classes in this directory
 class pAdicLatticeGeneric(pAdicGeneric):
     r"""
-    An implementation of the `p`-adic rationals with lattice precision
+    An implementation of the `p`-adic rationals with lattice precision.
 
     INPUT:
 
@@ -924,7 +924,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def _prec_type(self):
         """
-        Return the precision handling type
+        Return the precision handling type.
 
         EXAMPLES::
 
@@ -965,7 +965,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def precision_cap_relative(self):
         """
-        Return the relative precision cap for this ring
+        Return the relative precision cap for this ring.
 
         EXAMPLES::
 
@@ -985,7 +985,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def precision_cap_absolute(self):
         """
-        Return the absolute precision cap for this ring
+        Return the absolute precision cap for this ring.
 
         EXAMPLES::
 
@@ -1005,7 +1005,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def precision(self):
         """
-        Return the lattice precision object attached to this parent
+        Return the lattice precision object attached to this parent.
 
         EXAMPLES::
 
@@ -1025,7 +1025,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def label(self):
         """
-        Return the label of this parent
+        Return the label of this parent.
 
         NOTE:
 
@@ -1072,7 +1072,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def _element_constructor_(self, x, prec=None):
         """
-        Create an element of this parent
+        Create an element of this parent.
 
         INPUT:
 
@@ -1110,7 +1110,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
     def convert_multiple(self, *elts):
         """
-        Convert a list of elements to this parent
+        Convert a list of elements to this parent.
 
         NOTE:
 
@@ -1221,7 +1221,29 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
 class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
     """
-    An implementation of the `p`-adic integers with lattice precision
+    An implementation of the `p`-adic integers with lattice precision.
+
+    INPUT:
+
+    - ``p`` -- prime
+
+    - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
+
+    - ``print_mode`` -- dictionary with print options
+
+    - ``names`` -- how to print the prime
+
+    - ``label`` -- the label of this ring
+
+    EXAMPLES::
+
+        sage: R = ZpLC(next_prime(10^60)) # indirect doctest
+        sage: type(R)
+        <class 'sage.rings.padics.padic_base_leaves.pAdicRingLattice_with_category'>
+
+        sage: R = ZpLC(2, label='init') # indirect doctest
+        sage: R
+        2-adic Ring with lattice-cap precision (label: init)
     """
     def __init__(self, p, prec, subtype, print_mode, names, label=None):
         """
@@ -1230,9 +1252,13 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         INPUT:
 
         - ``p`` -- prime
+
         - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
+
         - ``print_mode`` -- dictionary with print options
+
         - ``names`` -- how to print the prime
+
         - ``label`` -- the label of this ring
 
         EXAMPLES::
@@ -1257,7 +1283,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     def _repr_(self, do_latex=False):
         """
-        Return a representation of this parent
+        Return a representation of this parent.
 
         EXAMPLES::
 
@@ -1279,7 +1305,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     def _coerce_map_from_(self, R):
         """
-        Return ``True`` if there is a coerce map from ``R`` to this ring
+        Return ``True`` if there is a coerce map from ``R`` to this ring.
 
         EXAMPLES::
 
@@ -1318,7 +1344,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     def random_element(self, prec=None):
         """
-        Return a random element of this ring
+        Return a random element of this ring.
 
         INPUT:
 
@@ -1357,7 +1383,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     def integer_ring(self, print_mode=None):
         """
-        Return the integer ring of this ring
+        Return the integer ring of this ring.
 
         INPUT:
 
@@ -1406,7 +1432,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     def fraction_field(self, print_mode=None):
         """
-        Return the fraction field of this ring
+        Return the fraction field of this ring.
 
         INPUT:
 
@@ -1447,7 +1473,29 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
 class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
     """
-    An implementation of the `p`-adic numbers with lattice precision
+    An implementation of the `p`-adic numbers with lattice precision.
+
+    INPUT:
+
+    - ``p`` -- prime
+
+    - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
+
+    - ``print_mode`` -- dictionary with print options
+
+    - ``names`` -- how to print the prime
+
+    - ``label`` -- the label of this ring
+
+    EXAMPLES::
+
+        sage: R = QpLC(next_prime(10^60)) # indirect doctest
+        sage: type(R)
+        <class 'sage.rings.padics.padic_base_leaves.pAdicFieldLattice_with_category'>
+
+        sage: R = QpLC(2,label='init') # indirect doctest
+        sage: R
+        2-adic Field with lattice-cap precision (label: init)
     """
     def __init__(self, p, prec, subtype, print_mode, names, label=None):
         """
@@ -1456,9 +1504,13 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         INPUT:
 
         - ``p`` -- prime
+
         - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
+
         - ``print_mode`` -- dictionary with print options
+
         - ``names`` -- how to print the prime
+
         - ``label`` -- the label of this ring
 
         EXAMPLES::
@@ -1483,7 +1535,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
     def _repr_(self, do_latex=False):
         """
-        Return a representation of this parent
+        Return a representation of this parent.
 
         EXAMPLES::
 
@@ -1505,7 +1557,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
     def _coerce_map_from_(self, R):
         """
-        Return ``True`` if there is a coerce map from ``R`` to this ring
+        Return ``True`` if there is a coerce map from ``R`` to this ring.
 
         EXAMPLES::
 
@@ -1544,7 +1596,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
     def random_element(self, prec=None, integral=False):
         """
-        Return a random element of this ring
+        Return a random element of this ring.
 
         INPUT:
 
@@ -1558,7 +1610,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
             sage: K = QpLC(2)
             sage: K.random_element()
-
+            2^-8 + 2^-7 + 2^-6 + 2^-5 + 2^-3 + 1 + 2^2 + 2^3 + O(2^4)
             sage: K.random_element(integral=True)    # random
             2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + O(2^20)
 
@@ -1581,14 +1633,14 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             prec = self._prec_cap_absolute - val
         p = self.prime()
         x = ZZ.random_element(p**prec)
-        relcap = x.valuation(p) + val + self._prec_cap_relative
+        relcap = x.valuation(p) + self._prec_cap_relative
         if relcap < prec:
             prec = relcap
-        return self._element_class(self, x, prec=prec) << val
+        return self._element_class(self, x*(p**val), prec=prec)
 
     def integer_ring(self, print_mode=None):
         """
-        Return the integer ring of this field
+        Return the integer ring of this field.
 
         INPUT:
 
@@ -1616,7 +1668,6 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             2-adic Field with lattice-cap precision (label: test)
             sage: K.integer_ring()
             2-adic Ring with lattice-cap precision (label: test)
-
         """
         from sage.rings.padics.factory import Zp
         if self._subtype == 'cap':
@@ -1630,7 +1681,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
     def fraction_field(self, print_mode=None):
         """
-        Return the fraction field of this ring
+        Return the fraction field of this ring.
 
         INPUT:
 

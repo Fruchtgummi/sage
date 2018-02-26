@@ -44,7 +44,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     - ``dx`` -- a dictionary representing the differential of ``x``
 
-    - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+    - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
       or ``values``
 
     - ``valuation`` -- an integer or ``None`` (default: ``None``), 
@@ -63,7 +63,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         sage: x
         1 + O(2^10)
     """
-    def __init__(self, parent, x, prec=None, dx=[], dx_mode='linear_combinaison', valuation=None, check=True, reduce=True):
+    def __init__(self, parent, x, prec=None, dx=[], dx_mode='linear_combination', valuation=None, check=True, reduce=True):
         """
         Initialize this element.
 
@@ -75,7 +75,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         - ``dx`` -- a dictionary representing the differential of ``x``
 
-        - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+        - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
           or ``values``
 
         - ``valuation`` -- an integer or ``None`` (default: ``None``), 
