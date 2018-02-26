@@ -667,7 +667,8 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         self._label = label
         self._type = type
         self._elements = [ ]
-        self._matrix = { }
+        self._matrix = { }  # a dictionary whose keys are weak references to tracked elements
+                            # and values are corresponding columns
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
         self._threshold_deletion = DEFAULT_THRESHOLD_DELETION
