@@ -2476,7 +2476,10 @@ def ZqFP(q, prec = None, *args, **kwds):
 def ZpLC(p, prec=None, *args, **kwds):
     r"""
     A shortcut function to create `p`-adic rings with lattice precision
-    with cap.
+    (precision is encoded by a lattice in a large vector space and tracked
+    using automatic differentiation).
+
+    See documentation for :func:`Zp` for a description of the input parameters.
 
     EXAMPLES:
 
@@ -2615,7 +2618,8 @@ def ZpLC(p, prec=None, *args, **kwds):
 
     The precision is global.
     It is encoded by a lattice in a huge vector space whose dimension
-    is the number of elements having this parent. (see [CRV2014]_ and 
+    is the number of elements having this parent. Precision is tracked
+    using automatic differentiation techniques (see [CRV2014]_ and 
     [CRV2018]_).
 
     Concretely, this precision datum is an instance of the class
@@ -2717,62 +2721,8 @@ def ZpLC(p, prec=None, *args, **kwds):
     polynomials of degree 20).
 
     The class :class:`PrecisionLattice` provides several
-    features for introspection (especially concerning timings).
-    If enabled, it maintains a history of all actions and stores
-    the wall time of each of them::
-
-        sage: R = ZpLC(3)
-        sage: prec = R.precision()
-        sage: prec.history_enable()
-        sage: M = random_matrix(R, 5)
-        sage: d = M.determinant()
-        sage: print(prec.history())  # somewhat random
-           ---
-        0.004212s  oooooooooooooooooooooooooooooooooooo
-        0.000003s  oooooooooooooooooooooooooooooooooo~~
-        0.000010s  oooooooooooooooooooooooooooooooooo
-        0.001560s  ooooooooooooooooooooooooooooooooooooooooo
-        0.000004s  ooooooooooooooooooooooooooooo~oooo~oooo~o
-        0.002168s  oooooooooooooooooooooooooooooooooooooo
-        0.001787s  ooooooooooooooooooooooooooooooooooooooooo
-        0.000004s  oooooooooooooooooooooooooooooooooooooo~~o
-        0.000198s  ooooooooooooooooooooooooooooooooooooooo
-        0.001152s  ooooooooooooooooooooooooooooooooooooooooo
-        0.000005s  ooooooooooooooooooooooooooooooooo~oooo~~o
-        0.000853s  oooooooooooooooooooooooooooooooooooooo
-        0.000610s  ooooooooooooooooooooooooooooooooooooooo
-        ...
-        0.003879s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000006s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~~
-        0.000036s  oooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.006737s  oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000005s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~~ooooo
-        0.002637s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.007118s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000008s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~o~~~~oooo
-        0.003504s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.005371s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000006s  ooooooooooooooooooooooooooooooooooooooooooooooooooooo~~~o~~~ooo
-        0.001858s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.003584s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000004s  oooooooooooooooooooooooooooooooooooooooooooooooooooooo~~o~~oo
-        0.000801s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.001916s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-        0.000022s  ooooooooooooooooooooooooooooo~~~~~~~~~~~~~~~~~~~~~~oooo~o~o
-        0.014705s  ooooooooooooooooooooooooooooooooooo
-        0.001292s  ooooooooooooooooooooooooooooooooooooo
-        0.000002s  ooooooooooooooooooooooooooooooooooo~o
-
-    The symbol `o` symbolized a tracked element.
-    The symbol `~` means that the element is marked for deletion.
-
-    The global timings are also accessible as follows::
-
-        sage: prec.timings()   # somewhat random
-        {'add': 0.25049376487731934,
-         'del': 0.11911273002624512,
-         'mark': 0.0004909038543701172,
-         'partial reduce': 0.0917658805847168}
+    features for introspection, especially concerning timings.
+    See :meth:`history` and :meth:`timings` for details.
 
     .. SEEALSO::
 
@@ -2782,12 +2732,17 @@ def ZpLC(p, prec=None, *args, **kwds):
 
 def ZpLF(p, prec=None, *args, **kwds):
     """
-    A shortcut function to create `p`-adic rings with precision
-    tracked through automatic differentiation.
-    Floating point `p`-adic numbers are used for the computation
-    of the differential (which is then not exact).
+    A shortcut function to create `p`-adic rings where precision
+    is encoded by a module in a large vector space.
 
     See documentation for :func:`Zp` for a description of the input parameters.
+
+    NOTE:
+
+    The precision is tracked using automatic differentiation
+    techniques (see [CRV2018]_ and [CRV2014]_).
+    Floating point `p`-adic numbers are used for the computation
+    of the differential (which is then not exact).
 
     EXAMPLES::
 

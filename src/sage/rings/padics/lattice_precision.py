@@ -4,7 +4,6 @@ This file implements lattice precision for the parents ``ZpLC`` and ``ZpLF``
 AUTHOR:
 
 - Xavier caruso (2018-02): initial version
-
 """
 
 # ****************************************************************************
@@ -952,7 +951,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         INPUT:
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
-          a column whose distance to the right at greater than the
+          a column whose distance to the right is greater than the
           threshold is not erased
 
         EXAMPLES::
@@ -1436,6 +1435,53 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
                ...   RRRRRRRRRRRR
                ---   oooooooooooo
 
+        Here is an example coming from every-day life.
+
+            sage: R = ZpLC(3)
+            sage: prec = R.precision()
+            sage: prec.history_enable()
+            sage: M = random_matrix(R, 5)
+            sage: d = M.determinant()
+            sage: print(prec.history())  # somewhat random
+               ---
+            0.004212s  oooooooooooooooooooooooooooooooooooo
+            0.000003s  oooooooooooooooooooooooooooooooooo~~
+            0.000010s  oooooooooooooooooooooooooooooooooo
+            0.001560s  ooooooooooooooooooooooooooooooooooooooooo
+            0.000004s  ooooooooooooooooooooooooooooo~oooo~oooo~o
+            0.002168s  oooooooooooooooooooooooooooooooooooooo
+            0.001787s  ooooooooooooooooooooooooooooooooooooooooo
+            0.000004s  oooooooooooooooooooooooooooooooooooooo~~o
+            0.000198s  ooooooooooooooooooooooooooooooooooooooo
+            0.001152s  ooooooooooooooooooooooooooooooooooooooooo
+            0.000005s  ooooooooooooooooooooooooooooooooo~oooo~~o
+            0.000853s  oooooooooooooooooooooooooooooooooooooo
+            0.000610s  ooooooooooooooooooooooooooooooooooooooo
+            ...
+            0.003879s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000006s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~~
+            0.000036s  oooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.006737s  oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000005s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~~ooooo
+            0.002637s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.007118s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000008s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~o~~~~oooo
+            0.003504s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.005371s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000006s  ooooooooooooooooooooooooooooooooooooooooooooooooooooo~~~o~~~ooo
+            0.001858s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.003584s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000004s  oooooooooooooooooooooooooooooooooooooooooooooooooooooo~~o~~oo
+            0.000801s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.001916s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+            0.000022s  ooooooooooooooooooooooooooooo~~~~~~~~~~~~~~~~~~~~~~oooo~o~o
+            0.014705s  ooooooooooooooooooooooooooooooooooo
+            0.001292s  ooooooooooooooooooooooooooooooooooooo
+            0.000002s  ooooooooooooooooooooooooooooooooooo~o
+
+        We observe that deleted variables appear mostly on the right.
+        This is the so-called principal of temporal locality.
+
         .. SEEALSO::
 
             :meth:`history_enable`, :meth:`history_disable`, :meth:`history_clear`
@@ -1839,7 +1885,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         INPUT:
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
-          a column whose distance to the right at greater than the
+          a column whose distance to the right is greater than the
           threshold is not erased
 
         EXAMPLES::
@@ -2479,7 +2525,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         INPUT:
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
-          a column whose distance to the right at greater than the
+          a column whose distance to the right is greater than the
           threshold is not erased
 
         EXAMPLES::
