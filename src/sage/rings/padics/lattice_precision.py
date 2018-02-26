@@ -626,14 +626,19 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
     - ``p`` -- a prime number
 
-    - ``type`` -- either ``lattice`` or ``module``
+    - ``type`` -- either ``"lattice"`` or ``"module"``
 
-    - ``label`` -- a string, the label of the parents to which belong
-      the elements tracked by this precision module
+    - ``label`` -- a string, the label of the parents to which the elements
+      belong that are tracked by this precision module
+
+    .. NOTE::
+
+        This object is used internally by the parent ring. You should not
+        create instances of this class on your own.
 
     TESTS::
 
-        sage: R = ZpLC(2, label='init')  # indirect doctest
+        sage: R = ZpLC(2, label='init')
         sage: prec = R.precision()
         sage: prec
         Precision lattice on 0 object (label: init)
@@ -644,34 +649,24 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     """
     def __init__(self, p, type, label):
         r"""
-        Initialize this precision module.
-
-        NOTE:
-
-        The precision module is automatically initialized at the 
-        creation of the parent.
-
         TESTS::
 
-            sage: R = ZpLC(2, label='init')  # indirect doctest
-            sage: prec = R.precision()
-            sage: prec
-            Precision lattice on 0 object (label: init)
-            sage: prec._type
-            'lattice'
-            sage: prec.label()
-            'init'
+            sage: prec = ZpLC(2, label='init').precision()
+            sage: from sage.rings.padics.lattice_precision import DifferentialPrecisionGeneric
+            sage: isinstance(prec, DifferentialPrecisionGeneric)
+            True
+
         """
         self._p = p
         self._label = label
         self._type = type
         self._elements = [ ]
-        self._matrix = { }  # a dictionary whose keys are weak references to tracked elements
-                            # and values are corresponding columns
+        self._matrix = { } # A dictionary whose keys are weak references to tracked elements
+                           # and values corresponding columns in the matrix
+                           # representing the precision lattice
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
         self._threshold_deletion = DEFAULT_THRESHOLD_DELETION
-        # History
         self._history_init = None
         self._history = None
 
