@@ -693,7 +693,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: R.precision()
             Precision lattice on ... objects
 
-        If a label has been specified, it is included in the representation.
+        If a label has been specified, it is included in the representation::
 
             sage: R = ZpLC(2, label="mylabel")
             sage: R.precision()
@@ -715,31 +715,31 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         r"""
         Return (and set) the threshold for column deletion.
 
-        When a variable dies, the ambient space in which the precision
-        module lives can be reduced (by projection onto the hyperplane
-        defined by the dead variable).
-        However this reduction has a cost because it leads to re-echelonize
-        a part of the matrix that encodes the precision. The size of this
-        part is roughly the distance between the last column and the one
-        corresponding to the dead variable.
+        When a variable dies, i.e., goes out of scope, the ambient space in
+        which the precision module lives can be reduced (by projection onto the
+        hyperplane defined by the dead variable).
+        This reduction has a cost because it leads to re-echelonization
+        of a part of the matrix that encodes the precision. The size of this
+        part is roughly measured by the number of columns between the last
+        column and the one corresponding to the dead variable.
 
-        The threshold deletion is the maximal distance until which the
-        above reduction is performed. After the threshold, the column of
-        the dead variable is kept in this matrix as if the variable were
-        not destroyed.
+        This threshold returned by this method is the maximal distance until
+        which a column of a dead variable is removed and the matrix
+        re-echelonized. Beyond the threshold, the column of the dead variable
+        is kept in this matrix as if the variable were not destroyed.
 
         INPUT:
 
-        - ``threshold`` -- a non negative integer, ``Infinity`` or ``None`` 
-          (default: ``None``): if ``None``, return the current threshold;
-          otherwise set the threshold to the given value
+        - ``threshold`` -- a non-negative integer, ``Infinity`` or ``None``
+          (default: ``None``): if not ``None`` set the threshold to the given
+          value.
 
-        NOTE::
+        .. NOTE::
 
-        Setting the threshold to ``0`` disables the dimension reduction.
+            Setting the threshold to ``0`` disables the dimension reduction.
 
-        Setting the threshold to ``Infinity`` forces the dimension reduction
-        after each deletion.
+            Setting the threshold to ``Infinity`` forces the dimension reduction
+            after each deletion.
 
         EXAMPLES::
 
