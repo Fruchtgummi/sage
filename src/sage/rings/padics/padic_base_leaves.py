@@ -1009,11 +1009,11 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
         EXAMPLES::
 
-            sage: R = ZpLC(5,label='precision')
+            sage: R = ZpLC(5, label='precision')
             sage: R.precision()
             Precision lattice on 0 object (label: precision)
 
-            sage: x = R(1,10); y = R(1,5)
+            sage: x = R(1, 10); y = R(1, 5)
             sage: R.precision()
             Precision lattice on 2 objects (label: precision)
 
@@ -1090,7 +1090,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         is actually equal to ``x`` (at infinite precision)::
 
             sage: R = ZpLC(2, absprec=50)
-            sage: x = R(1,10); x
+            sage: x = R(1, 10); x
             1 + O(2^10)
             sage: y = R(x)   # indirect doctest
             sage: y
@@ -1123,7 +1123,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10); y = R(1,5)
+            sage: x = R(1, 10); y = R(1, 5)
             sage: x,y = x+y, x-y
 
         Remark that the pair `(x,y)` has diffused digits of precision::
@@ -1241,7 +1241,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             sage: type(R)
             <class 'sage.rings.padics.padic_base_leaves.pAdicRingLattice_with_category'>
 
-            sage: R = ZpLC(2,label='init') # indirect doctest
+            sage: R = ZpLC(2, label='init') # indirect doctest
             sage: R
             2-adic Ring with lattice-cap precision (label: init)
 
@@ -1376,7 +1376,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             2-adic Ring with lattice-cap precision
             sage: R2 is R
             False
-            sage: x = R(121,10); x
+            sage: x = R(121, 10); x
             1 + 2^3 + 2^4 + 2^5 + 2^6 + O(2^10)
             sage: x2 = R2(x); x2
             121 + O(2^10)
@@ -1423,7 +1423,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             2-adic Field with lattice-cap precision
             sage: K2 is K
             False
-            sage: x = R(121,10); x
+            sage: x = R(121, 10); x
             1 + 2^3 + 2^4 + 2^5 + 2^6 + O(2^10)
             sage: x2 = K2(x); x2
             121 + O(2^10)
@@ -1542,7 +1542,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         if isinstance(R, (pAdicRingLattice, pAdicFieldLattice)) and R.precision() is self.precision():
             return True
 
-    def random_element(self, prec=None): # integral=False
+    def random_element(self, prec=None, integral=False):
         """
         Return a random element of this ring
 
@@ -1551,24 +1551,40 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         - ``prec`` -- an integer or ``None`` (the default): the
           absolute precision of the generated random element
 
+        - ``integral`` -- a boolean (default: ``False``); if true
+          return an element in the ring of integers
+
         EXAMPLES::
 
             sage: K = QpLC(2)
-            sage: K.random_element()    # random
+            sage: K.random_element()
+
+            sage: K.random_element(integral=True)    # random
             2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + O(2^20)
 
             sage: K.random_element(prec=10)    # random
-            1 + 2^3 + 2^4 + 2^7 + O(2^10)
+            2^(-3) + 1 + 2 + 2^4 + 2^8 + O(2^10)
+
+        If the given precision is higher than the internal cap of the
+        parent, then the cap is used::
+
+            sage: K.precision_cap_relative()
+            20
+            sage: K.random_element(prec=100)    # random
+            2^5 + 2^8 + 2^11 + 2^12 + 2^14 + 2^18 + 2^20 + 2^24 + O(2^25)
         """
-        # TODO: do not pick only among integers
+        if integral:
+            val = 0
+        else:
+            val = ZZ.random_element()
         if prec is None:
-            prec = self._prec_cap_absolute
+            prec = self._prec_cap_absolute - val
         p = self.prime()
         x = ZZ.random_element(p**prec)
-        relcap = x.valuation(p) + self._prec_cap_relative
+        relcap = x.valuation(p) + val + self._prec_cap_relative
         if relcap < prec:
             prec = relcap
-        return self._element_class(self, x, prec=prec)
+        return self._element_class(self, x, prec=prec) << val
 
     def integer_ring(self, print_mode=None):
         """
@@ -1589,7 +1605,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             2-adic Ring with lattice-cap precision
             sage: R2 is R
             False
-            sage: x = R(121,10); x
+            sage: x = R(121, 10); x
             1 + 2^3 + 2^4 + 2^5 + 2^6 + O(2^10)
             sage: x2 = R2(x); x2
             121 + O(2^10)
@@ -1633,7 +1649,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             2-adic Field with lattice-cap precision
             sage: K2 is K
             False
-            sage: x = K(121,10); x
+            sage: x = K(121, 10); x
             1 + 2^3 + 2^4 + 2^5 + 2^6 + O(2^10)
             sage: x2 = K2(x); x2
             121 + O(2^10)

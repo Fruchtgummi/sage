@@ -1,4 +1,25 @@
+r"""
+`p`-Adic Elements with lattice precision.
+
+AUTHOR:
+
+- Xavier caruso (2018-02): initial version
+"""
+
+# ****************************************************************************
+#       Copyright (C) 2018 Xavier Caruso <xavier.caruso@normalesup.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  http://www.gnu.org/licenses/
+# ****************************************************************************
+
+
 import _weakref as weakref
+
+from sage.misc.abstract_method import abstract_method
 
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
@@ -14,10 +35,37 @@ from sage.rings.padics.precision_error import PrecisionError
 class pAdicLatticeElement(pAdicGenericElement):
     """
     Constructs new element with given parent and value.
+
+    INPUT:
+
+    - ``parent`` -- the parent of this element
+
+    - ``x`` -- the newly created element
+
+    - ``dx`` -- a dictionary representing the differential of ``x``
+
+    - ``dx_mode`` -- a string, either ``linear_combinaison`` (the default)
+      or ``values``
+
+    - ``valuation`` -- an integer or ``None`` (default: ``None``), 
+      the valuation of this element
+
+    - ``check`` -- a boolean (default: ``True``), whether the function
+      should check that the given values are well formed and coherent
+
+    - ``reduce`` -- a boolean (default: ``True``), whether the given
+      values need to be reduced
+
+    TESTS::
+
+        sage: R = ZpLC(2)
+        sage: x = R(1, 10)  # indirect doctest
+        sage: x
+        1 + O(2^10)
     """
     def __init__(self, parent, x, prec=None, dx=[], dx_mode='linear_combinaison', valuation=None, check=True, reduce=True):
         """
-        Initialize this element
+        Initialize this element.
 
         INPUT:
 
@@ -42,7 +90,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         TESTS::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10)  # indirect doctest
+            sage: x = R(1, 10)  # indirect doctest
             sage: x
             1 + O(2^10)
         """
@@ -70,12 +118,13 @@ class pAdicLatticeElement(pAdicGenericElement):
         self._approx_one = pRational(p, 1)
         self._approx_minusone = pRational(p, -1)
 
+    @abstract_method
     def _declare_new_element(self, dx, prec, dx_mode):
         """
         Declare this element to the precision object and 
-        return the precision at which this element can be truncated safely
+        return the precision at which this element can be truncated safely.
 
-        Only for internal use!
+        Only for internal use.
 
         TESTS::
 
@@ -84,20 +133,20 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: prec.del_elements()
             sage: nb = prec.number_of_tracked_elements()
-            sage: x = R(1,10)    # indirect doctest
+            sage: x = R(1, 10)    # indirect doctest
             sage: prec.number_of_tracked_elements() == nb + 1
             True
         """
-        raise NotImplementError("implement this method in subclasses")
+        pass
 
     def __hash__(self):
         """
-        Return a hash of this element
+        Return a hash of this element.
 
         TESTS::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10)
+            sage: x = R(1, 10)
             sage: hash(x)   # somewhat random
         """
         return id(self)
@@ -108,17 +157,31 @@ class pAdicLatticeElement(pAdicGenericElement):
     #     self._precision.mark_for_deletion(weakref.ref(self))
 
     def _is_base_elt(self, p):
+        """
+        Return ``True`` if this element is an element of Zp or Qp (rather than
+        an extension).
+
+        INPUT:
+
+        - ``p`` -- a prime, which is compared with the parent of this element.
+
+        EXAMPLES::
+
+            sage: K = QpLC(7)
+            sage: K.random_element()._is_base_elt(7)
+            True
+        """
         return p == self._parent.prime()
 
     def approximation(self):
         """
         Return an approximation of this element at
-        its absolute precision
+        its absolute precision.
 
         EXAMPLES::
 
             sage: R = ZpLC(2, print_mode='terse')
-            sage: x = R(1234,10); x
+            sage: x = R(1234, 10); x
             210 + O(2^10)
             sage: x.approximation()
             210
@@ -138,14 +201,14 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2, print_mode='terse')
-            sage: x = R(1234,10); x
+            sage: x = R(1234, 10); x
             210 + O(2^10)
             sage: x.approximation()
             210
 
         Another example with diffused digits::
 
-            sage: x = R(2,10); y = R(7,5)
+            sage: x = R(2, 10); y = R(7, 5)
             sage: u = x - y
             sage: u
             27 + O(2^5)
@@ -158,7 +221,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         Return the precision object (which is a lattice in a possibly
         high-dimensional vector space) that handles the precision of 
-        this element
+        this element.
 
         EXAMPLES::
 
@@ -176,22 +239,22 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def precision_absolute(self):
         """
-        Return the absolute precision of this element
+        Return the absolute precision of this element.
 
         This precision is computed by projecting the lattice precision
-        onto the coordinate defined by this element
+        onto the coordinate defined by this element.
 
         EXAMPLES::
 
             sage: R = ZpLC(2, print_mode='terse')
-            sage: x = R(1234,10); x
+            sage: x = R(1234, 10); x
             210 + O(2^10)
             sage: x.precision_absolute()
             10
 
         Another example with diffused digits::
 
-            sage: x = R(1,10); y = R(1,5)
+            sage: x = R(1, 10); y = R(1, 5)
             sage: x,y = x+y, x-y
             sage: x.precision_absolute()
             5
@@ -207,7 +270,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     def is_precision_capped(self):
         """
         Return whether the absolute precision on the given element
-        results from a cap coming from the parent
+        results from a cap coming from the parent.
 
         INPUT:
 
@@ -220,7 +283,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10); x
+            sage: x = R(1, 10); x
             1 + O(2^10)
             sage: x.is_precision_capped()
             False
@@ -243,7 +306,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def valuation(self, secure=False):
         """
-        Return the valuation if this element
+        Return the valuation if this element.
 
         INPUT:
 
@@ -256,7 +319,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(12,10); x
+            sage: x = R(12, 10); x
             2^2 + 2^3 + O(2^10)
             sage: x.valuation()
             2
@@ -284,7 +347,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         Return the relative precision of this element, that is
         the difference between its absolute precision and its
-        valuation
+        valuation.
 
         INPUT:
 
@@ -295,7 +358,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(12,10); x
+            sage: x = R(12, 10); x
             2^2 + 2^3 + O(2^10)
             sage: x.precision_relative()
             8
@@ -312,18 +375,38 @@ class pAdicLatticeElement(pAdicGenericElement):
         return self.precision_absolute() - self.valuation(secure=secure)
 
     def _cmp_(self, other):
+        """
+        Compare this element with ``other``.
+
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1, 5)
+            sage: y = R(128, 10)
+            sage: z = x + y
+
+            sage: x
+            1 + O(2^5)
+            sage: z
+            1 + O(2^5)
+
+            sage: x == z   # Indirect doctest
+            False
+            sage: x - z
+            2^7 + O(2^10)
+        """
         if (self-other).is_zero():
             return 0
         else:
-            return cmp(self.lift(), other.lift())
+            return self.lift()._cmp_(other.lift())
 
     def _add_(self, other):
         """
-        Return the sum of this element and ``other``
+        Return the sum of this element and ``other``.
 
         EXAMPLES::
 
-            sage: R = ZpLC(19,5)
+            sage: R = ZpLC(19, 5)
             sage: a = R(-1); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
             sage: b = R(-5/2); b
@@ -348,11 +431,11 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def _sub_(self, other):
         """
-        Return the difference of this element and ``other``
+        Return the difference of this element and ``other``.
 
         EXAMPLES::
 
-           sage: R = ZpLC(19,5)
+           sage: R = ZpLC(19, 5)
            sage: a = R(-1); a
            18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
            sage: b = R(-5/2); b
@@ -370,11 +453,11 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def _mul_(self, other):
         """
-        Return the product of this element and ``other``
+        Return the product of this element and ``other``.
 
         EXAMPLES::
 
-            sage: R = ZpLC(19,5)
+            sage: R = ZpLC(19, 5)
             sage: a = R(-1); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
             sage: b = R(-5/2); b
@@ -404,7 +487,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def _div_(self, other):
         """
-        Return the quotient of this element and ``other``
+        Return the quotient of this element and ``other``.
 
         NOTE::
 
@@ -414,9 +497,9 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(19)
-            sage: a = R(-1,5); a
+            sage: a = R(-1, 5); a
             18 + 18*19 + 18*19^2 + 18*19^3 + 18*19^4 + O(19^5)
-            sage: b = R(-5/2,5); b
+            sage: b = R(-5/2, 5); b
             7 + 9*19 + 9*19^2 + 9*19^3 + 9*19^4 + O(19^5)
  
             sage: c = a / b   # indirect doctest
@@ -448,7 +531,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def __invert__(self):
         """
-        Return the multiplicative inverse of this element
+        Return the multiplicative inverse of this element.
 
         NOTE::
 
@@ -458,7 +541,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(19)
-            sage: x = R(-5/2,5); x
+            sage: x = R(-5/2, 5); x
             7 + 9*19 + 9*19^2 + 9*19^3 + 9*19^4 + O(19^5)
 
             sage: y = ~x    # indirect doctest
@@ -485,7 +568,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     def add_bigoh(self, prec):
         """
         Return a new element with absolute precision decreased to
-        the specified precision
+        the specified precision.
 
         INPUT:
 
@@ -499,7 +582,7 @@ class pAdicLatticeElement(pAdicGenericElement):
            sage: b = R(0); b.add_bigoh(3)
            O(7^3)
 
-           sage: R = QpLC(7,4)
+           sage: R = QpLC(7, 4)
            sage: a = R(8); a.add_bigoh(1)
            1 + O(7)
            sage: b = R(0); b.add_bigoh(3)
@@ -518,7 +601,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         Return another element of the same parent with absolute precision
         at least ``prec``, congruent to this p-adic element modulo the
-        precision of this element
+        precision of this element.
 
         INPUT:
 
@@ -547,7 +630,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10); x
+            sage: x = R(1, 10); x
             1 + O(2^10)
             sage: x.lift_to_precision(15)
             1 + O(2^15)
@@ -556,7 +639,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         An example with diffused digits of precision::
 
-            sage: x = R(1,10); y = R(1,5)
+            sage: x = R(1, 10); y = R(1, 5)
             sage: u = x+y; u
             2 + O(2^5)
             sage: v = x-y; v
@@ -564,7 +647,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: u + v
             2 + O(2^11)
 
-        The gain of precision on ``u+v`` is due to the presence of diffused
+        The gain of precision on ``u + v`` is due to the presence of diffused
         digits of precision between ``u`` and ``v``.
 
         However, if we call :meth:`lift_to_precision` on one of these variables, 
@@ -607,7 +690,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def _is_inexact_zero(self):
         """
-        Return ``True`` if this element is indistinguishable from zero
+        Return ``True`` if this element is indistinguishable from zero.
 
         EXAMPLES::
 
@@ -623,7 +706,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     def is_zero(self, prec=None):
         """
         Return ``True`` if this element is indistinguishable from zero
-        at the given precision (if given)
+        at the given precision (if given).
 
         INPUT:
 
@@ -632,7 +715,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(2/5,10); x
+            sage: x = R(2/5, 10); x
             2 + 2^3 + 2^4 + 2^7 + 2^8 + O(2^10)
             sage: x.is_zero()
             False
@@ -738,7 +821,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         p = parent.prime()
         if isinstance(parent, pAdicRingBaseGeneric):
             if self.precision_absolute() + n < 0:
-                return self.__class__(parent, pRational(p,0), 0, dx={}, check=False)
+                return self.__class__(parent, pRational(p, 0), 0, dx={}, check=False)
         powp = pRational(p, ZZ(1), n)
         x = self._value * powp
         if isinstance(parent, pAdicRingBaseGeneric):
@@ -748,7 +831,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def unit_part(self):
         """
-        Return `u`, where this element is `p^v u` and `u` is a unit
+        Return `u`, where this element is `p^v u` and `u` is a unit.
 
         EXAMPLES::
 
@@ -762,9 +845,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: b.unit_part()
             1 + 16*17 + O(17^3)
 
-        If the element is indistinguishable from zero, an error is raised
+        If the element is indistinguishable from zero, an error is raised.
 
-            sage: c = R(0,5); c
+            sage: c = R(0, 5); c
             O(17^5)
             sage: c.unit_part()
             Traceback (most recent call last):
@@ -777,7 +860,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     def val_unit(self):
         """
         Return the pair `(v,u)`, where this element is 
-        `p^v u` and `u` is a unit
+        `p^v u` and `u` is a unit.
 
         EXAMPLES::
 
@@ -793,7 +876,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         If the element is indistinguishable from zero, an error is raised
 
-            sage: c = R(0,5); c
+            sage: c = R(0, 5); c
             O(17^5)
             sage: c.unit_part()
             Traceback (most recent call last):
@@ -807,12 +890,12 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         Return a copy of this element or convert this element
         to the given parent provided that the precision on this
-        parent is handled by the same precision object
+        parent is handled by the same precision object.
 
         EXAMPLES::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10); x
+            sage: x = R(1, 10); x
             1 + O(2^10)
             sage: y = x.copy()
             sage: y
@@ -834,7 +917,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: y.parent()
             2-adic Field with lattice-cap precision
 
-            sage: a = K(2,10); a
+            sage: a = K(2, 10); a
             2 + O(2^10)
             sage: b = a.copy(R)
             sage: b
@@ -888,12 +971,12 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def __copy__(self):
         """
-        Return a copy of this element
+        Return a copy of this element.
 
         TESTS::
 
             sage: R = ZpLC(2)
-            sage: x = R(1,10); x
+            sage: x = R(1, 10); x
             1 + O(2^10)
             sage: y = copy(x)   # indirect doctest
             sage: y
@@ -911,7 +994,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         EXAMPLES::
 
-            sage: R = ZpLC(5,10)
+            sage: R = ZpLC(5, 10)
             sage: x = R(123456789); x
             4 + 2*5 + 5^2 + 4*5^3 + 5^5 + 5^6 + 5^8 + 3*5^9 + O(5^10)
             sage: x.expansion()
@@ -934,9 +1017,9 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
     def _declare_new_element(self, dx, prec, dx_mode):
         """
         Declare this element to the precision object and 
-        return the precision at which this element can be truncated safely
+        return the precision at which this element can be truncated safely.
 
-        Only for internal use!
+        Only for internal use.
 
         TESTS::
 
@@ -945,7 +1028,7 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
 
             sage: prec.del_elements()
             sage: nb = prec.number_of_tracked_elements()
-            sage: x = R(1,10)    # indirect doctest
+            sage: x = R(1, 10)    # indirect doctest
             sage: prec.number_of_tracked_elements() == nb + 1
             True
         """
@@ -961,7 +1044,7 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
 
     def _is_exact_zero(self):
         """
-        Return ``True`` if this element is exactly zero
+        Return ``True`` if this element is exactly zero.
 
         NOTE::
 
@@ -983,9 +1066,9 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
     def _declare_new_element(self, dx, prec, dx_mode):
         """
         Declare this element to the precision object and 
-        return the precision at which this element can be truncated safely
+        return the precision at which this element can be truncated safely.
 
-        Only for internal use!
+        Only for internal use.
 
         TESTS::
 
@@ -994,7 +1077,7 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
 
             sage: prec.del_elements()
             sage: nb = prec.number_of_tracked_elements()
-            sage: x = R(1,10)    # indirect doctest
+            sage: x = R(1, 10)    # indirect doctest
             sage: prec.number_of_tracked_elements() == nb + 1
             True
         """
@@ -1007,14 +1090,14 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
 
     def _is_exact_zero(self):
         """
-        Return ``True`` if this element is exactly zero
+        Return ``True`` if this element is exactly zero.
 
         EXAMPLES::
 
             sage: R = ZpLF(5)
             sage: R(0)._is_exact_zero()
             True
-            sage: R(0,10)._is_exact_zero()
+            sage: R(0, 10)._is_exact_zero()
             False
 
             sage: R(1)._is_exact_zero()
