@@ -177,6 +177,7 @@ TESTS::
 
 """
 from __future__ import absolute_import
+from six import iteritems
 
 #*****************************************************************************
 #       Copyright (C) 2008 David Roe <roed.math@gmail.com>
@@ -1189,7 +1190,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         ans = len(elts)*[None]
         selfprec = self._precision
         # First the elements with precision lattice
-        for (prec, L) in elt_by_prec.iteritems():
+        for (prec, L) in iteritems(elt_by_prec):
             if prec is selfprec:
                 # Here, we use the copy method in order
                 # to be sharp on precision
