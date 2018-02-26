@@ -2484,7 +2484,7 @@ def ZqFP(q, prec = None, *args, **kwds):
     return Zq(q, prec, 'floating-point', *args, **kwds)
 
 def ZpLC(p, prec=None, *args, **kwds):
-    """
+    r"""
     A shortcut function to create `p`-adic rings with lattice precision
     with cap.
 
