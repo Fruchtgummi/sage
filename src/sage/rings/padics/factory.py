@@ -1402,8 +1402,6 @@ class Zp_class(UniqueFactory):
     We refer to the documentation of the function :func:`ZpLC` for
     more information about this precision model.
 
-    ::
-
     There are many types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
