@@ -1400,23 +1400,23 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             oo~~o~o~ooo~o~ooo~o~
             oooooooooooo
 
-            sage: print(prec.history(separate_reduce=True))
+            sage: print(prec.history(separate_reduce=True))   # somewhat random
              Timings
-               ...   oooooooooooooooooooo
-               ...   oo~~o~o~ooo~o~ooo~o~
-               ...   oo~~o~o~ooo~ooooo
-               ...   oo~~o~o~ooo~orrrr 
-               ...   oo~~o~o~oooooooo
-               ...   oo~~o~o~ooorrrrr
-               ...   oo~~o~ooooooooo
-               ...   oo~~o~orrrrrrrr
-               ...   oo~~oooooooooo
-               ...   oo~~orrrrrrrrr
-               ...   oo~oooooooooo
-               ...   oo~rrrrrrrrrr
-               ...   oooooooooooo
-               ...   oorrrrrrrrrr
-               ---   oooooooooooo
+            0.001063s  oooooooooooooooooooo
+            0.000014s  oo~~o~o~ooo~o~ooo~o~
+            0.000798s  oo~~o~o~ooo~ooooo
+            0.000233s  oo~~o~o~ooo~orrrr
+            0.000824s  oo~~o~o~oooooooo
+            0.000375s  oo~~o~o~ooorrrrr
+            0.001724s  oo~~o~ooooooooo
+            0.001020s  oo~~o~orrrrrrrr
+            0.001989s  oo~~oooooooooo
+            0.001303s  oo~~orrrrrrrrr
+            0.002352s  oo~oooooooooo
+            0.001632s  oo~rrrrrrrrrr
+            0.002265s  oooooooooooo
+            0.001630s  oorrrrrrrrrr
+               ---     oooooooooooo
 
         The symbol ``r`` represents a column of the precision matrix which is
         currently under partial Hermite reduction.
@@ -1429,13 +1429,26 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         automatically but needs to be called by hand::
 
             sage: prec.reduce()
-            sage: print(prec.history(separate_reduce=True))
+            sage: print(prec.history(separate_reduce=True))   # somewhat random
              Timings
-               ...
-               ...   RRRRRRRRRRRR
-               ---   oooooooooooo
+            0.001063s  oooooooooooooooooooo
+            0.000014s  oo~~o~o~ooo~o~ooo~o~
+            0.000798s  oo~~o~o~ooo~ooooo
+            0.000233s  oo~~o~o~ooo~orrrr
+            0.000824s  oo~~o~o~oooooooo
+            0.000375s  oo~~o~o~ooorrrrr
+            0.001724s  oo~~o~ooooooooo
+            0.001020s  oo~~o~orrrrrrrr
+            0.001989s  oo~~oooooooooo
+            0.001303s  oo~~orrrrrrrrr
+            0.002352s  oo~oooooooooo
+            0.001632s  oo~rrrrrrrrrr
+            0.002265s  oooooooooooo
+            0.001630s  oorrrrrrrrrr
+            0.001486s  RRRRRRRRRRRR
+               ---     oooooooooooo
 
-        Here is an example coming from every-day life.
+        Here is a more common example with matrices::
 
             sage: R = ZpLC(3)
             sage: prec = R.precision()
