@@ -1,8 +1,29 @@
+r"""
+This file implements lattice precision for the parents ``ZpLC`` and ``ZpLF``
+
+AUTHOR:
+
+- Xavier caruso (2018-02): initial version
+
+"""
+
+# ****************************************************************************
+#       Copyright (C) 2018 Xavier Caruso <xavier.caruso@normalesup.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  http://www.gnu.org/licenses/
+# ****************************************************************************
+
+
 import _weakref as weakref
 from sage.misc.misc import walltime
 
 from sage.structure.sage_object import SageObject
 from sage.structure.unique_representation import UniqueRepresentation
+from sage.misc.abstract_method import abstract_method
 
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
@@ -12,8 +33,13 @@ from sage.rings.padics.precision_error import PrecisionError
 
 
 # Global variables
+##################
 
-DEFAULT_THRESOLD_DELETION = 50
+# The default minimal size after which re-echelonization
+# are not performed
+DEFAULT_THRESHOLD_DELETION = 50
+
+# The number of additional digits used for internal computations
 STARTING_ADDITIONAL_PREC = 5
 
 
@@ -23,28 +49,57 @@ STARTING_ADDITIONAL_PREC = 5
 
 class pRational:
     """
-    This class implements rational numbers as approximations
-    of `p`-adic numbers.
+    This class implements rational numbers viewed as elements of ``Qp``.
+    In particular, it provides additional methods which are specific to
+    ``p``-adics (as ``p``-adic valuation).
 
     Only for internal use.
+
+    INPUT:
+
+    - ``p`` -- a prime number
+
+    - ``x`` -- a rational number
+
+    - ``exponent`` -- an integer (default: 0)
+
+    - ``valuation`` -- an integer or None (default: ``None``),
+      the ``p``-adic valuation of this element
+
+    If not ``None``, this method trusts the given value to the
+    attribute ``valuation``.
+
+    TESTS::
+
+        sage: from sage.rings.padics.lattice_precision import pRational
+        sage: x = pRational(2, 5); x
+        5
+        sage: y = pRational(2, 5/3, 2); y
+        2^2 * 5/3
+
+        sage: x + y
+        35/3
+        sage: x - y
+        -5/3
+        sage: x * y
+        2^2 * 25/3
+        sage: x / y
+        2^-2 * 3
+
+        sage: x.valuation()
+        0
+        sage: y.valuation()
+        2
+
+        sage: z = pRational(2, 1024, valuation=4)
+        sage: z
+        1024
+        sage: z.valuation()
+        4
     """
     def __init__(self, p, x, exponent=0, valuation=None):
         """
         Construct the element ``x * p^exponent``
-
-        INPUT:
-
-        - ``p`` -- a prime number
-
-        - ``x`` -- a rational number
-
-        - ``exponent`` -- a relative integer (default: 0)
-
-        - ``valuation`` -- an integer or None (default: ``None``),
-          the ``p``-adic valuation of this element
-
-        If not ``None``, this method trusts the given value to the
-        attribute ``valuation``.
 
         TESTS::
 
@@ -73,7 +128,7 @@ class pRational:
             2^2 * 5
         """
         if self.exponent == 0:
-            return str(self.x)
+            return repr(self.x)
         else:
             return "%s^%s * %s" % (self.p, self.exponent, self.x)
 
@@ -83,7 +138,7 @@ class pRational:
 
         INPUT:
 
-        - ``prec`` -- a relative integer
+        - ``prec`` -- an integer
 
         TESTS::
 
@@ -111,13 +166,16 @@ class pRational:
             num = x.numerator()
             denom = x.denominator()
             valdenom = denom.valuation(self.p)
-            denom /= self.p ** valdenom
+            denom //= self.p ** valdenom
             exp -= valdenom
-            modulo = self.p ** (prec - exp)
-            # probably we should use Newton iteration instead 
-            # (but it is actually slower for now - Python implementation)
-            _, inv, _ = denom.xgcd(modulo)
-            x = (num*inv) % modulo
+            if prec > exp:
+                modulo = self.p ** (prec - exp)
+                # probably we should use Newton iteration instead 
+                # (but it is actually slower for now - Python implementation)
+                _, inv, _ = denom.xgcd(modulo)
+                x = (num*inv) % modulo
+            else:
+                x = 0
         if self.x == 0:
             val = Infinity
         else:
@@ -271,21 +329,7 @@ class pRational:
             sage: x - y
             2^7 * -28388896
         """
-        p = self.p
-        sexp = self.exponent
-        oexp = other.exponent
-        if self._valuation is None or other._valuation is None:
-            val = None
-        elif self._valuation < other._valuation:
-            val = self._valuation
-        elif self._valuation > other._valuation:
-            val = other._valuation
-        else:
-            val = None
-        if sexp < oexp:
-            return self.__class__(p, self.x - other.x * p**(oexp-sexp), sexp, valuation=val)
-        else:
-            return self.__class__(p, self.x * p**(sexp-oexp) - other.x, oexp, valuation=val)
+        return self + (-other)
 
     def __neg__(self):
         """
@@ -481,17 +525,24 @@ class pRational:
             41/152
             sage: y.list(10)
             [1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1]
+
+            sage: z = pRational(2, 0)
+            sage: z.list(10)
+            []
+            sage: z.list(100)
+            []
         """
         if self.x not in ZZ:
             self = self.reduce(prec)
         val = self.valuation()
+        if val is Infinity:
+            return []
         p = self.p
         x = ZZ(self.x * p**(self.exponent - val))
-        l = [ ]; i = val
-        while i < prec:
+        l = [ ]
+        for _ in range(val, prec):
             x, digit = x.quo_rem(p)
             l.append(digit)
-            i += 1
         return l
 
 
@@ -500,10 +551,10 @@ class pRational:
 
 def list_of_padics(elements):
     """
-    Convert a list of p-adic composed elements (as polynomials, matrices)
+    Convert a list of p-adic composed elements (such as polynomials, matrices)
     to a list of weak refererences of their p-adic coefficients.
 
-    This is an helper function for the methods :meth:`precision_lattice`
+    This is a helper function for the method :meth:`precision_lattice`
 
     TESTS::
 
@@ -519,6 +570,11 @@ def list_of_padics(elements):
     from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
     if isinstance(elements, pAdicLatticeElement):
         return [ weakref.ref(elements) ]
+    try:
+        if elements.parent().is_sparse():
+            elements = elements.coefficients()
+    except AttributeError:
+        pass
     if not isinstance(elements, list):
         elements = list(elements)
     ans = [ ]
@@ -526,11 +582,11 @@ def list_of_padics(elements):
         ans += list_of_padics(x)
     return ans
 
-def format_history(tme, status, timings):
+def format_history(time, status, timings):
     """
-    Return a formated output for the history.
+    Return a formattwed output for the history.
 
-    This is an helper function for the methods :meth:`history`.
+    This is a helper function for the method :meth:`history`.
 
     TESTS::
 
@@ -549,14 +605,14 @@ def format_history(tme, status, timings):
     """
     status = ''.join(status)
     if timings:
-        if tme < 0:
+        if time < 0:
             s = " Timings "
-        elif tme < 0.000001:
+        elif time < 0.000001:
             s = "   ---   "
-        elif tme >= 10:
+        elif time >= 10:
             s = "  >= 10s "
         else:
-            s = "%.6fs" % tme
+            s = "%.6fs" % time
         return s + "  " + status
     else:
         return status
@@ -566,19 +622,30 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     """
     A generic class for precision objects obtained by automatic
     differentiation
+
+    INPUT:
+
+    - ``p`` -- a prime number
+
+    - ``type`` -- either ``lattice`` or ``module``
+
+    - ``label`` -- a string, the label of the parents to which belong
+      the elements tracked by this precision module
+
+    TESTS::
+
+        sage: R = ZpLC(2, label='init')  # indirect doctest
+        sage: prec = R.precision()
+        sage: prec
+        Precision lattice on 0 object (label: init)
+        sage: prec._type
+        'lattice'
+        sage: prec.label()
+        'init'
     """
     def __init__(self, p, type, label):
         """
         Initialize this precision module
-
-        INPUT:
-
-        - ``p`` -- a prime number
-
-        - ``type`` -- either ``lattice`` or ``module``
-
-        - ``label`` -- a string, the label of the parents to which belong
-          the elements tracked by this precision module
 
         NOTE:
 
@@ -599,11 +666,11 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         self._p = p
         self._label = label
         self._type = type
-        self._elements = [ ]   # Probably better to use a double chained list
+        self._elements = [ ]
         self._matrix = { }
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
-        self._thresold_deletion = DEFAULT_THRESOLD_DELETION
+        self._threshold_deletion = DEFAULT_THRESHOLD_DELETION
         # History
         self._history_init = None
         self._history = None
@@ -649,73 +716,75 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             else:
                 return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
 
-    def thresold_deletion(self, thresold=None):
+    def threshold_deletion(self, threshold=None):
         """
-        Return or set the thresold for column deletion
+        Return (and set) the threshold for column deletion
 
-        When a variable dies, the ambiant space in which the precision
+        When a variable dies, the ambient space in which the precision
         module lives can be reduced (by projection onto the hyperplane
         defined by the dead variable).
-        However this reduction has a cost because it leads to re-echonize
+        However this reduction has a cost because it leads to re-echelonize
         a part of the matrix that encodes the precision. The size of this
         part is roughly the distance between the last column and the one
         corresponding to the dead variable.
 
-        The thresold deletion is the maximal distance until which the
-        above reduction is performed. After the thresold, the column of
+        The threshold deletion is the maximal distance until which the
+        above reduction is performed. After the threshold, the column of
         the dead variable is kept in this matrix as if the variable were
         not destroyed.
 
         INPUT:
 
-        - ``thresold`` -- a non negative integer, ``Infinity`` or ``None`` 
-          (default: ``None``): if ``None``, return the current thresold;
-          otherwise set the thresold to the given value
+        - ``threshold`` -- a non negative integer, ``Infinity`` or ``None`` 
+          (default: ``None``): if ``None``, return the current threshold;
+          otherwise set the threshold to the given value
 
         NOTE::
 
-        Setting the thresold to ``0`` disables the dimension reduction.
+        Setting the threshold to ``0`` disables the dimension reduction.
 
-        Setting the thresold to ``Infinity``
+        Setting the threshold to ``Infinity`` forces the dimension reduction
+        after each deletion.
 
         EXAMPLES::
 
-            sage: R = ZpLC(2, label='thresold_deletion')
+            sage: R = ZpLC(2, label='threshold_deletion')
             sage: prec = R.precision()
-            sage: prec.thresold_deletion()
+            sage: prec.threshold_deletion()
             50
 
-            sage: prec.thresold_deletion(20)
-            sage: prec.thresold_deletion()
+            sage: prec.threshold_deletion(20)
+            20
+            sage: prec.threshold_deletion()
             20
 
-            sage: prec.thresold_deletion(-2)
+            sage: prec.threshold_deletion(-2)
             Traceback (most recent call last):
             ...
-            ValueError: The thresold must be a nonnegative integer or Infinity
+            ValueError: The threshold must be a nonnegative integer or Infinity
 
         TESTS::
 
             sage: L = [ R.random_element() for _ in range(100) ]
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             100
 
             sage: del L[:10]
             sage: s = sum(L)
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             102
 
             sage: del L[-10:]
             sage: s = sum(L)
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             93
         """
-        if thresold is None:
-            return self._thresold_deletion
-        if thresold is Infinity or (thresold in ZZ and thresold >= 0):
-            self._thresold_deletion = thresold
-        else:
-            raise ValueError("The thresold must be a nonnegative integer or Infinity")
+        if threshold is not None:
+            if threshold is Infinity or (threshold in ZZ and threshold >= 0):
+                self._threshold_deletion = threshold
+            else:
+                raise ValueError("The threshold must be a nonnegative integer or Infinity")
+        return self._threshold_deletion
 
     def prime(self):
         """
@@ -734,10 +803,29 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         Return the index of the element whose reference is ``ref``
 
         Only for internal use!
+
+        TESTS::
+
+            sage: import _weakref as weakref
+
+            sage: R = ZpLC(2, label="index")
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: y = R(1,5)
+
+            sage: prec._index(weakref.ref(x))
+            0
+            sage: prec._index(weakref.ref(y))
+            1
+
+            sage: del x
+            sage: prec.del_elements()
+            sage: prec._index(weakref.ref(y))
+            0
         """
         return self._elements.index(ref)
 
-    def ambiant_dimension(self):
+    def ambient_dimension(self):
         """
         Return the dimension of the vector space in which the precision
         module/lattice lives
@@ -748,13 +836,13 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec = R.precision()
 
             sage: x,y = R(1,10), R(1,5)
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             2
             sage: prec.dimension()
             2
 
             sage: u = x + y
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             3
             sage: prec.dimension()
             3
@@ -770,68 +858,188 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec = R.precision()
 
             sage: x,y = R(1,10), R(1,5)
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             2
             sage: prec.dimension()
             2
 
             sage: u = x + y
-            sage: prec.ambiant_dimension()
+            sage: prec.ambient_dimension()
             3
             sage: prec.dimension()
             2
         """
         return len(self._matrix)
 
+    @abstract_method
     def dimension(self):
         """
         Return the dimension of this precision module
 
-        This method must be implemented in subclasses
-        """
-        raise NotImplementedError("implement this function is subclasses")
+        EXAMPLES::
 
-    def new_element(self, *args):
+            sage: R = ZpLC(5, label='dim')
+            sage: prec = R.precision()
+            sage: prec.dimension()
+            0
+
+            sage: x = R(1,10)
+            sage: prec.dimension()
+            1
+        """
+        pass
+
+    @abstract_method
+    def new_element(self, *args, **kwargs):
         """
         Insert a new element in this precision module
 
-        This method must be implemented in subclasses
-        """
-        raise NotImplementedError("implement this function is subclasses")
+        This function is not meant to be called manually.
+        It is automatically called by the parent when a new
+        element is created.
 
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R.random_element()
+            sage: y = R.random_element()
+            sage: z = x*y    # indirect doctest
+        """
+        pass
+
+    @abstract_method
     def mark_for_deletion(self, ref):
         """
         Mark for deletion an element of this precision module.
 
-        This method must be implemented in subclasses
-        """
-        raise NotImplementedError("implement this function is subclasses")
+        This function is not meant to be called manually.
+        It is automatically called by the garbage collection when 
+        an element is collected.
 
-    def del_elements(self, thresold=None):
-        """
-        Delete all elements marked for deletion up to the given thresold
+        INPUT:
 
-        This method must be implemented in subclasses
-        """
-        raise NotImplementedError("implement this function in subclasses")
+        - ``ref`` -- a weak reference to the destroyed element
 
+        NOTE::
+
+        This method does not update the precision lattice.
+        The actual update is performed when the method :meth:`del_elements`
+        is called. This is automatically done at the creation of a new
+        element but can be done manually as well.
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='mark_deletion')
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: prec
+            Precision lattice on 1 object (label: mark_deletion)
+            sage: del x   # indirect doctest: x is here marked for deletion
+            sage: prec
+            Precision lattice on 1 object (label: mark_deletion)
+            sage: prec.del_elements()       # x is indeed deleted
+            sage: prec
+            Precision lattice on 0 object (label: mark_deletion)
+        """
+        pass
+
+    @abstract_method
+    def del_elements(self, threshold=None):
+        """
+        Delete all elements marked for deletion up to the given threshold
+
+        INPUT:
+
+        - ``threshold`` -- an integer or ``None`` (default: ``None``):
+          a column whose distance to the right at greater than the
+          threshold is not erased
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='del_elements')
+            sage: prec = R.precision()
+
+            sage: x = R(1,10)
+            sage: prec
+            Precision lattice on 1 object (label: del_elements)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: del x
+            sage: prec
+            Precision lattice on 1 object (label: del_elements)
+            sage: prec.precision_lattice()
+            [1024]
+
+            sage: prec.del_elements()
+            sage: prec
+            Precision lattice on 0 object (label: del_elements)
+            sage: prec.precision_lattice()
+            []
+        """
+        pass
+
+    @abstract_method
     def precision_absolute(self, x):
         """
         Return the absolute precision of the given element
 
-        This method must be implemented in subclasses
-        """
-        raise NotImplementedError("implement this function in subclasses")
+        INPUT:
 
+        - ``x`` -- the element whose absolute precision is requested
+
+        NOTE:
+
+        The absolute precision is obtained by projecting the precision
+        lattice onto the line of coordinate ``dx``
+
+        NOTE:
+
+        This function is not meant to be called directly.
+        You should prefer call the method :meth:`precision_absolute`
+        of ``x`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+        """
+        pass
+
+    @abstract_method
     def precision_lattice(self, elements=None):
         """
         Return a lattice modeling the precision on the given set of elements
         or, if not given, on the whole set of elements tracked by the precision
         module
 
-        This method must be implemented in subclasses
+        INPUT:
+
+        - ``elements`` -- a list of elements or ``None`` (default: ``None``)
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2, label='precision_lattice')
+            sage: prec = R.precision()
+            sage: x = R(1,10); y = R(1,5)
+            sage: u = x + y
+            sage: v = x - y
+            sage: prec.precision_lattice()
+            [         1024             0          1024          1024]
+            [            0            32            32 1099511627744]
+            [            0             0       2097152             0]
+            [            0             0             0 1099511627776]
+            sage: prec.precision_lattice([u,v])
+            [  32 2016]
+            [   0 2048]
         """
-        raise NotImplementedError("implement this function in subclasses")
+        pass
 
     def number_of_diffused_digits(self, elements=None):
         """
@@ -841,8 +1049,8 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         NOTE:
 
         A diffused digit of precision is a known digit which is not
-        located on a single variable but only atppears on a suitable
-        linear combinaison of variables.
+        located on a single variable but only appears on a suitable
+        linear combination of variables.
 
         The number of diffused digits of precision quantifies the
         quality of the approximation of the lattice precision by a
@@ -881,11 +1089,22 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
             sage: prec.number_of_diffused_digits(N)
             17
+
+        Note that, in some cases, the number of diffused digits can be
+        infinite::
+
+            sage: R = ZpLF(2)
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: y = x
+            sage: prec.number_of_diffused_digits([x,y])
+            +Infinity
         """
-        M = self.precision_lattice(elements)
-        n = M.nrows()
-        if M.ncols() > n:
+        try:
+            M = self.precision_lattice(elements)
+        except PrecisionError:
             return Infinity
+        n = M.nrows()
         p = self._p
         diffused = 0
         for j in range(n):
@@ -1342,7 +1561,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
         - ``p`` -- a prime number
 
-        - ``type`` -- either ``lattice`` or ``module``
+        - ``type`` -- either ``"lattice"`` or ``"module"``
 
         - ``label`` -- a string, the label of the parents to which belong
           the elements tracked by this precision module
@@ -1371,7 +1590,24 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         Return the index of the element whose reference is ``ref``
 
-        Only for internal use!
+        TESTS::
+
+            sage: import _weakref as weakref
+
+            sage: R = ZpLC(2, label="index")
+            sage: prec = R.precision()
+            sage: x = R(1,10)
+            sage: y = R(1,5)
+
+            sage: prec._index(weakref.ref(x))
+            0
+            sage: prec._index(weakref.ref(y))
+            1
+
+            sage: del x
+            sage: prec.del_elements()
+            sage: prec._index(weakref.ref(y))
+            0
         """
         return len(self._matrix[ref]) - 1
 
@@ -1514,7 +1750,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         # First we delete some elements marked for deletion
         if self._marked_for_deletion:
-            self.del_elements(thresold=self._thresold_deletion)
+            self.del_elements(threshold=self._threshold_deletion)
 
         # Then we add the new element
         tme = walltime()
@@ -1592,7 +1828,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         if self._history is not None:
             self._history.append(('mark', index, walltime(tme)))
 
-    def del_elements(self, thresold=None):
+    def del_elements(self, threshold=None):
         """
         Erase columns of the lattice precision matrix corresponding to
         elements which are marked for deletion and echelonize the matrix
@@ -1600,9 +1836,9 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
         INPUT:
 
-        - ``thresold`` -- an integer or ``None`` (default: ``None``):
+        - ``threshold`` -- an integer or ``None`` (default: ``None``):
           a column whose distance to the right at greater than the
-          thresold is not erased
+          threshold is not erased
 
         EXAMPLES::
 
@@ -1633,7 +1869,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         self._marked_for_deletion.sort(reverse=True)
         count = 0
         for index in self._marked_for_deletion:
-            if thresold is not None and index < n - thresold: break
+            if threshold is not None and index < n - threshold: break
             n -= 1; count += 1
 
             tme = walltime()
@@ -1759,7 +1995,21 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         """
         Compute the absolute precision of the given element and cache it
 
-        For internal use.
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+
+            sage: import _weakref as weakref
+            sage: R.precision()._absolute_precisions[weakref.ref(z)]
+            [5, False]
         """
         col = self._matrix[ref]
         absprec = Infinity
@@ -1968,7 +2218,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         self._zero_cap = prec
         self._internal_prec = prec + STARTING_ADDITIONAL_PREC
         self._count = 0
-        self._thresold = 1
+        self._threshold = 1
 
     def internal_prec(self):
         """
@@ -2110,13 +2360,13 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         # First we delete some elements marked for deletion
         if self._marked_for_deletion:
-            self.del_elements(thresold=self._thresold_deletion)
+            self.del_elements(threshold=self._threshold_deletion)
 
         # We first increase the internal prec
         self._count += 1
-        if self._count > self._thresold:
+        if self._count > self._threshold:
             self._internal_prec += 1
-            self._thresold *= self._p
+            self._threshold *= self._p
 
         tme = walltime()
         p = self._p
@@ -2218,7 +2468,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
                 self._history.append(('del', index, walltime(tme)))
 
 
-    def del_elements(self, thresold=None):
+    def del_elements(self, threshold=None):
         """
         Erase columns of the lattice precision matrix corresponding to
         elements which are marked for deletion and reduce the matrix
@@ -2226,9 +2476,9 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
         INPUT:
 
-        - ``thresold`` -- an integer or ``None`` (default: ``None``):
+        - ``threshold`` -- an integer or ``None`` (default: ``None``):
           a column whose distance to the right at greater than the
-          thresold is not erased
+          threshold is not erased
 
         EXAMPLES::
 
@@ -2259,7 +2509,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         self._marked_for_deletion.sort(reverse=True)
         count = 0
         for index in self._marked_for_deletion:
-            if thresold is not None and index < n - thresold: break
+            if threshold is not None and index < n - threshold: break
             n -= 1; count += 1
 
             tme = walltime()
@@ -2323,7 +2573,23 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         Compute the absolute precision of the given element and cache it
 
-        For internal use.
+        Only for internal use!
+
+        TESTS::
+
+            sage: R = ZpLF(2)
+            sage: x = R(1,10); x
+            1 + O(2^10)
+            sage: y = R(1,5); y
+            1 + O(2^5)
+            sage: z = x + y; z
+            2 + O(2^5)
+            sage: z.precision_absolute()  # indirect doctest
+            5
+
+            sage: import _weakref as weakref
+            sage: R.precision()._absolute_precisions[weakref.ref(z)]
+            5
         """
         col = self._matrix[ref]
         if len(col) == 0:

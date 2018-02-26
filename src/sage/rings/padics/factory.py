@@ -1248,15 +1248,6 @@ def QpFP(p, prec = None, *args, **kwds):
     """
     return Qp(p, prec, 'floating-point', *args, **kwds)
 
-#def QpL(p, prec = DEFAULT_PREC, print_mode = None, halt = DEFAULT_HALT, names = None, print_pos = None,
-#        print_sep = None, print_alphabet = None, print_max_terms = None, check=True):
-#    """
-#    A shortcut function to create lazy p-adic fields.
-
-#    Currently deactivated.  See documentation for Qp for a description of the input parameters.
-
-#    EXAMPLES::
-
 def QqCR(q, prec = None, *args, **kwds):
     """
     A shortcut function to create capped relative unramified `p`-adic
@@ -1303,6 +1294,17 @@ def QpLC(p, prec = None, *args, **kwds):
     return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
 def QpLF(p, prec = None, *args, **kwds):
+    """
+    A shortcut function to create `p`-adic fields with lattice precision.
+
+    See :func:`ZpLC` for more information about this model of precision.
+
+    EXAMPLES::
+
+        sage: R = QpLF(2)
+        sage: R
+        2-adic Field with lattice-float precision
+    """
     return Qp(p, prec, 'lattice-float', *args, **kwds)
 
 
@@ -1325,7 +1327,8 @@ class Zp_class(UniqueFactory):
 
     - ``prec`` -- integer (default: ``20``) the precision cap of the
       ring.  In the lattice capped case, ``prec`` can either be a
-      pair (``relative_cap``, ``absolute_cap``).
+      pair (``relative_cap``, ``absolute_cap``) or an integer
+      (understood at relative cap).
       Except for the fixed modulus case, individual elements
       keep track of their own precision.  See TYPES and PRECISION
       below.
@@ -1399,7 +1402,7 @@ class Zp_class(UniqueFactory):
     We refer to the documentation of the function :func:`ZpLC` for
     more information about this precision model.
 
-    There are seven types of `p`-adic rings: capped relative rings
+    There are many types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
     floating point rings (type=``'floating-point'``), lattice capped rings 
@@ -2391,7 +2394,7 @@ def ZpCA(p, prec = None, *args, **kwds):
     """
     A shortcut function to create capped absolute `p`-adic rings.
 
-    See documentation for ``Zp`` for a description of the input parameters.
+    See documentation for :func:`Zp` for a description of the input parameters.
 
     EXAMPLES::
 
@@ -2404,7 +2407,7 @@ def ZpFM(p, prec = None, *args, **kwds):
     """
     A shortcut function to create fixed modulus `p`-adic rings.
 
-    See documentation for ``Zp`` for a description of the input parameters.
+    See documentation for :func:`Zp` for a description of the input parameters.
 
     EXAMPLES::
 
@@ -2445,7 +2448,7 @@ def ZqCA(q, prec = None, *args, **kwds):
     """
     A shortcut function to create capped absolute unramified `p`-adic rings.
 
-    See documentation for ``Zq`` for a description of the input parameters.
+    See documentation for :func:`Zq` for a description of the input parameters.
 
     EXAMPLES::
 
@@ -2458,7 +2461,7 @@ def ZqFM(q, prec = None, *args, **kwds):
     """
     A shortcut function to create fixed modulus unramified `p`-adic rings.
 
-    See documentation for ``Zq`` for a description of the input parameters.
+    See documentation for :func:`Zq` for a description of the input parameters.
 
     EXAMPLES::
 
@@ -2486,7 +2489,7 @@ def ZpLC(p, prec=None, *args, **kwds):
     A shortcut function to create `p`-adic rings with lattice precision
     with cap.
 
-    DEMONSTRATION:
+    EXAMPLES:
 
     Below is a small demo of the features by this model of precision::
 
@@ -2516,7 +2519,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: x*z
         1 + O(3^11)
 
-    This comes more funny when we are working with elements given
+    This can be more surprising when we are working with elements given
     at different precisions::
 
         sage: R = ZpLC(2, print_mode='terse')
@@ -2619,7 +2622,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: d
         20949 + O(2^15)
 
-    BEHIND THE SCENE:
+    ALGORITHM:
 
     The precision is global.
     It is encoded by a lattice in a huge vector space whose dimension
@@ -2640,7 +2643,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: prec
         Precision lattice on 0 object
 
-    This instance knows about all elements of the parent, it is
+    This instance knows about all elements of the parent. It is
     automatically updated when a new element (of this parent) is
     created::
 
@@ -2705,10 +2708,10 @@ def ZpLC(p, prec=None, *args, **kwds):
     do not appear on the printing) allow to be always sharp on
     precision.
 
-    PERFORMANCES:
+    NOTE:
 
     Each elementary operation requires significant manipulations
-    on the lattice precision and then is costly. Precisely:
+    on the precision lattice and therefore is costly. Precisely:
 
     - The creation of a new element has a cost `O(n)` where `n`
       is the number of tracked elements.
@@ -2721,11 +2724,11 @@ def ZpLC(p, prec=None, *args, **kwds):
 
     It is nevertheless still possible to manipulate several
     hundred variables (e.g. square matrices of size 5 or
-    polynomials of degree 20 are accessible).
+    polynomials of degree 20).
 
     The class :class:`PrecisionLattice` provides several
     features for introspection (especially concerning timings).
-    If enabled, it maintains an history of all actions and stores
+    If enabled, it maintains a history of all actions and stores
     the wall time of each of them::
 
         sage: R = ZpLC(3)
@@ -2781,6 +2784,9 @@ def ZpLC(p, prec=None, *args, **kwds):
          'mark': 0.0004909038543701172,
          'partial reduce': 0.0917658805847168}
 
+    .. SEEALSO::
+
+        :func:`ZpLF`
     """
     return Zp(p, prec, 'lattice-cap', *args, **kwds)
 
@@ -2791,7 +2797,7 @@ def ZpLF(p, prec=None, *args, **kwds):
     Floating point `p`-adic numbers are used for the computation
     of the differential (which is then not exact).
 
-    See documentation for ``Zp`` for a description of the input parameters.
+    See documentation for :func:`Zp` for a description of the input parameters.
 
     EXAMPLES::
 
@@ -2803,13 +2809,6 @@ def ZpLF(p, prec=None, *args, **kwds):
         :func:`ZpLC`
     """
     return Zp(p, prec, 'lattice-float', *args, **kwds)
-
-#def ZpL(p, prec = DEFAULT_PREC, print_mode = None, halt = DEFAULT_HALT, names = None, print_pos = None,
-#         print_sep = None, print_alphabet = None, print_max_terms = None, check=True):
-#    """
-#    A shortcut function to create lazy `p`-adic rings.
-
-#    Currently deactivated.  See documentation for Zp for a description of the input parameters.
 
 
 #######################################################################################################
