@@ -1048,7 +1048,7 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
             prec = cap
         else:
             capped = False
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
+        self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
         return prec
 
     def _is_exact_zero(self):
@@ -1090,7 +1090,7 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: prec.number_of_tracked_elements() == nb + 1
             True
         """
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
+        self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
         cap = self._precision.internal_prec() + self._value.valuation()
         if prec is None:
             return cap
