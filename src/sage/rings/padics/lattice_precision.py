@@ -655,7 +655,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         sage: R = ZpLC(2, label='init')
         sage: prec = R.precision()
         sage: prec
-        Precision lattice on 0 object (label: init)
+        Precision lattice on 0 objects (label: init)
         sage: prec._type
         'lattice'
         sage: prec.label()
@@ -711,16 +711,16 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
             sage: R = ZpLC(2, label="mylabel")
             sage: R.precision()
-            Precision lattice on 0 object (label: mylabel)
+            Precision lattice on 0 objects (label: mylabel)
         """
         n = len(self._elements)
         if self._label is None:
-            if n > 1:
+            if n != 1:
                 return "Precision %s on %s objects" % (self._type, len(self._elements))
             else:
                 return "Precision %s on %s object" % (self._type, len(self._elements))
         else:
-            if n > 1:
+            if n != 1:
                 return "Precision %s on %s objects (label: %s)" % (self._type, len(self._elements), self._label)
             else:
                 return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
@@ -899,22 +899,22 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     @abstract_method
     def _mark_for_deletion(self, ref):
         r"""
-        Mark for deletion an element of this precision module.
-
-        This function is not meant to be called manually.
-        It is automatically called by the garbage collection when 
-        an element is collected.
+        Mark an element for deletion.
 
         INPUT:
 
         - ``ref`` -- a weak reference to the destroyed element
 
-        NOTE::
+        .. NOTE::
 
-        This method does not update the precision lattice.
-        The actual update is performed when the method :meth:`del_elements`
-        is called. This is automatically done at the creation of a new
-        element but can be done manually as well.
+            This function is not meant to be called manually.
+            It is automatically called by the garbage collection when 
+            an element is collected.
+
+            This method does not update the precision lattice.
+            The actual update is performed when the method :meth:`del_elements`
+            is called. This is automatically done at the creation of a new
+            element but can be done manually as well.
 
         EXAMPLES::
 
@@ -924,11 +924,11 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec
             Precision lattice on 1 object (label: mark_deletion)
             sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
+            sage: prec    # random output, "0 objects" if the garbage collector is too fast
             Precision lattice on 1 object (label: mark_deletion)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision lattice on 0 object (label: mark_deletion)
+            Precision lattice on 0 objects (label: mark_deletion)
         """
         pass
 
@@ -962,7 +962,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
             sage: prec.del_elements()
             sage: prec
-            Precision lattice on 0 object (label: del_elements)
+            Precision lattice on 0 objects (label: del_elements)
             sage: prec.precision_lattice()
             []
         """
@@ -1626,7 +1626,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: R = ZpLC(2, label='init')
             sage: prec = R.precision()
             sage: prec
-            Precision lattice on 0 object (label: init)
+            Precision lattice on 0 objects (label: init)
             sage: prec._type
             'lattice'
             sage: prec.label()
@@ -1867,7 +1867,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             Precision lattice on 1 object (label: markdel)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision lattice on 0 object (label: markdel)
+            Precision lattice on 0 objects (label: markdel)
         """
         tme = walltime()
         try:
@@ -1909,7 +1909,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
             sage: prec.del_elements()
             sage: prec
-            Precision lattice on 0 object (label: delelts)
+            Precision lattice on 0 objects (label: delelts)
             sage: prec.precision_lattice()
             []
         """
@@ -2257,7 +2257,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             sage: R = ZpLF(2, label='init')
             sage: prec = R.precision()
             sage: prec
-            Precision module on 0 object (label: init)
+            Precision module on 0 objects (label: init)
             sage: prec._type
             'module'
             sage: prec.label()
@@ -2491,7 +2491,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             Precision module on 1 object (label: markdel)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision module on 0 object (label: markdel)
+            Precision module on 0 objects (label: markdel)
         """
         tme = walltime()
         try:
@@ -2549,7 +2549,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
             sage: prec.del_elements()
             sage: prec
-            Precision module on 0 object (label: delelts)
+            Precision module on 0 objects (label: delelts)
             sage: prec.precision_lattice()
             []
         """
