@@ -163,7 +163,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     # This doesn't work apparently (I don't know why)
     # Deletion is currently handled in PrecisionLattice 
     # def __del__(self):
-    #     self._precision.mark_for_deletion(weakref.ref(self))
+    #     self._precision._mark_for_deletion(weakref.ref(self))
 
     def _is_base_elt(self, p):
         """

@@ -897,7 +897,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         pass
 
     @abstract_method
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
         Mark for deletion an element of this precision module.
 
@@ -1806,7 +1806,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = len(self._elements)
-        x_ref = weakref.ref(x, self.mark_for_deletion)
+        x_ref = weakref.ref(x, self._mark_for_deletion)
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
@@ -1836,7 +1836,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         if self._history is not None:
             self._history.append(('add', None, walltime(tme)))
 
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
         Mark an element for deletion.
 
@@ -2421,7 +2421,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = self.dimension()
-        x_ref = weakref.ref(x, self.mark_for_deletion)
+        x_ref = weakref.ref(x, self._mark_for_deletion)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
@@ -2460,7 +2460,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             self._history.append(('add', None, walltime(tme)))
 
 
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
         Mark an element for deletion.
 
