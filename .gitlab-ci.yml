@@ -105,6 +105,9 @@ test-doctest: &doctest
     - . .ci/setup-make-parallelity.sh
     - . .ci/pull-gitlab.sh sagemath
     - . .ci/test-doctest.sh sagemath
+  # Don't stop the pipeline just because a few doctests fail. The docker images
+  # are still valuable.
+  allow_failure: true
 
 # Run the --long doctests
 test-doctest-long:
