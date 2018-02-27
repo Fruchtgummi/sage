@@ -969,7 +969,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         pass
 
     @abstract_method
-    def precision_absolute(self, x):
+    def _precision_absolute(self, x):
         r"""
         Return the absolute precision of the given element.
 
@@ -977,16 +977,13 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
         - ``x`` -- the element whose absolute precision is requested
 
-        NOTE:
+        .. NOTE::
 
-        The absolute precision is obtained by projecting the precision
-        lattice onto the line of coordinate ``dx``.
+            The absolute precision is obtained by projecting the precision
+            lattice onto the line of coordinate ``dx``.
 
-        NOTE:
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`precision_absolute`
-        of ``x`` instead.
+            This function is not meant to be called directly. Call
+            ``x.precision_absolute()`` instead.
 
         EXAMPLES::
 
@@ -2073,7 +2070,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
                 capped = capped and self._capped[self._elements[i]]
         self._absolute_precisions[ref] = [absprec, capped]
 
-    def precision_absolute(self, x):
+    def _precision_absolute(self, x):
         r"""
         Return the absolute precision of the given element.
 
@@ -2081,16 +2078,13 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
         - ``x`` -- the element whose absolute precision is requested
 
-        NOTE:
+        .. NOTE::
 
-        The absolute precision is obtained by projecting the precision
-        lattice onto the line of coordinate ``dx``.
+            The absolute precision is obtained by projecting the precision
+            lattice onto the line of coordinate ``dx``.
 
-        NOTE:
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`precision_absolute`
-        of ``x`` instead.
+            This function is not meant to be called directly. Call
+            ``x.precision_absolute()`` instead.
 
         EXAMPLES::
 
@@ -2647,7 +2641,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         else:
             self._absolute_precisions[ref] = min( [ c.valuation() for c in col ] )
 
-    def precision_absolute(self, x):
+    def _precision_absolute(self, x):
         r"""
         Return the absolute precision of the given element.
 
@@ -2655,16 +2649,13 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
         - ``x`` -- the element whose absolute precision is requested
 
-        NOTE:
+        .. NOTE::
 
-        The absolute precision is obtained by projecting the precision
-        module onto the line of coordinate ``dx``.
+            The absolute precision is obtained by projecting the precision
+            module onto the line of coordinate ``dx``.
 
-        NOTE:
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`precision_absolute`
-        of ``x`` instead.
+            This function is not meant to be called directly. Call
+            ``x.precision_absolute()`` instead.
 
         EXAMPLES::
 

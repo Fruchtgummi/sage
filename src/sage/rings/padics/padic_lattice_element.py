@@ -272,7 +272,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: (x+y).precision_absolute()
             11
         """
-        prec = self._precision.precision_absolute(self)
+        prec = self._precision._precision_absolute(self)
         cap = self._value.valuation() + self._parent._prec_cap_relative
         return min(prec,cap)
 
@@ -1112,4 +1112,4 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: R(1)._is_exact_zero()
             False
         """
-        return self._value.is_zero() and self._precision.precision_absolute(self) is Infinity
+        return self._value.is_zero() and self._precision._precision_absolute(self) is Infinity
