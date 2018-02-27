@@ -4,6 +4,20 @@ This file implements lattice precision for the parents ``ZpLC`` and ``ZpLF``
 AUTHOR:
 
 - Xavier caruso (2018-02): initial version
+
+TESTS::
+
+    sage: R = ZpLC(2)
+    doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+    See http://trac.sagemath.org/23505 for details.
+    sage: prec = R.precision()
+    sage: prec
+    Precision lattice on 0 object
+
+    sage: S = ZpLF(2)
+    sage: prec = S.precision()
+    sage: prec
+    Precision module on 0 object
 """
 
 # ****************************************************************************

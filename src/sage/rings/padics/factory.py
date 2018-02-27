@@ -6,6 +6,15 @@ This file contains the constructor classes and functions for `p`-adic rings and 
 AUTHORS:
 
 - David Roe
+
+TESTS::
+
+    sage: R = ZpLC(2)
+    doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+    See http://trac.sagemath.org/23505 for details.
+    sage: R = ZpLF(2)
+    sage: R = QpLC(2)
+    sage: R = QpLF(2)
 """
 
 #*****************************************************************************
@@ -19,6 +28,8 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 from __future__ import absolute_import, print_function
+
+from sage.misc.superseded import experimental
 
 from sage.structure.factory import UniqueFactory
 from sage.rings.integer import Integer
@@ -1267,6 +1278,7 @@ def QqFP(q, prec = None, *args, **kwds):
     """
     return Qq(q, prec, 'floating-point', *args, **kwds)
 
+@experimental(23505)
 def QpLC(p, prec = None, *args, **kwds):
     """
     A shortcut function to create `p`-adic fields with lattice precision.
@@ -1282,6 +1294,7 @@ def QpLC(p, prec = None, *args, **kwds):
     """
     return Qp(p, prec, 'lattice-cap', *args, **kwds)
 
+@experimental(23505)
 def QpLF(p, prec = None, *args, **kwds):
     """
     A shortcut function to create `p`-adic fields with lattice precision.
@@ -2473,6 +2486,7 @@ def ZqFP(q, prec = None, *args, **kwds):
     """
     return Zq(q, prec, 'floating-point', *args, **kwds)
 
+@experimental(23505)
 def ZpLC(p, prec=None, *args, **kwds):
     r"""
     A shortcut function to create `p`-adic rings with lattice precision
@@ -2486,6 +2500,9 @@ def ZpLC(p, prec=None, *args, **kwds):
     Below is a small demo of the features by this model of precision::
 
         sage: R = ZpLC(3, print_mode='terse')
+        sage: R
+        3-adic Ring with lattice-cap precision
+
         sage: x = R(1,10)
 
     Of course, when we multiply by 3, we gain one digit of absolute
@@ -2730,6 +2747,7 @@ def ZpLC(p, prec=None, *args, **kwds):
     """
     return Zp(p, prec, 'lattice-cap', *args, **kwds)
 
+@experimental(23505)
 def ZpLF(p, prec=None, *args, **kwds):
     """
     A shortcut function to create `p`-adic rings where precision
@@ -2746,7 +2764,8 @@ def ZpLF(p, prec=None, *args, **kwds):
 
     EXAMPLES::
 
-        sage: ZpLF(5, 40)
+        sage: R = ZpLF(5, 40)
+        sage: R
         5-adic Ring with lattice-float precision
 
     .. SEEALSO::

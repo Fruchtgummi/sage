@@ -4,6 +4,15 @@ r"""
 AUTHOR:
 
 - Xavier caruso (2018-02): initial version
+
+TESTS::
+
+    sage: R = ZpLC(2)
+    doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+    See http://trac.sagemath.org/23505 for details.
+    sage: R = ZpLF(2)
+    sage: R = QpLC(2)
+    sage: R = QpLF(2)
 """
 
 # ****************************************************************************
@@ -392,7 +401,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: x == z   # Indirect doctest
             False
-            sage: x - z
+            sage: z - x
             2^7 + O(2^10)
         """
         if (self-other).is_zero():
