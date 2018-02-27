@@ -1,9 +1,23 @@
 r"""
-This file implements lattice precision for the parents ``ZpLC`` and ``ZpLF``
+Lattice precision for the parents ``ZpLC`` and ``ZpLF``
 
 AUTHOR:
 
-- Xavier caruso (2018-02): initial version
+- Xavier Caruso (2018-02): initial version
+
+TESTS::
+
+    sage: R = ZpLC(2)
+    doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+    See http://trac.sagemath.org/23505 for details.
+    sage: prec = R.precision()
+    sage: prec
+    Precision lattice on 0 object
+
+    sage: S = ZpLF(2)
+    sage: prec = S.precision()
+    sage: prec
+    Precision module on 0 object
 """
 
 # ****************************************************************************
@@ -31,11 +45,11 @@ from sage.rings.infinity import Infinity
 from sage.rings.padics.precision_error import PrecisionError
 
 
-# Global variables
-##################
-
-# The default minimal size after which re-echelonization
-# are not performed
+# The default minimal size after which re-echelonization is not performed,
+# i.e., when a variable is not referenced anymore and could be deleted but its
+# corresponding column is further than this threshold from the right end of the
+# matrix representing the precision lattice, then the column is not removed
+# from the matrix because the re-echelonization would be too costly.
 DEFAULT_THRESHOLD_DELETION = 50
 
 # The number of additional digits used for internal computations
@@ -626,17 +640,22 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
     - ``p`` -- a prime number
 
-    - ``type`` -- either ``lattice`` or ``module``
+    - ``type`` -- either ``"lattice"`` or ``"module"``
 
-    - ``label`` -- a string, the label of the parents to which belong
-      the elements tracked by this precision module
+    - ``label`` -- a string, the label of the parents to which the elements
+      belong that are tracked by this precision module
+
+    .. NOTE::
+
+        This object is used internally by the parent ring. You should not
+        create instances of this class on your own.
 
     TESTS::
 
-        sage: R = ZpLC(2, label='init')  # indirect doctest
+        sage: R = ZpLC(2, label='init')
         sage: prec = R.precision()
         sage: prec
-        Precision lattice on 0 object (label: init)
+        Precision lattice on 0 objects (label: init)
         sage: prec._type
         'lattice'
         sage: prec.label()
@@ -644,34 +663,24 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     """
     def __init__(self, p, type, label):
         r"""
-        Initialize this precision module.
-
-        NOTE:
-
-        The precision module is automatically initialized at the 
-        creation of the parent.
-
         TESTS::
 
-            sage: R = ZpLC(2, label='init')  # indirect doctest
-            sage: prec = R.precision()
-            sage: prec
-            Precision lattice on 0 object (label: init)
-            sage: prec._type
-            'lattice'
-            sage: prec.label()
-            'init'
+            sage: prec = ZpLC(2, label='init').precision()
+            sage: from sage.rings.padics.lattice_precision import DifferentialPrecisionGeneric
+            sage: isinstance(prec, DifferentialPrecisionGeneric)
+            True
+
         """
         self._p = p
         self._label = label
         self._type = type
         self._elements = [ ]
-        self._matrix = { }  # a dictionary whose keys are weak references to tracked elements
-                            # and values are corresponding columns
+        self._matrix = { } # A dictionary whose keys are weak references to tracked elements
+                           # and values corresponding columns in the matrix
+                           # representing the precision lattice
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
         self._threshold_deletion = DEFAULT_THRESHOLD_DELETION
-        # History
         self._history_init = None
         self._history = None
 
@@ -698,20 +707,20 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: R.precision()
             Precision lattice on ... objects
 
-        If a label has been specified, it is included in the representation.
+        If a label has been specified, it is included in the representation::
 
             sage: R = ZpLC(2, label="mylabel")
             sage: R.precision()
-            Precision lattice on 0 object (label: mylabel)
+            Precision lattice on 0 objects (label: mylabel)
         """
         n = len(self._elements)
         if self._label is None:
-            if n > 1:
+            if n != 1:
                 return "Precision %s on %s objects" % (self._type, len(self._elements))
             else:
                 return "Precision %s on %s object" % (self._type, len(self._elements))
         else:
-            if n > 1:
+            if n != 1:
                 return "Precision %s on %s objects (label: %s)" % (self._type, len(self._elements), self._label)
             else:
                 return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
@@ -720,31 +729,31 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         r"""
         Return (and set) the threshold for column deletion.
 
-        When a variable dies, the ambient space in which the precision
-        module lives can be reduced (by projection onto the hyperplane
-        defined by the dead variable).
-        However this reduction has a cost because it leads to re-echelonize
-        a part of the matrix that encodes the precision. The size of this
-        part is roughly the distance between the last column and the one
-        corresponding to the dead variable.
+        When a variable dies, i.e., goes out of scope, the ambient space in
+        which the precision module lives can be reduced (by projection onto the
+        hyperplane defined by the dead variable).
+        This reduction has a cost because it leads to re-echelonization
+        of a part of the matrix that encodes the precision. The size of this
+        part is roughly measured by the number of columns between the last
+        column and the one corresponding to the dead variable.
 
-        The threshold deletion is the maximal distance until which the
-        above reduction is performed. After the threshold, the column of
-        the dead variable is kept in this matrix as if the variable were
-        not destroyed.
+        This threshold returned by this method is the maximal distance until
+        which a column of a dead variable is removed and the matrix
+        re-echelonized. Beyond the threshold, the column of the dead variable
+        is kept in this matrix as if the variable were not destroyed.
 
         INPUT:
 
-        - ``threshold`` -- a non negative integer, ``Infinity`` or ``None`` 
-          (default: ``None``): if ``None``, return the current threshold;
-          otherwise set the threshold to the given value
+        - ``threshold`` -- a non-negative integer, ``Infinity`` or ``None``
+          (default: ``None``): if not ``None`` set the threshold to the given
+          value.
 
-        NOTE::
+        .. NOTE::
 
-        Setting the threshold to ``0`` disables the dimension reduction.
+            Setting the threshold to ``0`` disables the dimension reduction.
 
-        Setting the threshold to ``Infinity`` forces the dimension reduction
-        after each deletion.
+            Setting the threshold to ``Infinity`` forces the dimension reduction
+            after each deletion.
 
         EXAMPLES::
 
@@ -762,22 +771,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             Traceback (most recent call last):
             ...
             ValueError: The threshold must be a nonnegative integer or Infinity
-
-        TESTS::
-
-            sage: L = [ R.random_element() for _ in range(100) ]
-            sage: prec.ambient_dimension()
-            100
-
-            sage: del L[:10]
-            sage: s = sum(L)
-            sage: prec.ambient_dimension()
-            102
-
-            sage: del L[-10:]
-            sage: s = sum(L)
-            sage: prec.ambient_dimension()
-            93
         """
         if threshold is not None:
             if threshold is Infinity or (threshold in ZZ and threshold >= 0):
@@ -890,42 +883,38 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         pass
 
     @abstract_method
-    def new_element(self, *args, **kwargs):
+    def _new_element(self, *args, **kwargs):
         r"""
         Insert a new element in this precision module.
-
-        This function is not meant to be called manually.
-        It is automatically called by the parent when a new
-        element is created.
 
         TESTS::
 
             sage: R = ZpLC(2)
             sage: x = R.random_element()
             sage: y = R.random_element()
-            sage: z = x*y    # indirect doctest
+            sage: z = x*y # indirect doctest
         """
         pass
 
     @abstract_method
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
-        Mark for deletion an element of this precision module.
-
-        This function is not meant to be called manually.
-        It is automatically called by the garbage collection when 
-        an element is collected.
+        Mark an element for deletion.
 
         INPUT:
 
         - ``ref`` -- a weak reference to the destroyed element
 
-        NOTE::
+        .. NOTE::
 
-        This method does not update the precision lattice.
-        The actual update is performed when the method :meth:`del_elements`
-        is called. This is automatically done at the creation of a new
-        element but can be done manually as well.
+            This function is not meant to be called manually.
+            It is automatically called by the garbage collection when 
+            an element is collected.
+
+            This method does not update the precision lattice.
+            The actual update is performed when the method :meth:`del_elements`
+            is called. This is automatically done at the creation of a new
+            element but can be done manually as well.
 
         EXAMPLES::
 
@@ -935,11 +924,11 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec
             Precision lattice on 1 object (label: mark_deletion)
             sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
+            sage: prec    # random output, "0 objects" if the garbage collector is too fast
             Precision lattice on 1 object (label: mark_deletion)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision lattice on 0 object (label: mark_deletion)
+            Precision lattice on 0 objects (label: mark_deletion)
         """
         pass
 
@@ -973,7 +962,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
             sage: prec.del_elements()
             sage: prec
-            Precision lattice on 0 object (label: del_elements)
+            Precision lattice on 0 objects (label: del_elements)
             sage: prec.precision_lattice()
             []
         """
@@ -1637,7 +1626,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: R = ZpLC(2, label='init')
             sage: prec = R.precision()
             sage: prec
-            Precision lattice on 0 object (label: init)
+            Precision lattice on 0 objects (label: init)
             sage: prec._type
             'lattice'
             sage: prec.label()
@@ -1765,7 +1754,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             if self._history is not None:
                 self._history.append(('full reduce', index, walltime(tme)))
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combination', capped=False):
+    def _new_element(self, x, dx, bigoh, dx_mode='linear_combination', capped=False):
         r"""
         Update the lattice when a new element is created.
 
@@ -1817,7 +1806,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = len(self._elements)
-        x_ref = weakref.ref(x, self.mark_for_deletion)
+        x_ref = weakref.ref(x, self._mark_for_deletion)
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
@@ -1847,7 +1836,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         if self._history is not None:
             self._history.append(('add', None, walltime(tme)))
 
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
         Mark an element for deletion.
 
@@ -1878,7 +1867,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             Precision lattice on 1 object (label: markdel)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision lattice on 0 object (label: markdel)
+            Precision lattice on 0 objects (label: markdel)
         """
         tme = walltime()
         try:
@@ -1920,7 +1909,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
             sage: prec.del_elements()
             sage: prec
-            Precision lattice on 0 object (label: delelts)
+            Precision lattice on 0 objects (label: delelts)
             sage: prec.precision_lattice()
             []
         """
@@ -2268,7 +2257,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             sage: R = ZpLF(2, label='init')
             sage: prec = R.precision()
             sage: prec
-            Precision module on 0 object (label: init)
+            Precision module on 0 objects (label: init)
             sage: prec._type
             'module'
             sage: prec.label()
@@ -2375,7 +2364,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         return self.dimension() == len(self._elements)
 
-    def new_element(self, x, dx, bigoh, dx_mode='linear_combination'):
+    def _new_element(self, x, dx, bigoh, dx_mode='linear_combination'):
         r"""
         Update the lattice when a new element is created.
 
@@ -2432,7 +2421,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = self.dimension()
-        x_ref = weakref.ref(x, self.mark_for_deletion)
+        x_ref = weakref.ref(x, self._mark_for_deletion)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
@@ -2471,7 +2460,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             self._history.append(('add', None, walltime(tme)))
 
 
-    def mark_for_deletion(self, ref):
+    def _mark_for_deletion(self, ref):
         r"""
         Mark an element for deletion.
 
@@ -2502,7 +2491,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             Precision module on 1 object (label: markdel)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
-            Precision module on 0 object (label: markdel)
+            Precision module on 0 objects (label: markdel)
         """
         tme = walltime()
         try:
@@ -2560,7 +2549,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
             sage: prec.del_elements()
             sage: prec
-            Precision module on 0 object (label: delelts)
+            Precision module on 0 objects (label: delelts)
             sage: prec.precision_lattice()
             []
         """

@@ -4,6 +4,15 @@ r"""
 AUTHOR:
 
 - Xavier caruso (2018-02): initial version
+
+TESTS::
+
+    sage: R = ZpLC(2)
+    doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+    See http://trac.sagemath.org/23505 for details.
+    sage: R = ZpLF(2)
+    sage: R = QpLC(2)
+    sage: R = QpLF(2)
 """
 
 # ****************************************************************************
@@ -154,7 +163,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     # This doesn't work apparently (I don't know why)
     # Deletion is currently handled in PrecisionLattice 
     # def __del__(self):
-    #     self._precision.mark_for_deletion(weakref.ref(self))
+    #     self._precision._mark_for_deletion(weakref.ref(self))
 
     def _is_base_elt(self, p):
         """
@@ -392,7 +401,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: x == z   # Indirect doctest
             False
-            sage: x - z
+            sage: z - x
             2^7 + O(2^10)
         """
         if (self-other).is_zero():
@@ -1039,7 +1048,7 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
             prec = cap
         else:
             capped = False
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
+        self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode, capped=capped)
         return prec
 
     def _is_exact_zero(self):
@@ -1081,7 +1090,7 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: prec.number_of_tracked_elements() == nb + 1
             True
         """
-        self._precision.new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
+        self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
         cap = self._precision.internal_prec() + self._value.valuation()
         if prec is None:
             return cap

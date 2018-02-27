@@ -2318,7 +2318,7 @@ class CompletionFunctor(ConstructionFunctor):
     """
     rank = 4
     _real_types = ['Interval', 'Ball', 'MPFR', 'RDF', 'RLF', 'RR']
-    _dvr_types = [None, 'fixed-mod','floating-point','capped-abs','capped-rel','lazy']
+    _dvr_types = [None, 'fixed-mod', 'floating-point', 'capped-abs', 'capped-rel', 'lattice-cap', 'lattice-float']
 
     def __init__(self, p, prec, extras=None):
         """
@@ -2335,8 +2335,8 @@ class CompletionFunctor(ConstructionFunctor):
 
           - 'RDF', 'Interval', 'RLF', or 'RR' for completions at infinity
 
-          - 'capped-rel', 'capped-abs', 'fixed-mod' or 'lazy' for completions at a finite place
-            or ideal of a DVR.
+          - 'capped-rel', 'capped-abs', 'fixed-mod', 'lattice-cap' or 'lattice-float' 
+            for completions at a finite place or ideal of a DVR.
 
         TESTS::
 
@@ -2471,9 +2471,6 @@ class CompletionFunctor(ConstructionFunctor):
             True
         """
         return not (self == other)
-
-    _real_types = ['Interval','Ball','MPFR','RDF','RLF']
-    _dvr_types = [None, 'fixed-mod','floating-point','capped-abs','capped-rel','lazy','lattice-cap','lattice-float']
 
     def merge(self, other):
         """

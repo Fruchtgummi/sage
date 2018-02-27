@@ -875,10 +875,20 @@ class pAdicLatticeGeneric(pAdicGeneric):
     TESTS::
 
         sage: R = ZpLC(17)   # indirect doctest
+        doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+        See http://trac.sagemath.org/23505 for details.
         sage: R._prec_type()
         'lattice-cap'
 
         sage: R = ZpLF(17)   # indirect doctest
+        sage: R._prec_type()
+        'lattice-float'
+
+        sage: R = QpLC(17)   # indirect doctest
+        sage: R._prec_type()
+        'lattice-cap'
+
+        sage: R = QpLF(17)   # indirect doctest
         sage: R._prec_type()
         'lattice-float'
     """
@@ -946,7 +956,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: R.precision_cap_relative()
             20
 
-            sage: R = ZpLC(3, absprec=20)
+            sage: R = ZpLC(3, prec=(Infinity,20))
             sage: R.precision_cap()
             20
             sage: R.precision_cap_relative()
@@ -973,7 +983,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: R.precision_cap_relative()
             20
 
-            sage: R = ZpLC(3, absprec=20)
+            sage: R = ZpLC(3, prec=(Infinity,20))
             sage: R.precision_cap_relative()
             +Infinity
 
@@ -993,7 +1003,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: R.precision_cap_absolute()
             40
 
-            sage: R = ZpLC(3, absprec=20)
+            sage: R = ZpLC(3, prec=(Infinity,20))
             sage: R.precision_cap_absolute()
             20
 
@@ -1089,7 +1099,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         same parent, the software remembers that the created element
         is actually equal to ``x`` (at infinite precision)::
 
-            sage: R = ZpLC(2, absprec=50)
+            sage: R = ZpLC(2, prec=(Infinity,50))
             sage: x = R(1, 10); x
             1 + O(2^10)
             sage: y = R(x)   # indirect doctest
@@ -1609,8 +1619,8 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         EXAMPLES::
 
             sage: K = QpLC(2)
-            sage: K.random_element()
-            2^-8 + 2^-7 + 2^-6 + 2^-5 + 2^-3 + 1 + 2^2 + 2^3 + O(2^4)
+            sage: K.random_element()   # random
+            2^-8 + 2^-7 + 2^-6 + 2^-5 + 2^-3 + 1 + 2^2 + 2^3 + 2^5 + O(2^12)
             sage: K.random_element(integral=True)    # random
             2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^10 + 2^11 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + O(2^20)
 
