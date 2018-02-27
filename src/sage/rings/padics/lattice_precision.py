@@ -12,12 +12,12 @@ TESTS::
     See http://trac.sagemath.org/23505 for details.
     sage: prec = R.precision()
     sage: prec
-    Precision lattice on 0 object
+    Precision lattice on 0 objects
 
     sage: S = ZpLF(2)
     sage: prec = S.precision()
     sage: prec
-    Precision module on 0 object
+    Precision module on 0 objects
 """
 
 # ****************************************************************************
