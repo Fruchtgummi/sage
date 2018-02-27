@@ -96,6 +96,21 @@ test-jupyter:
     - . .ci/pull-gitlab.sh sagemath
     - . .ci/test-jupyter.sh "$DOCKER_IMAGE" docker
 
+# Run doctests
+test-doctest: &doctest
+  stage: test
+  script:
+    - . .ci/setup-make-parallelity.sh
+    - . .ci/pull-gitlab.sh sagemath
+    - . .ci/test-doctest.sh sagemath
+
+# Run the --long doctests
+test-doctest-long:
+  << : *doctest
+  variables:
+    DOCTEST_PARAMETERS: "--long"
+  when: manual
+
 # Pushes the built images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
 dockerhub:
