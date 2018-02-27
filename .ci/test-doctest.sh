@@ -16,4 +16,4 @@
 
 set -ex
 
-docker run "$1" sage -tp $DOCTEST_PARAMETERS src/
+docker run "$CI_REGISTRY_IMAGE/$1:$DOCKER_TAG" sage -tp $DOCTEST_PARAMETERS src/
