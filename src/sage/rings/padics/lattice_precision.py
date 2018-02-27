@@ -1,9 +1,9 @@
 r"""
-This file implements lattice precision for the parents ``ZpLC`` and ``ZpLF``
+Lattice precision for the parents ``ZpLC`` and ``ZpLF``
 
 AUTHOR:
 
-- Xavier caruso (2018-02): initial version
+- Xavier Caruso (2018-02): initial version
 
 TESTS::
 
