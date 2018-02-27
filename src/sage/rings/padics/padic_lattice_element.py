@@ -278,16 +278,8 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def is_precision_capped(self):
         """
-        Return whether the absolute precision on the given element
-        results from a cap coming from the parent.
-
-        INPUT:
-
-        - ``x`` -- the element
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`is_precision_capped`
-        of ``x`` instead.
+        Return whether the absolute precision on this element results from a
+        cap coming from the parent.
 
         EXAMPLES::
 
@@ -311,7 +303,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: z.is_precision_capped()
             True
         """
-        return self._precision.is_precision_capped(self)
+        return self._precision._is_precision_capped(self)
 
     def valuation(self, secure=False):
         """

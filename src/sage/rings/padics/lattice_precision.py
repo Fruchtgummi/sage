@@ -37,6 +37,7 @@ from sage.misc.misc import walltime
 from sage.structure.sage_object import SageObject
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.misc.abstract_method import abstract_method
+from sage.misc.cachefunc import cached_method
 
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
@@ -1630,7 +1631,6 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             'init'
         """
         DifferentialPrecisionGeneric.__init__(self, p, 'lattice', label)
-        self._absolute_precisions = { }
         self._capped = { }
 
     def _index(self, ref):
@@ -2035,12 +2035,17 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             if w < prec:
                 rows_by_val[w].append(piv)
 
-        # We clear the cached absolute precisions
-        self._absolute_precisions = { }
+        self._precision_absolute_data.clear_cache()
 
-    def _compute_precision_absolute(self, ref):
+    @cached_method(key=lambda self, x: weakref.ref(x))
+    def _precision_absolute_data(self, x):
         r"""
-        Compute the absolute precision of the given element and cache it.
+        Return absolute precision data for ``x``.
+
+        .. NOTE::
+
+            Helper method for :meth:`_precision_absolute` and
+            :meth:`_is_precision_capped`.
 
         TESTS::
 
@@ -2054,10 +2059,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: z.precision_absolute()  # indirect doctest
             5
 
-            sage: import _weakref as weakref
-            sage: R.precision()._absolute_precisions[weakref.ref(z)]
-            [5, False]
         """
+        ref = weakref.ref(x)
         col = self._matrix[ref]
         absprec = Infinity
         capped = False
@@ -2068,7 +2071,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
                 capped = self._capped[self._elements[i]]
             elif v == absprec:
                 capped = capped and self._capped[self._elements[i]]
-        self._absolute_precisions[ref] = [absprec, capped]
+        return (absprec, capped)
 
     def _precision_absolute(self, x):
         r"""
@@ -2076,7 +2079,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
         INPUT:
 
-        - ``x`` -- the element whose absolute precision is requested
+        - ``x`` -- an element in the parent corresponding to this lattice
 
         .. NOTE::
 
@@ -2098,23 +2101,21 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: z.precision_absolute()  # indirect doctest
             5
         """
-        ref = weakref.ref(x)
-        if not self._absolute_precisions.has_key(ref):
-            self._compute_precision_absolute(ref)
-        return self._absolute_precisions[ref][0]
+        return self._precision_absolute_data(x)[0]
 
-    def is_precision_capped(self, x):
+    def _is_precision_capped(self, x):
         r"""
         Return whether the absolute precision on the given 
         results from a cap coming from the parent.
 
         INPUT:
 
-        - ``x`` -- the element
+        - ``x`` -- an element in the parent corresponding to this lattice
 
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`is_precision_capped`
-        of ``x`` instead.
+        .. NOTE::
+
+            This function is not meant to be called directly. Call
+            ``x.is_precision_capped`` instead.
 
         EXAMPLES::
 
@@ -2129,10 +2130,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: y.is_precision_capped()  # indirect doctest
             True
         """
-        ref = weakref.ref(x)
-        if not self._absolute_precisions.has_key(ref):
-            self._compute_precision_absolute(ref)
-        return self._absolute_precisions[ref][1]
+        return self._precision_absolute_data(x)[1]
 
     def precision_lattice(self, elements=None):
         r"""
@@ -2258,7 +2256,6 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             'init'
         """
         DifferentialPrecisionGeneric.__init__(self, p, 'module', label)
-        self._absolute_precisions = { }
         self._zero_cap = prec
         self._internal_prec = prec + STARTING_ADDITIONAL_PREC
         self._count = 0
@@ -2612,35 +2609,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
         del self._marked_for_deletion[:count]
 
-
-    def _compute_precision_absolute(self, ref):
-        r"""
-        Compute the absolute precision of the given element and cache it.
-
-        Only for internal use.
-
-        TESTS::
-
-            sage: R = ZpLF(2)
-            sage: x = R(1, 10); x
-            1 + O(2^10)
-            sage: y = R(1, 5); y
-            1 + O(2^5)
-            sage: z = x + y; z
-            2 + O(2^5)
-            sage: z.precision_absolute()  # indirect doctest
-            5
-
-            sage: import _weakref as weakref
-            sage: R.precision()._absolute_precisions[weakref.ref(z)]
-            5
-        """
-        col = self._matrix[ref]
-        if len(col) == 0:
-            self._absolute_precisions[ref] = Infinity
-        else:
-            self._absolute_precisions[ref] = min( [ c.valuation() for c in col ] )
-
+    @cached_method(key=lambda self, x: weakref.ref(x))
     def _precision_absolute(self, x):
         r"""
         Return the absolute precision of the given element.
@@ -2675,7 +2644,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         may be infinite::
 
             sage: y = R(1)
-            sage: prec.precision_absolute(y)
+            sage: prec._precision_absolute(y)
             +Infinity
 
         However calling the method :meth:`absolute_precision` of the
@@ -2685,9 +2654,11 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             20
         """
         ref = weakref.ref(x)
-        if not self._absolute_precisions.has_key(ref):
-            self._compute_precision_absolute(ref)
-        return self._absolute_precisions[ref]
+        col = self._matrix[ref]
+        if len(col) == 0:
+            return Infinity
+        else:
+            return min( [ c.valuation() for c in col ] )
 
     def precision_lattice(self, elements=None):
         r"""
