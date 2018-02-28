@@ -1646,6 +1646,10 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         - ``dx`` -- a dictionary representing the differential of ``x``
 
+        - ``bigoh`` -- an integer or ``None`` (default: ``None``): the 
+          bigoh to be added to the precision of ``x``; if ``None``, the
+          default cap is used.
+
         - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
           or ``values``
 
@@ -2241,11 +2245,12 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         - ``dx`` -- a dictionary representing the differential of ``x``
 
+        - ``bigoh`` -- an integer or ``None`` (default: ``None``): the 
+          bigoh to be added to the precision of ``x``; if ``None``, the
+          default cap is used.
+
         - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
           or ``values``
-
-        - ``capped`` -- a boolean, whether this element has been capped 
-          according to the parent's cap
 
         If ``dx_mode`` is ``linear_combination``, the dictionary ``dx`` 
         encodes the expression of the differential of ``x``. 
