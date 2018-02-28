@@ -961,7 +961,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             except AttributeError:
                 raise TypeError("parent must share the same precision object")
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
-                raise ValueError("element of negative valuation cannot be convert to the integer ring")
+                raise ValueError("element of negative valuation cannot be converted to the integer ring")
         dx = [ [ self, self._approx_one ] ]
         return self.__class__(parent, self._value, dx=dx, check=False)
 
