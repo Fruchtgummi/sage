@@ -1056,7 +1056,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         to limit the size of the lattice modeling the precision (which
         is roughly the number of elements having this parent).
 
-        Elements of a parent with some label do not coerse to aparent 
+        Elements of a parent with some label do not coerce to a parent 
         with a different label. However conversions are allowed.
 
         EXAMPLES:
