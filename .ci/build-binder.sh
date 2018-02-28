@@ -63,10 +63,8 @@ chmod 600 ~/.ssh/id_rsa
 
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SAGE_BINDER_ENV_GITHUB.
-
-# json_escape() from https://stackoverflow.com/a/13466143/812379
 json_escape() {
-    printf '%s' $1 | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+    echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 export AUTHOR=$(json_escape "`git log -1 --format=format:%an`")
 export COMMIT_MESSAGE=$(json_escape "`git log -1 --format=format:%s%n%n%-b`")
