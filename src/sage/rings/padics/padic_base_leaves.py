@@ -835,21 +835,6 @@ class pAdicFieldFloatingPoint(pAdicFieldBaseGeneric, pAdicFloatingPointFieldGene
                 from sage.rings.padics.padic_generic import ResidueLiftingMap
                 return ResidueLiftingMap._create_(R, self)
 
-    def _repr_(self, do_latex=False):
-        r"""
-        Print representation.
-
-        EXAMPLES::
-
-            sage: K = QpFP(17); K #indirect doctest
-            17-adic Field with floating precision 20
-            sage: latex(K)
-            \QQ_{17}
-        """
-        if do_latex:
-            return "\\QQ_{%s}" % self.prime()
-        return "%s-adic Field with floating precision %s"%(self.prime(), self.precision_cap())
-
 
 
 # Lattice precision
