@@ -57,10 +57,6 @@ DEFAULT_THRESHOLD_DELETION = 50
 STARTING_ADDITIONAL_PREC = 5
 
 
-
-# Class pRational
-#################
-
 class pRational:
     r"""
     This class implements rational numbers viewed as elements of ``Qp``.
@@ -558,78 +554,6 @@ class pRational:
             x, digit = x.quo_rem(p)
             l.append(digit)
         return l
-
-
-# Helper function
-#################
-
-def list_of_padics(elements):
-    r"""
-    Convert a list of p-adic composed elements (such as polynomials, matrices)
-    to a list of weak refererences of their p-adic coefficients.
-
-    This is a helper function for the method :meth:`precision_lattice`.
-
-    TESTS::
-
-        sage: from sage.rings.padics.lattice_precision import list_of_padics
-        sage: R = ZpLC(2)
-        sage: M = random_matrix(R, 2, 2)
-        sage: list_of_padics(M)
-        [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
-    """
-    from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
-    if isinstance(elements, pAdicLatticeElement):
-        return [ weakref.ref(elements) ]
-    try:
-        if elements.parent().is_sparse():
-            elements = elements.coefficients()
-    except AttributeError:
-        pass
-    if not isinstance(elements, list):
-        elements = list(elements)
-    ans = [ ]
-    for x in elements:
-        ans += list_of_padics(x)
-    return ans
-
-def format_history(time, status, timings):
-    r"""
-    Return a formattwed output for the history.
-
-    This is a helper function for the method :meth:`history`.
-
-    TESTS::
-
-        sage: from sage.rings.padics.lattice_precision import format_history
-        sage: format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], true)
-        '1.234568s  oooooo~oo'
-        sage: format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], false)
-        'oooooo~oo'
-
-        sage: format_history(12.3456789, ['o','o','o','o','o','o','~','o','o'], true)
-        '  >= 10s   oooooo~oo'
-        sage: format_history(10^(-10), ['o','o','o','o','o','o','~','o','o'], true)
-        '   ---     oooooo~oo'
-        sage: format_history(-1, ['o','o','o','o','o','o','~','o','o'], true)
-        ' Timings   oooooo~oo'
-    """
-    status = ''.join(status)
-    if timings:
-        if time < 0:
-            s = " Timings "
-        elif time < 0.000001:
-            s = "   ---   "
-        elif time >= 10:
-            s = "  >= 10s "
-        else:
-            s = "%.6fs" % time
-        return s + "  " + status
-    else:
-        return status
 
 
 class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
@@ -1255,6 +1179,43 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         self._history_init = ( len(self._elements), list(self._marked_for_deletion) )
         self._history = [ ]
 
+    def _format_history(self, time, status, timings):
+        r"""
+        Return a formatted output for the history.
+    
+        This is a helper function for the method :meth:`history`.
+    
+        TESTS::
+    
+            sage: R = ZpLC(2, label='history_en')
+            sage: prec = R.precision()
+            sage: prec._format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], true)
+            '1.234568s  oooooo~oo'
+            sage: prec._format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], false)
+            'oooooo~oo'
+    
+            sage: prec._format_history(12.3456789, ['o','o','o','o','o','o','~','o','o'], true)
+            '  >= 10s   oooooo~oo'
+            sage: prec._format_history(10^(-10), ['o','o','o','o','o','o','~','o','o'], true)
+            '   ---     oooooo~oo'
+            sage: prec._format_history(-1, ['o','o','o','o','o','o','~','o','o'], true)
+            ' Timings   oooooo~oo'
+        """
+        status = ''.join(status)
+        if timings:
+            if time < 0:
+                s = " Timings "
+            elif time < 0.000001:
+                s = "   ---   "
+            elif time >= 10:
+                s = "  >= 10s "
+            else:
+                s = "%.6fs" % time
+            return s + "  " + status
+        else:
+            return status
+
+
     def history(self, compact=True, separate_reduce=False, timings=True, output_type='asciiart'):
         r"""
         Show history.
@@ -1441,17 +1402,17 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             status = n*['o']
             for index in mark:
                 status[index] = '~'
-            hist = [ format_history(-1, status, timings) ]
+            hist = [ self._format_history(-1, status, timings) ]
             oldevent = ''; total_time = 0
             for (event, index, tme) in self._history:
                 if event == 'partial reduce' or event == 'full reduce':
                     if separate_reduce:
                         if total_time > 0:
-                            hist.append(format_history(total_time, status, timings))
+                            hist.append(self._format_history(total_time, status, timings))
                         if event == 'partial reduce': code = 'r'
                         else: code = 'R'
                         status_red = status[:index] + (len(status) - index) * [code]
-                        hist.append(format_history(tme, status_red, timings))
+                        hist.append(self._format_history(tme, status_red, timings))
                         total_time = 0
                         oldevent = ''
                     else:
@@ -1459,7 +1420,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
                     continue
                 if not compact or event != oldevent:
                     if total_time > 0:
-                        hist.append(format_history(total_time, status, timings))
+                        hist.append(self._format_history(total_time, status, timings))
                     total_time = 0
                     oldevent = event
                 total_time += tme
@@ -1473,7 +1434,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
                 elif event == 'del':
                     del status[index]
             if total_time > 0 or oldevent == '':
-                hist.append(format_history(total_time, status, timings))
+                hist.append(self._format_history(total_time, status, timings))
             return '\n'.join(hist)
         else:
             raise NotImplementedError
@@ -1531,9 +1492,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         else:
             raise ValueError("invalid event")
 
-
-# class PrecisionLattice
-########################
 
 class PrecisionLattice(DifferentialPrecisionGeneric):
     r"""
@@ -2157,9 +2115,6 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         return M
 
 
-# class PrecisionModule
-#######################
-
 class PrecisionModule(DifferentialPrecisionGeneric):
     r"""
     A class for handling precision modules which are used to
@@ -2679,3 +2634,37 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         if val < 0:
             M *= self._p ** val
         return M
+
+def list_of_padics(elements):
+    r"""
+    Convert a list of p-adic composed elements (such as polynomials, matrices)
+    to a list of weak refererences of their p-adic coefficients.
+
+    This is a helper function for the method :meth:`precision_lattice`.
+
+    TESTS::
+
+        sage: from sage.rings.padics.lattice_precision import list_of_padics
+        sage: R = ZpLC(2)
+        sage: M = random_matrix(R, 2, 2)
+        sage: list_of_padics(M)
+        [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
+    """
+    from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
+    if isinstance(elements, pAdicLatticeElement):
+        return [ weakref.ref(elements) ]
+    try:
+        if elements.parent().is_sparse():
+            elements = elements.coefficients()
+    except AttributeError:
+        pass
+    if not isinstance(elements, list):
+        elements = list(elements)
+    ans = [ ]
+    for x in elements:
+        ans += list_of_padics(x)
+    return ans
+
