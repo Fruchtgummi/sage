@@ -947,14 +947,15 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: R = ZpCR(5, 15)
             sage: R.is_lattice_prec()
             False
-            sage: R(25,8) - R(25,8)
+            sage: x = R(25, 8)
+            sage: x - x
             O(5^8)
             sage: S = ZpLC(5, 15)
             sage: S.is_lattice_prec()
             True
             sage: x = S(25, 8)
             sage: x - x
-            O(5^17)
+            O(5^30)
         """
         return True
 
@@ -1187,7 +1188,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: x2 + y2
             2 + O(2^11)
 
-            sage: R2.precision().number_of_diffused_digits([x2,y2])
+            sage: R2.precision().diffused_digits([x2,y2])
             6
         """
         p = self.prime()
