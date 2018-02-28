@@ -2120,7 +2120,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
 
     def internal_prec(self):
         r"""
-        Return the relative precision at which computations has handled
+        Return the relative precision at which computations is handled
         internally.
 
         It is slightly greater than the actual precision and increases
@@ -2226,15 +2226,15 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         - ``dx`` -- a dictionary representing the differential of ``x``
 
-        - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
-          or ``values``
+        - ``dx_mode`` -- a string, either ``"linear_combination"`` (the
+          default) or ``"values"``
 
         - ``capped`` -- a boolean, whether this element has been capped 
           according to the parent's cap
 
-        If ``dx_mode`` is ``linear_combination``, the dictionary ``dx`` 
-        encodes the expression of the differential of ``x``. 
-        For example, if ``x`` was defined as ``x = y*z`` then:
+        If ``dx_mode`` is ``"linear_combination"``, the dictionary ``dx``
+        encodes the expression of the differential of ``x``.  For example, if
+        ``x`` was defined as ``x = y*z`` then:
 
         .. MATH::
 
@@ -2244,7 +2244,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         that the keys are not the elements themselves but weak references
         to them).
 
-        If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
+        If ``dx_mode`` is ``"values"``, the dictionary ``dx`` directly
         specifies the entries that have to stored in the precision module.
         This mode is only used for multiple conversion between different
         parents (see :meth:`multiple_conversion`).
