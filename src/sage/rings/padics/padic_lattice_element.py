@@ -51,6 +51,9 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     - ``x`` -- the newly created element
 
+    - ``prec`` -- an integer; the absolute precision at which this 
+      element has to be capped
+
     - ``dx`` -- a dictionary representing the differential of ``x``
 
     - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
@@ -82,6 +85,9 @@ class pAdicLatticeElement(pAdicGenericElement):
 
         - ``x`` -- the newly created element
 
+        - ``prec`` -- an integer; the absolute precision at which this 
+          element should be capped
+
         - ``dx`` -- a dictionary representing the differential of ``x``
 
         - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
@@ -90,10 +96,10 @@ class pAdicLatticeElement(pAdicGenericElement):
         - ``valuation`` -- an integer or ``None`` (default: ``None``), 
           the valuation of this element
 
-        - ``check`` -- a boolean (default: ``True``), whether the function
+        - ``check`` -- a boolean (default: ``True``); whether the function
           should check that the given values are well formed and coherent
 
-        - ``reduce`` -- a boolean (default: ``True``), whether the given
+        - ``reduce`` -- a boolean (default: ``True``); whether the given
           values need to be reduced
 
         TESTS::
@@ -123,9 +129,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         trunc = self._declare_new_element(dx, prec, dx_mode)
         if reduce:
             self._value = self._value.reduce(trunc)
-        self._approx_zero = pRational(p, 0)
-        self._approx_one = pRational(p, 1)
-        self._approx_minusone = pRational(p, -1)
 
     @abstract_method
     def _declare_new_element(self, dx, prec, dx_mode):
@@ -423,11 +426,13 @@ class pAdicLatticeElement(pAdicGenericElement):
             True
         """
         x = self._value + other._value
+        # elements whose valuation are not less than _zero_cap are assumed to vanish
+        # (_zero_cap is set at the creation of the parent)
         if self._parent._zero_cap is not None:
             if x.valuation() >= min(self._value.valuation(), other._value.valuation()) + self._parent._zero_cap:
-                x = self._approx_zero
-        dx = [  [self, self._approx_one], 
-               [other, self._approx_one] ]
+                x = self._parent._approx_zero
+        dx = [  [self, self._parent._approx_one], 
+               [other, self._parent._approx_one] ]
         return self.__class__(self._parent, x, dx=dx, check=False)
 
     def _sub_(self, other):
@@ -447,9 +452,9 @@ class pAdicLatticeElement(pAdicGenericElement):
         x = self._value - other._value
         if self._parent._zero_cap is not None:
             if x.valuation() >= min(self._value.valuation(), other._value.valuation()) + self._parent._zero_cap:
-                x = self._approx_zero
-        dx = [  [self, self._approx_one], 
-               [other, self._approx_minusone] ]
+                x = self._parent._approx_zero
+        dx = [  [self, self._parent._approx_one], 
+               [other, self._parent._approx_minusone] ]
         return self.__class__(self._parent, x, dx=dx, check=False)
 
     def _mul_(self, other):
@@ -525,7 +530,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         x_other = other._value
         x = x_self / x_other
         # dx = (1/other)*dself - (self/other^2)*dother
-        dx = [  [self, self._approx_one/x_other],
+        dx = [  [self, self._parent._approx_one/x_other],
                [other, -x_self/(x_other*x_other)] ]
         return self.__class__(self._parent.fraction_field(), x, dx=dx, check=False)
 
@@ -559,9 +564,9 @@ class pAdicLatticeElement(pAdicGenericElement):
         if self.is_zero():
             raise PrecisionError("cannot invert something indistinguishable from zero")
         x_self = self._value
-        x = self._approx_one / x_self
+        x = self._parent._approx_one / x_self
         # dx = -(1/self^2)*dself
-        dx = [  [self, self._approx_minusone/(x_self*x_self)] ]
+        dx = [  [self, self._parent._approx_minusone/(x_self*x_self)] ]
         return self.__class__(self._parent.fraction_field(), x, dx=dx, check=False)
 
     def add_bigoh(self, prec):
@@ -593,7 +598,7 @@ class pAdicLatticeElement(pAdicGenericElement):
            4 + O(7^2)
         """
         x = self._value
-        dx = [ [self, self._approx_one ] ]
+        dx = [ [self, self._parent._approx_one ] ]
         return self.__class__(self._parent, x, prec, dx=dx, check=False)
 
     def lift_to_precision(self, prec=None, infer_precision=False):
@@ -950,7 +955,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: K(1/2).copy(R)
             Traceback (most recent call last):
             ...
-            ValueError: element of negative valuation cannot be convert to the integer ring
+            ValueError: element of negative valuation cannot be converted to the integer ring
         """
         if parent is None:
             parent = self._parent
@@ -962,7 +967,7 @@ class pAdicLatticeElement(pAdicGenericElement):
                 raise TypeError("parent must share the same precision object")
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
                 raise ValueError("element of negative valuation cannot be converted to the integer ring")
-        dx = [ [ self, self._approx_one ] ]
+        dx = [ [ self, self._parent._approx_one ] ]
         return self.__class__(parent, self._value, dx=dx, check=False)
 
     def __copy__(self):

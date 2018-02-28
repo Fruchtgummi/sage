@@ -2652,7 +2652,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: R = ZpLC(5, print_mode='terse')
         sage: prec = R.precision()
         sage: prec
-        Precision lattice on 0 object
+        Precision lattice on 0 objects
 
     This instance knows about all elements of the parent. It is
     automatically updated when a new element (of this parent) is
