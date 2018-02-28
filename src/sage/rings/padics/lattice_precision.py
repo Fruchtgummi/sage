@@ -818,7 +818,7 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: prec
             Precision lattice on 1 object (label: mark_deletion)
             sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec    # random output, "0 objects" if the garbage collector is too fast
+            sage: prec
             Precision lattice on 1 object (label: mark_deletion)
             sage: prec.del_elements()       # x is indeed deleted
             sage: prec
