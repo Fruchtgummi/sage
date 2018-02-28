@@ -1034,8 +1034,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         Return the number of diffused digits of precision within a 
         subset of elements.
 
-        NOTE:
-
         A diffused digit of precision is a known digit which is not
         located on a single variable but only appears on a suitable
         linear combination of variables.
@@ -1094,14 +1092,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             return Infinity
         n = M.nrows()
         p = self._p
-        diffused = 0
-        for j in range(n):
-            val = minval = M[j,j].valuation(p)
-            for i in range(j):
-                v = M[i,j].valuation(p)
-                if v < minval: minval = v
-            diffused += val - minval
-        return diffused
+        return sum(M[i,i].valuation(p) - min(M[j,i].valuation(p) for j in range(i + 1)) for i in range(n))
 
     def number_of_tracked_elements(self, dead=True):
         r"""
