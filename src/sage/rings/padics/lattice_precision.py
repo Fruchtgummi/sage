@@ -556,7 +556,7 @@ class pRational:
         return l
 
 
-class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
+class DifferentialPrecisionGeneric(SageObject):
     r"""
     A generic class for precision objects obtained by automatic
     differentiation.
@@ -564,8 +564,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
     INPUT:
 
     - ``p`` -- a prime number
-
-    - ``type`` -- either ``"lattice"`` or ``"module"``
 
     - ``label`` -- a string, the label of the parents to which the elements
       belong that are tracked by this precision module
@@ -575,18 +573,13 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         This object is used internally by the parent ring. You should not
         create instances of this class on your own.
 
-    TESTS::
+    EXAMPLES::
 
         sage: R = ZpLC(2, label='init')
-        sage: prec = R.precision()
-        sage: prec
+        sage: R.precision()
         Precision lattice on 0 objects (label: init)
-        sage: prec._type
-        'lattice'
-        sage: prec.label()
-        'init'
     """
-    def __init__(self, p, type, label):
+    def __init__(self, p, label):
         r"""
         TESTS::
 
@@ -598,7 +591,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         """
         self._p = p
         self._label = label
-        self._type = type
         self._elements = [ ]
         self._matrix = { } # A dictionary whose keys are weak references to tracked elements
                            # and values corresponding columns in the matrix
@@ -609,22 +601,9 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         self._history_init = None
         self._history = None
 
-    def label(self):
-        r"""
-        Return the label of the parent to which this precision lattice
-        corresponds.
-
-        EXAMPLE::
-
-            sage: R = ZpLC(2, label="mylabel")
-            sage: R.precision().label()
-            'mylabel'
-        """
-        return self._label
-
     def _repr_(self):
         r"""
-        Return a string representation of this precision lattice.
+        Return a string representation of this precision object.
 
         EXAMPLES::
 
@@ -638,17 +617,9 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: R.precision()
             Precision lattice on 0 objects (label: mylabel)
         """
-        n = len(self._elements)
-        if self._label is None:
-            if n != 1:
-                return "Precision %s on %s objects" % (self._type, len(self._elements))
-            else:
-                return "Precision %s on %s object" % (self._type, len(self._elements))
-        else:
-            if n != 1:
-                return "Precision %s on %s objects (label: %s)" % (self._type, len(self._elements), self._label)
-            else:
-                return "Precision %s on %s object (label: %s)" % (self._type, len(self._elements), self._label)
+        label = "" if self._label is None else " (label: %s)"%(self._label,)
+        count = "1 object" if len(self._elements) == 1 else "%s objects"%len(self._elements)
+        return "%s on %s%s"%(self._repr_type, count, label)
 
     def threshold_deletion(self, threshold=None):
         r"""
@@ -1493,44 +1464,44 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             raise ValueError("invalid event")
 
 
-class PrecisionLattice(DifferentialPrecisionGeneric):
+class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
     r"""
     A class for handling precision lattices which are used to
     track precision in the ZpLC model.
 
     The precision lattice is stored as a triangular matrix whose
     rows are generators of the lattice.
+
+    INPUT:
+
+    - ``p`` -- a prime number
+
+    - ``label`` -- a string, the label of the parents to which the elements
+      tracked by this lattice belong.
+
+    .. NOTE::
+
+        You should not create instances of this class directly. The precision
+        lattice is automatically initialized at the creation of the parent.
+
+    EXAMPLES::
+
+        sage: R = ZpLC(2, label='init')
+        sage: R.precision()
+        Precision lattice on 0 objects (label: init)
     """
     def __init__(self, p, label):
         r"""
-        Initialize this precision module.
-
-        INPUT:
-
-        - ``p`` -- a prime number
-
-        - ``type`` -- either ``"lattice"`` or ``"module"``
-
-        - ``label`` -- a string, the label of the parents to which belong
-          the elements tracked by this precision module
-
-        NOTE:
-
-        The precision module is automatically initialized at the 
-        creation of the parent.
-
         TESTS::
 
-            sage: R = ZpLC(2, label='init')
-            sage: prec = R.precision()
-            sage: prec
-            Precision lattice on 0 objects (label: init)
-            sage: prec._type
-            'lattice'
-            sage: prec.label()
-            'init'
+            sage: from sage.rings.padics.lattice_precision import PrecisionLattice
+            sage: R = ZpLC(2)
+            sage: isinstance(R.precision(), PrecisionLattice)
+            True
+
         """
-        DifferentialPrecisionGeneric.__init__(self, p, 'lattice', label)
+        DifferentialPrecisionGeneric.__init__(self, p, label)
+        self._repr_type = "Precision lattice"
         self._capped = { }
 
     def _index(self, ref):
@@ -2115,7 +2086,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
         return M
 
 
-class PrecisionModule(DifferentialPrecisionGeneric):
+class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
     r"""
     A class for handling precision modules which are used to
     track precision in the ZpLF model.
@@ -2131,8 +2102,6 @@ class PrecisionModule(DifferentialPrecisionGeneric):
 
         - ``p`` -- a prime number
 
-        - ``type`` -- either ``lattice`` or ``module``
-
         - ``label`` -- a string, the label of the parents to which belong
           the elements tracked by this precision module
 
@@ -2144,19 +2113,15 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         TESTS::
 
             sage: R = ZpLF(2, label='init')
-            sage: prec = R.precision()
-            sage: prec
+            sage: R.precision()
             Precision module on 0 objects (label: init)
-            sage: prec._type
-            'module'
-            sage: prec.label()
-            'init'
         """
-        DifferentialPrecisionGeneric.__init__(self, p, 'module', label)
+        DifferentialPrecisionGeneric.__init__(self, p, label)
         self._zero_cap = prec
         self._internal_prec = prec + STARTING_ADDITIONAL_PREC
         self._count = 0
         self._threshold = 1
+        self._repr_type = "Precision module"
 
     def internal_prec(self):
         r"""
