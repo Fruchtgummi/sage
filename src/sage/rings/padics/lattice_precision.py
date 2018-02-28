@@ -2280,7 +2280,10 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
         if self._marked_for_deletion:
             self.del_elements(threshold=self._threshold_deletion)
 
-        # We first increase the internal prec
+        # We increase the internal prec
+        # The heuristic behind this is the following: when computing
+        # with N digits of precision, we except that about N-log_p(c)
+        # of them are correct after c elementary operations.
         self._count += 1
         if self._count > self._threshold:
             self._internal_prec += 1
