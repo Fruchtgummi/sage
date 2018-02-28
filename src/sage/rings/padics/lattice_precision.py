@@ -1819,7 +1819,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         del self._marked_for_deletion[:count]
 
-    def lift_to_precision(self, x, prec):
+    def _lift_to_precision(self, x, prec):
         r"""
         Lift the specified element to the specified precision.
 
@@ -1841,11 +1841,10 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         This function may change at the same time the precision of 
         other elements having the same parent.
 
-        NOTE:
+        .. NOTE::
 
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`lift_to_precision`
-        of ``x`` instead.
+            This function is not meant to be called directly. Use
+            ``x.lift_to_precision`` instead.
 
         EXAMPLES::
 
@@ -1858,7 +1857,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
             2 + O(2^5)
 
             sage: prec = R.precision()
-            sage: prec.lift_to_precision(z, 12)
+            sage: prec._lift_to_precision(z, 12)
             sage: z
             2 + O(2^12)
             sage: y
@@ -1971,8 +1970,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
     def _is_precision_capped(self, x):
         r"""
-        Return whether the absolute precision on the given 
-        results from a cap coming from the parent.
+        Return whether the absolute precision of ``x`` results from a cap
+        coming from the parent.
 
         INPUT:
 
@@ -2007,8 +2006,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         - ``elements`` -- a list of elements or ``None`` (default: ``None``)
 
-        - ``echelon`` -- a boolean (default: ``True``); specify whether
-          the result should be in echelon form
+        - ``echelon`` -- a boolean (default: ``True``); whether the result
+          should be in echelon form
 
         EXAMPLES::
 
@@ -2060,7 +2059,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         else:
             elements = list_of_padics(elements)
         n = len(self._elements)
-        rows = [ ]; val = 0
+        rows = []
+        val = 0
         for ref in elements:
             col = self._matrix[ref]
             row = [ x.value() for x in col ]

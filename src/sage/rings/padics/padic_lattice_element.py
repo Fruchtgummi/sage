@@ -682,7 +682,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             if prec is None or prec > cap:
                 prec = cap
             lift = self.copy()
-            parent.precision().lift_to_precision(lift, prec)
+            parent.precision()._lift_to_precision(lift, prec)
         else:
             lift = self.__class__(parent, self._value, prec, check=False)
         return lift
