@@ -1703,20 +1703,20 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         r"""
         Mark an element for deletion.
 
-        This function is not meant to be called manually.
-        It is automatically called by the garbage collection when 
-        an element is collected.
-
         INPUT:
 
         - ``ref`` -- a weak reference to the destroyed element
 
-        NOTE::
+        .. NOTE::
 
-        This method does not update the precision lattice.
-        The actual update is performed when the method :meth:`del_elements`
-        is called. This is automatically done at the creation of a new
-        element but can be done manually as well.
+            This function is not meant to be called manually.
+            It is automatically called by the garbage collection when 
+            an element is collected.
+
+            This method does not update the precision lattice.
+            The actual update is performed when the method :meth:`del_elements`
+            is called. This is automatically done at the creation of a new
+            element but can be done manually as well.
 
         EXAMPLES::
 
@@ -2312,20 +2312,20 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
         r"""
         Mark an element for deletion.
 
-        This function is not meant to be called manually.
-        It is automatically called by the garbage collection when 
-        an element is collected.
-
         INPUT:
 
         - ``ref`` -- a weak reference to the destroyed element
 
-        NOTE::
+        .. NOTE::
 
-        This method may do not update the precision module.
-        The actual update is performed when the method :meth:`del_elements`
-        is called. This is automatically done at the creation of a new
-        element but can be done manually as well.
+            This function is not meant to be called manually.
+            It is automatically called by the garbage collection when 
+            an element is collected.
+
+            This method does not update the precision lattice.
+            The actual update is performed when the method :meth:`del_elements`
+            is called. This is automatically done at the creation of a new
+            element but can be done manually as well.
 
         EXAMPLES::
 
