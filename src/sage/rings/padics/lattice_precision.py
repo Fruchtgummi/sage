@@ -31,7 +31,7 @@ TESTS::
 # ****************************************************************************
 
 
-import _weakref as weakref
+import weakref
 from sage.misc.misc import walltime
 
 from sage.structure.sage_object import SageObject
@@ -694,8 +694,6 @@ class DifferentialPrecisionGeneric(SageObject):
         Only for internal use.
 
         TESTS::
-
-            sage: import _weakref as weakref
 
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
@@ -1509,8 +1507,6 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         Return the index of the element whose reference is ``ref``.
 
         TESTS::
-
-            sage: import _weakref as weakref
 
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()

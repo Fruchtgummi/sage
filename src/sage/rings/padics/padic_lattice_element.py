@@ -26,7 +26,7 @@ TESTS::
 # ****************************************************************************
 
 
-import _weakref as weakref
+import weakref
 
 from sage.misc.abstract_method import abstract_method
 
