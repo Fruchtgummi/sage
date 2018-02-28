@@ -264,7 +264,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         Another example with diffused digits::
 
             sage: x = R(1, 10); y = R(1, 5)
-            sage: x,y = x+y, x-y
+            sage: x, y = x+y, x-y
             sage: x.precision_absolute()
             5
             sage: y.precision_absolute()
@@ -274,7 +274,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         prec = self._precision._precision_absolute(self)
         cap = self._value.valuation() + self._parent._prec_cap_relative
-        return min(prec,cap)
+        return min(prec, cap)
 
     def is_precision_capped(self):
         """
@@ -860,7 +860,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def val_unit(self):
         """
-        Return the pair `(v,u)`, where this element is 
+        Return the pair `(v, u)`, where this element is 
         `p^v u` and `u` is a unit.
 
         EXAMPLES::
@@ -1087,7 +1087,7 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
         if prec is None:
             return cap
         else:
-            return min(cap,prec)
+            return min(cap, prec)
 
     def _is_exact_zero(self):
         """

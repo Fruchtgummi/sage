@@ -455,7 +455,7 @@ class pRational:
         x = self.x / (p ** (val-self.exponent))
         return self.__class__(p, x, 0, valuation=0)
 
-    def xgcd(self,other):
+    def xgcd(self, other):
         r"""
         Return the gcd of ``self`` and ``other`` together with two
         element ``u`` and ``v`` such that ``u*self + v*other = gcd``.
@@ -722,7 +722,7 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: R = ZpLC(2, label='ambient_dim')
             sage: prec = R.precision()
 
-            sage: x,y = R(1, 10), R(1, 5)
+            sage: x, y = R(1, 10), R(1, 5)
             sage: prec.ambient_dimension()
             2
             sage: prec.dimension()
@@ -916,7 +916,7 @@ class DifferentialPrecisionGeneric(SageObject):
             [            0            32            32 1099511627744]
             [            0             0       2097152             0]
             [            0             0             0 1099511627776]
-            sage: prec.precision_lattice([u,v])
+            sage: prec.precision_lattice([u, v])
             [  32 2016]
             [   0 2048]
         """
@@ -947,9 +947,9 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: u = x + y
             sage: v = x - y
 
-            sage: prec.diffused_digits([x,y])
+            sage: prec.diffused_digits([x, y])
             0
-            sage: prec.diffused_digits([u,v])
+            sage: prec.diffused_digits([u, v])
             6
 
         The elements `u` and `v` are known at absolute precision `O(2^5)`.
@@ -976,7 +976,7 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: prec = R.precision()
             sage: x = R(1, 10)
             sage: y = x
-            sage: prec.diffused_digits([x,y])
+            sage: prec.diffused_digits([x, y])
             +Infinity
         """
         try:
@@ -985,7 +985,7 @@ class DifferentialPrecisionGeneric(SageObject):
             return Infinity
         n = M.nrows()
         p = self._p
-        return sum(M[i,i].valuation(p) - min(M[j,i].valuation(p) for j in range(i + 1)) for i in range(n))
+        return sum(M[i, i].valuation(p) - min(M[j, i].valuation(p) for j in range(i + 1)) for i in range(n))
 
     def tracked_elements(self, values=True, dead=True):
         r"""
@@ -1158,16 +1158,16 @@ class DifferentialPrecisionGeneric(SageObject):
     
             sage: R = ZpLC(2, label='history_en')
             sage: prec = R.precision()
-            sage: prec._format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], true)
+            sage: prec._format_history(1.23456789, ['o', 'o', 'o', 'o', 'o', 'o', '~', 'o', 'o'], true)
             '1.234568s  oooooo~oo'
-            sage: prec._format_history(1.23456789, ['o','o','o','o','o','o','~','o','o'], false)
+            sage: prec._format_history(1.23456789, ['o', 'o', 'o', 'o', 'o', 'o', '~', 'o', 'o'], false)
             'oooooo~oo'
     
-            sage: prec._format_history(12.3456789, ['o','o','o','o','o','o','~','o','o'], true)
+            sage: prec._format_history(12.3456789, ['o', 'o', 'o', 'o', 'o', 'o', '~', 'o', 'o'], true)
             '  >= 10s   oooooo~oo'
-            sage: prec._format_history(10^(-10), ['o','o','o','o','o','o','~','o','o'], true)
+            sage: prec._format_history(10^(-10), ['o', 'o', 'o', 'o', 'o', 'o', '~', 'o', 'o'], true)
             '   ---     oooooo~oo'
-            sage: prec._format_history(-1, ['o','o','o','o','o','o','~','o','o'], true)
+            sage: prec._format_history(-1, ['o', 'o', 'o', 'o', 'o', 'o', '~', 'o', 'o'], true)
             ' Timings   oooooo~oo'
         """
         status = ''.join(status)
@@ -1562,12 +1562,11 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         The full Hermite reduction has cost `O(m^3)`.
 
-        NOTE:
+        .. NOTE::
 
-        The software ensures that the precision lattice is always 
-        partially reduced.
-        Calling the function manually with the argument ``partial=True``
-        should then just do nothing.
+            The software ensures that the precision lattice is always partially
+            reduced.  Calling the function manually with the argument
+            ``partial=True`` should then just do nothing.
 
         TESTS::
 
@@ -1587,7 +1586,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
             for j in range(n-1, index, -1):
                 col = self._matrix[self._elements[j]]
                 prec = col[j].valuation() - diffval[j-index]
-                for i in range(index,j):
+                for i in range(index, j):
                     col[i] = col[i].reduce(prec)
                     col[i].normalize()  # seems to be faster then
                     dval = col[i].valuation() - prec
@@ -1651,7 +1650,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         to them).
 
         If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
-        specifies the entries that have to stored in the precision lattice.
+        specifies the entries that have to be stored in the precision lattice.
         This mode is only used for multiple conversion between different
         parents (see :meth:`multiple_conversion`).
 
@@ -1674,7 +1673,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
-            for elt,scalar in dx:
+            for elt, scalar in dx:
                 ref = weakref.ref(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
@@ -1682,7 +1681,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
                 for i in range(len(c)):
                     col[i] += scalar * c[i]
         elif dx_mode == 'values':
-            for elt,scalar in dx:
+            for elt, scalar in dx:
                 ref = weakref.ref(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
@@ -1794,7 +1793,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
             del self._capped[ref]
 
             # Now, we echelonize
-            for i in range(index,n):
+            for i in range(index, n):
                 ref = self._elements[i]
                 col = self._matrix[ref]
                 if col[i].valuation() < col[i+1].valuation():
@@ -1806,7 +1805,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
                 up, vp = col[i+1]/d, col[i]/d
                 col[i] = d
                 del col[i+1]
-                for j in range(i+1,n):
+                for j in range(i+1, n):
                     col = self._matrix[self._elements[j]]
                     col[i], col[i+1] = u*col[i] + v*col[i+1], up*col[i] - vp*col[i+1]
 
@@ -1890,11 +1889,11 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
                 if i == piv: continue
                 # We clear the entry on the i-th line
                 beta = col[i].unit_part()
-                for j in range(piv,n):
+                for j in range(piv, n):
                     col_cur = self._matrix[self._elements[j]]
                     col_cur[i] = alpha*col_cur[i] - beta*col_cur[piv]
             # We rescale the piv-th line
-            for j in range(piv,n):
+            for j in range(piv, n):
                 col_cur = self._matrix[self._elements[j]]
                 col_cur[piv] = col_cur[piv] << (w-v)
             # Now the entry on the piv-th line has valuation w
@@ -2023,7 +2022,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
             [            0            32            32 1099511627744]
             [            0             0       2097152             0]
             [            0             0             0 1099511627776]
-            sage: prec.precision_lattice([u,v])
+            sage: prec.precision_lattice([u, v])
             [  32 2016]
             [   0 2048]
 
@@ -2046,7 +2045,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         We can give a list of matrices as well::
 
-            sage: prec.precision_lattice([M,N])
+            sage: prec.precision_lattice([M, N])
             [       32         0         0         0 226115584  96788480  52174848  82804736]
             [        0        32         0         0  52174848 121765888  11829248  28516352]
             [        0         0        32         0  96788480  42762240 121765888 199614464]
@@ -2076,7 +2075,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         M = M.change_ring(ZZ)
         M.echelonize()
         n = len(elements)
-        M = M.submatrix(0, 0,n,n)
+        M = M.submatrix(0, 0, n, n)
         if val < 0:
             M *= self._p ** val
         return M
@@ -2274,7 +2273,7 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
-            for elt,scalar in dx:
+            for elt, scalar in dx:
                 ref = weakref.ref(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
@@ -2287,7 +2286,7 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
                 if col[i].valuation() >= expected_vals[i] + self._zero_cap:
                     col[i] = self._approx_zero
         elif dx_mode == 'values':
-            for elt,scalar in dx:
+            for elt, scalar in dx:
                 ref = weakref.ref(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
@@ -2538,14 +2537,14 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
 
             sage: u = x + y
             sage: v = x - y
-            sage: prec.precision_lattice([u,v])
+            sage: prec.precision_lattice([u, v])
             [  32 2016]
             [   0 2048]
 
         If the precision module does not project to a lattice,
         an error is raised.
 
-            sage: prec.precision_lattice([x,y,u,v])
+            sage: prec.precision_lattice([x, y, u, v])
             Traceback (most recent call last):
             ...
             PrecisionError: the differential is not surjective
@@ -2588,10 +2587,10 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
         if len(M.pivots()) < n:
             raise PrecisionError("the differential is not surjective")
         for i in range(n):
-            v = M[i,i].valuation(self._p)
-            M[i,i] = self._p ** v
+            v = M[i, i].valuation(self._p)
+            M[i, i] = self._p ** v
         M.echelonize()
-        M = M.submatrix(0, 0,n,n)
+        M = M.submatrix(0, 0, n, n)
         if val < 0:
             M *= self._p ** val
         return M
