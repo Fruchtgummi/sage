@@ -141,9 +141,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         pass
@@ -1028,9 +1028,9 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         parent = self._parent
@@ -1077,9 +1077,9 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode)

@@ -1029,7 +1029,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         """
         pass
 
-    def number_of_diffused_digits(self, elements=None):
+    def diffused_digits(self, elements=None):
         r"""
         Return the number of diffused digits of precision within a 
         subset of elements.
@@ -1054,9 +1054,9 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: u = x + y
             sage: v = x - y
 
-            sage: prec.number_of_diffused_digits([x,y])
+            sage: prec.diffused_digits([x,y])
             0
-            sage: prec.number_of_diffused_digits([u,v])
+            sage: prec.diffused_digits([u,v])
             6
 
         The elements `u` and `v` are known at absolute precision `O(2^5)`.
@@ -1073,7 +1073,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         subset of variables (the selected subset consists of the four
         entries of the matrix ``N``)::
 
-            sage: prec.number_of_diffused_digits(N)
+            sage: prec.diffused_digits(N)
             17
 
         Note that, in some cases, the number of diffused digits can be
@@ -1083,7 +1083,7 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec = R.precision()
             sage: x = R(1, 10)
             sage: y = x
-            sage: prec.number_of_diffused_digits([x,y])
+            sage: prec.diffused_digits([x,y])
             +Infinity
         """
         try:
@@ -1093,48 +1093,6 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
         n = M.nrows()
         p = self._p
         return sum(M[i,i].valuation(p) - min(M[j,i].valuation(p) for j in range(i + 1)) for i in range(n))
-
-    def number_of_tracked_elements(self, dead=True):
-        r"""
-        Return the number of tracked elements through this precision
-        lattice.
-
-        INPUT:
-
-        - ``dead`` -- a boolean (default: ``True``); whether dead
-          elements for which the corresponding column is still not
-          erased should be counted or not
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='count')
-            sage: prec = R.precision()
-            sage: x = R(1, 10); y = R(1, 5)
-            sage: prec.number_of_tracked_elements()
-            2
-
-            sage: u = x + y
-            sage: v = x - y
-            sage: prec.number_of_tracked_elements()
-            4
-
-            sage: del x; del y
-            sage: prec.number_of_tracked_elements()
-            4
-            sage: prec.number_of_tracked_elements(dead=False)
-            2
-
-            sage: prec.del_elements()
-            sage: prec.number_of_tracked_elements()
-            2
-        """
-        if dead:
-            return len(self._elements)
-        else:
-            count = 0
-            for x_ref in self._elements:
-                if x_ref() is not None: count += 1
-            return count
 
     def tracked_elements(self, values=True, dead=True):
         r"""
@@ -1184,17 +1142,10 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
              <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
              <weakref at 0x...; dead>]
         """
+        ret = [ ref for ref in self._elements if dead or ref() is not None]
         if values:
-            if dead:
-                return [ ref() for ref in self._elements ]
-            else:
-                return [ ref() for ref in self._elements if ref() is not None ]
-        else:
-            if dead:
-                return list(self._elements)
-            else:
-                return [ ref for ref in self._elements if ref() is not None ]
-
+            ret = [ ref() for ref in ret ]
+        return ret
 
     # History
 
