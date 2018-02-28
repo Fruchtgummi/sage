@@ -733,9 +733,6 @@ class pAdicLatticeElement(pAdicGenericElement):
             prec = min(absprec, prec)
         return self._value.valuation() >= prec
 
-    #def value(self):
-    #    return self._value
-
     def lift(self):
         """
         Return an integer or rational congruent to this element modulo
