@@ -1462,7 +1462,7 @@ class DifferentialPrecisionGeneric(SageObject):
             raise ValueError("invalid event")
 
 
-class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
+class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
     r"""
     A class for handling precision lattices which are used to
     track precision in the ZpLC model.
@@ -2081,7 +2081,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         return M
 
 
-class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
+class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
     r"""
     A class for handling precision modules which are used to
     track precision in the ZpLF model.
