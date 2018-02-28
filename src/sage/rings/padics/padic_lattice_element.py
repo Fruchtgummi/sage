@@ -144,9 +144,9 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         pass
@@ -166,7 +166,7 @@ class pAdicLatticeElement(pAdicGenericElement):
     # This doesn't work apparently (I don't know why)
     # Deletion is currently handled in PrecisionLattice 
     # def __del__(self):
-    #     self._precision.mark_for_deletion(weakref.ref(self))
+    #     self._precision._mark_for_deletion(weakref.ref(self))
 
     def _is_base_elt(self, p):
         """
@@ -267,7 +267,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         Another example with diffused digits::
 
             sage: x = R(1, 10); y = R(1, 5)
-            sage: x,y = x+y, x-y
+            sage: x, y = x+y, x-y
             sage: x.precision_absolute()
             5
             sage: y.precision_absolute()
@@ -275,22 +275,14 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: (x+y).precision_absolute()
             11
         """
-        prec = self._precision.precision_absolute(self)
+        prec = self._precision._precision_absolute(self)
         cap = self._value.valuation() + self._parent._prec_cap_relative
-        return min(prec,cap)
+        return min(prec, cap)
 
     def is_precision_capped(self):
         """
-        Return whether the absolute precision on the given element
-        results from a cap coming from the parent.
-
-        INPUT:
-
-        - ``x`` -- the element
-
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`is_precision_capped`
-        of ``x`` instead.
+        Return whether the absolute precision on this element results from a
+        cap coming from the parent.
 
         EXAMPLES::
 
@@ -314,11 +306,11 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: z.is_precision_capped()
             True
         """
-        return self._precision.is_precision_capped(self)
+        return self._precision._is_precision_capped(self)
 
     def valuation(self, secure=False):
         """
-        Return the valuation if this element.
+        Return the valuation of this element.
 
         INPUT:
 
@@ -534,7 +526,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         if other.is_zero():
             raise PrecisionError("cannot divide by something indistinguishable from zero")
-        p = self._parent.prime()
         x_self = self._value
         x_other = other._value
         x = x_self / x_other
@@ -572,7 +563,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         if self.is_zero():
             raise PrecisionError("cannot invert something indistinguishable from zero")
-        p = self._parent.prime()
         x_self = self._value
         x = self._parent._approx_one / x_self
         # dx = -(1/self^2)*dself
@@ -748,9 +738,6 @@ class pAdicLatticeElement(pAdicGenericElement):
             prec = min(absprec, prec)
         return self._value.valuation() >= prec
 
-    #def value(self):
-    #    return self._value
-
     def lift(self):
         """
         Return an integer or rational congruent to this element modulo
@@ -873,7 +860,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def val_unit(self):
         """
-        Return the pair `(v,u)`, where this element is 
+        Return the pair `(v, u)`, where this element is 
         `p^v u` and `u` is a unit.
 
         EXAMPLES::
@@ -892,7 +879,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: c = R(0, 5); c
             O(17^5)
-            sage: c.unit_part()
+            sage: c.val_unit()
             Traceback (most recent call last):
             ...
             PrecisionError: Not enough precision
@@ -968,7 +955,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: K(1/2).copy(R)
             Traceback (most recent call last):
             ...
-            ValueError: element of negative valuation cannot be convert to the integer ring
+            ValueError: element of negative valuation cannot be converted to the integer ring
         """
         if parent is None:
             parent = self._parent
@@ -979,7 +966,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             except AttributeError:
                 raise TypeError("parent must share the same precision object")
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
-                raise ValueError("element of negative valuation cannot be convert to the integer ring")
+                raise ValueError("element of negative valuation cannot be converted to the integer ring")
         dx = [ [ self, self._parent._approx_one ] ]
         return self.__class__(parent, self._value, dx=dx, check=False)
 
@@ -1041,9 +1028,9 @@ class pAdicLatticeCapElement(pAdicLatticeElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         parent = self._parent
@@ -1090,9 +1077,9 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: prec = R.precision()
 
             sage: prec.del_elements()
-            sage: nb = prec.number_of_tracked_elements()
+            sage: nb = len(prec.tracked_elements())
             sage: x = R(1, 10)    # indirect doctest
-            sage: prec.number_of_tracked_elements() == nb + 1
+            sage: len(prec.tracked_elements()) == nb + 1
             True
         """
         self._precision._new_element(self, dx, bigoh=prec, dx_mode=dx_mode)
@@ -1100,7 +1087,7 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
         if prec is None:
             return cap
         else:
-            return min(cap,prec)
+            return min(cap, prec)
 
     def _is_exact_zero(self):
         """
@@ -1117,4 +1104,4 @@ class pAdicLatticeFloatElement(pAdicLatticeElement):
             sage: R(1)._is_exact_zero()
             False
         """
-        return self._value.is_zero() and self._precision.precision_absolute(self) is Infinity
+        return self._value.is_zero() and self._precision._precision_absolute(self) is Infinity

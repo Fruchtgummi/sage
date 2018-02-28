@@ -835,21 +835,6 @@ class pAdicFieldFloatingPoint(pAdicFieldBaseGeneric, pAdicFloatingPointFieldGene
                 from sage.rings.padics.padic_generic import ResidueLiftingMap
                 return ResidueLiftingMap._create_(R, self)
 
-    def _repr_(self, do_latex=False):
-        r"""
-        Print representation.
-
-        EXAMPLES::
-
-            sage: K = QpFP(17); K #indirect doctest
-            17-adic Field with floating precision 20
-            sage: latex(K)
-            \QQ_{17}
-        """
-        if do_latex:
-            return "\\QQ_{%s}" % self.prime()
-        return "%s-adic Field with floating precision %s"%(self.prime(), self.precision_cap())
-
 
 
 # Lattice precision
@@ -947,6 +932,32 @@ class pAdicLatticeGeneric(pAdicGeneric):
         """
         return 'lattice-' + self._subtype
 
+    def is_lattice_prec(self):
+        """
+        Returns whether this `p`-adic ring bounds precision using
+        a lattice model.
+
+        In lattice precision, relationships between elements
+        are stored in a precision object of the parent, which
+        allows for optimal precision tracking at the cost of
+        increased memory usage and runtime.
+
+        EXAMPLES::
+
+            sage: R = ZpCR(5, 15)
+            sage: R.is_lattice_prec()
+            False
+            sage: R(25,8) - R(25,8)
+            O(5^8)
+            sage: S = ZpLC(5, 15)
+            sage: S.is_lattice_prec()
+            True
+            sage: x = S(25, 8)
+            sage: x - x
+            O(5^17)
+        """
+        return True
+
     def precision_cap(self):
         """
         Return the relative precision cap for this ring if it is finite.
@@ -1025,7 +1036,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
             sage: R = ZpLC(5, label='precision')
             sage: R.precision()
-            Precision lattice on 0 object (label: precision)
+            Precision lattice on 0 objects (label: precision)
 
             sage: x = R(1, 10); y = R(1, 5)
             sage: R.precision()
@@ -1050,7 +1061,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         to limit the size of the lattice modeling the precision (which
         is roughly the number of elements having this parent).
 
-        Elements of a parent with some label do not coerse to aparent 
+        Elements of a parent with some label do not coerce to a parent 
         with a different label. However conversions are allowed.
 
         EXAMPLES:
@@ -1068,19 +1079,19 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
             sage: R = ZpLC(5, label='matrices')
             sage: M = random_matrix(R, 4, 4)
-            sage: M.determinant()     # somewhat random
+            sage: d = M.determinant()
 
-        Now, if we want to do another unrelated computations, we can
+        Now, if we want to do another unrelated computation, we can
         use a different label::
 
             sage: R = ZpLC(5, label='polynomials')
             sage: S.<x> = PolynomialRing(R)
             sage: P = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)
 
-        If we have not used labels, the software would have modeled the
+        Without labels, the software would have modeled the
         precision on the matrices and on the polynomials using the same
-        lattice (resulting then in manipulating a lattice of higher
-        dimension, having then a significant impact on performances).
+        lattice (manipulating a lattice of higher
+        dimension can have a significant impact on performance).
         """
         return self._label
 
@@ -1116,6 +1127,8 @@ class pAdicLatticeGeneric(pAdicGeneric):
         try:
             if prec is None:
                 return x.copy(parent=self)
+            elif x.parent() is self:
+                return x.add_bigoh(prec)
             else:
                 return x.copy(parent=self).add_bigoh(prec)
         except (TypeError, ValueError, AttributeError):
@@ -1149,7 +1162,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: x + y
             2 + O(2^11)
 
-            sage: R.precision().number_of_diffused_digits([x,y])
+            sage: R.precision().diffused_digits([x,y])
             6
 
         As a consequence, if we convert ``x`` and ``y`` separately, we
@@ -1164,7 +1177,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: x2 + y2
             2 + O(2^5)
 
-            sage: R2.precision().number_of_diffused_digits([x2,y2])
+            sage: R2.precision().diffused_digits([x2,y2])
             0
 
         On the other hand, this issue dissapears when we use multiple

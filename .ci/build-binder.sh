@@ -29,7 +29,7 @@
 #                  http://www.gnu.org/licenses/
 # ****************************************************************************
 
-set -ex
+set -exo pipefail
 
 if [[ -z "$DOCKER_TAG" || -z "$DOCKER_USER" || -z "$SECRET_DOCKER_PASS" ]]; then
     echo "Build can not be pushed to docker hub. Not pushing binder configuration."
@@ -63,9 +63,14 @@ chmod 600 ~/.ssh/id_rsa
 
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SAGE_BINDER_ENV_GITHUB.
-export AUTHOR=$(git log -1 --format=format:%an)
-export COMMIT_MESSAGE=$(git log -1 --format=format:%s%n%n%-b)
-export COMMIT_TIMESTAMP=$(git log -1 --format=format:%aD)
+
+# json_escape() from https://stackoverflow.com/a/13466143/812379
+json_escape() {
+    printf '%s' $1 | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+export AUTHOR=$(json_escape "`git log -1 --format=format:%an`")
+export COMMIT_MESSAGE=$(json_escape "`git log -1 --format=format:%s%n%n%-b`")
+export COMMIT_TIMESTAMP=$(json_escape "`git log -1 --format=format:%aD`")
 export COMMIT_URL="https://github.com/${SAGE_GITHUB:-sagemath/sage}/commit/$(git log -1 --format=%H)"
 export BINDER_URL="https://mybinder.org/v2/gh/${SAGE_BINDER_ENV_GITHUB}/${BRANCH}?filepath=review.ipynb"
 
@@ -77,6 +82,8 @@ for template in *;do
     envsubst < "${template}.tmpl" > "$template"
     git add "$template"
 done
+# Verify that the notebook is valid JSON
+python -m json.tool < review.ipynb > /dev/null
 
 # Force push a new README and configuration to BRANCH on SAGE_BINDER_ENV_GITHUB.
 git -c user.name=circleci -c user.email=circleci@build.invalid commit -m "automatically generated from template"

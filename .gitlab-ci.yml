@@ -5,15 +5,19 @@
 # that limit in Settings → CI/CD.
 # You can also provision your own private more powerful runner in the same
 # place; or set up your favourite cloud service to provide an on-demand
-# autoscale runner.
+# autoscale runner. (Make sure to tag them as "2gb", otherwise the build step
+# is not going to run on them.)
 
-# As of early 2018 a run on GitLab CI takes about 50 minutes (with
+# As of early 2018 a run on GitLab CI takes about an hour (with
 # build-from-latest.) We could probably save 5 minutes by not pushing the
 # sagemath-dev image for branches other than develop and master. We could
 # save another 10 minutes by not building/pushing/testing that image in these
 # cases.
 # Note that most of the time during CI is spent with pulling and pushing of
 # docker images and copying files locally as part of the docker build.
+# At the moment there is no way of passing the docker images to the following
+# stages without explicit pushing/pulling or similar:
+# https://gitlab.com/gitlab-org/gitlab-runner/issues/1107
 
 image: docker:latest
 
@@ -58,6 +62,11 @@ build-from-latest: &build
     - . .ci/build-docker.sh | tee gitlab-build-docker.log | head -c 3m
     - . .ci/push-gitlab.sh sagemath-dev
     - . .ci/push-gitlab.sh sagemath
+  tags:
+    # We need enough disk space for the build to work.
+    # The do(=digitalocean) instances on gitlab.com should be the 4GB instances
+    # with 80GB of disk: https://www.digitalocean.com/pricing/
+    - do
   except:
     - master
     - develop
@@ -120,7 +129,7 @@ binder:
     - tags
   script:
     - apk update
-    - apk add gettext git openssh
+    - apk add gettext git openssh python
     - mkdir -p ~/.ssh && cp .ci/known_hosts.github ~/.ssh/known_hosts
     - export BRANCH=${CI_COMMIT_REF_SLUG}
     - export CI_URL="${CI_PROJECT_URL}/commits/${CI_COMMIT_REF_NAME}"
