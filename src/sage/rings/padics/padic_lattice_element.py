@@ -874,7 +874,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: c = R(0, 5); c
             O(17^5)
-            sage: c.unit_part()
+            sage: c.val_unit()
             Traceback (most recent call last):
             ...
             PrecisionError: Not enough precision
