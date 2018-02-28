@@ -1122,6 +1122,8 @@ class pAdicLatticeGeneric(pAdicGeneric):
         try:
             if prec is None:
                 return x.copy(parent=self)
+            elif x.parent() is self:
+                return x.add_bigoh(prec)
             else:
                 return x.copy(parent=self).add_bigoh(prec)
         except (TypeError, ValueError, AttributeError):
