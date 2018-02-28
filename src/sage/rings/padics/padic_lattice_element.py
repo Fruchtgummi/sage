@@ -307,7 +307,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
     def valuation(self, secure=False):
         """
-        Return the valuation if this element.
+        Return the valuation of this element.
 
         INPUT:
 
