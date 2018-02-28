@@ -1074,19 +1074,19 @@ class pAdicLatticeGeneric(pAdicGeneric):
 
             sage: R = ZpLC(5, label='matrices')
             sage: M = random_matrix(R, 4, 4)
-            sage: M.determinant()     # somewhat random
+            sage: d = M.determinant()
 
-        Now, if we want to do another unrelated computations, we can
+        Now, if we want to do another unrelated computation, we can
         use a different label::
 
             sage: R = ZpLC(5, label='polynomials')
             sage: S.<x> = PolynomialRing(R)
             sage: P = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)
 
-        If we have not used labels, the software would have modeled the
+        Without labels, the software would have modeled the
         precision on the matrices and on the polynomials using the same
-        lattice (resulting then in manipulating a lattice of higher
-        dimension, having then a significant impact on performances).
+        lattice (manipulating a lattice of higher
+        dimension can have a significant impact on performance).
         """
         return self._label
 
