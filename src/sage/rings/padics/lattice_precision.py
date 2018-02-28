@@ -1477,7 +1477,7 @@ class DifferentialPrecisionGeneric(SageObject):
             raise ValueError("invalid event")
 
 
-class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
+class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
     r"""
     A class for handling precision lattices which are used to
     track precision in the ZpLC model.
@@ -1838,7 +1838,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         del self._marked_for_deletion[:count]
 
-    def lift_to_precision(self, x, prec):
+    def _lift_to_precision(self, x, prec):
         r"""
         Lift the specified element to the specified precision.
 
@@ -1860,11 +1860,10 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         This function may change at the same time the precision of 
         other elements having the same parent.
 
-        NOTE:
+        .. NOTE::
 
-        This function is not meant to be called directly.
-        You should prefer call the method :meth:`lift_to_precision`
-        of ``x`` instead.
+            This function is not meant to be called directly. Use
+            ``x.lift_to_precision`` instead.
 
         EXAMPLES::
 
@@ -1877,7 +1876,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
             2 + O(2^5)
 
             sage: prec = R.precision()
-            sage: prec.lift_to_precision(z, 12)
+            sage: prec._lift_to_precision(z, 12)
             sage: z
             2 + O(2^12)
             sage: y
@@ -1989,8 +1988,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
     def _is_precision_capped(self, x):
         r"""
-        Return whether the absolute precision on the given 
-        results from a cap coming from the parent.
+        Return whether the absolute precision of ``x`` results from a cap
+        coming from the parent.
 
         INPUT:
 
@@ -2025,8 +2024,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
 
         - ``elements`` -- a list of elements or ``None`` (default: ``None``)
 
-        - ``echelon`` -- a boolean (default: ``True``); specify whether
-          the result should be in echelon form
+        - ``echelon`` -- a boolean (default: ``True``); whether the result
+          should be in echelon form
 
         EXAMPLES::
 
@@ -2078,7 +2077,8 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         else:
             elements = list_of_padics(elements)
         n = len(self._elements)
-        rows = [ ]; val = 0
+        rows = []
+        val = 0
         for ref in elements:
             col = self._matrix[ref]
             row = [ x.value() for x in col ]
@@ -2099,7 +2099,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric, UniqueRepresentation):
         return M
 
 
-class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
+class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
     r"""
     A class for handling precision modules which are used to
     track precision in the ZpLF model.
@@ -2139,7 +2139,7 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
 
     def internal_prec(self):
         r"""
-        Return the relative precision at which computations has handled
+        Return the relative precision at which computations is handled
         internally.
 
         It is slightly greater than the actual precision and increases
@@ -2249,12 +2249,12 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
           bigoh to be added to the precision of ``x``; if ``None``, the
           default cap is used.
 
-        - ``dx_mode`` -- a string, either ``linear_combination`` (the default)
-          or ``values``
+        - ``dx_mode`` -- a string, either ``"linear_combination"`` (the
+          default) or ``"values"``
 
-        If ``dx_mode`` is ``linear_combination``, the dictionary ``dx`` 
-        encodes the expression of the differential of ``x``. 
-        For example, if ``x`` was defined as ``x = y*z`` then:
+        If ``dx_mode`` is ``"linear_combination"``, the dictionary ``dx``
+        encodes the expression of the differential of ``x``.  For example, if
+        ``x`` was defined as ``x = y*z`` then:
 
         .. MATH::
 
@@ -2264,7 +2264,7 @@ class PrecisionModule(DifferentialPrecisionGeneric, UniqueRepresentation):
         that the keys are not the elements themselves but weak references
         to them).
 
-        If ``dx_mode`` is ``values``, the dictionary ``dx`` directly
+        If ``dx_mode`` is ``"values"``, the dictionary ``dx`` directly
         specifies the entries that have to stored in the precision module.
         This mode is only used for multiple conversion between different
         parents (see :meth:`multiple_conversion`).
