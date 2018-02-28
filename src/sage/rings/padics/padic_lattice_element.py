@@ -521,7 +521,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         if other.is_zero():
             raise PrecisionError("cannot divide by something indistinguishable from zero")
-        p = self._parent.prime()
         x_self = self._value
         x_other = other._value
         x = x_self / x_other
@@ -559,7 +558,6 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         if self.is_zero():
             raise PrecisionError("cannot invert something indistinguishable from zero")
-        p = self._parent.prime()
         x_self = self._value
         x = self._approx_one / x_self
         # dx = -(1/self^2)*dself
