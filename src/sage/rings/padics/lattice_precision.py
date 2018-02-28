@@ -31,7 +31,7 @@ TESTS::
 # ****************************************************************************
 
 
-import _weakref as weakref
+import weakref
 from sage.misc.misc import walltime
 
 from sage.structure.sage_object import SageObject
@@ -793,13 +793,14 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
     def _index(self, ref):
         r"""
-        Return the index of the element whose reference is ``ref``.
+        Return the index of the column in the precision matrix that 
+        corresponds to ``ref``.
 
         Only for internal use.
 
         TESTS::
 
-            sage: import _weakref as weakref
+            sage: import weakref
 
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
@@ -941,7 +942,8 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
           a column whose distance to the right is greater than the
-          threshold is not erased
+          threshold is not erased; if ``None``, all columns which are
+          marked for deletion are erased.
 
         EXAMPLES::
 
@@ -1028,6 +1030,19 @@ class DifferentialPrecisionGeneric(UniqueRepresentation, SageObject):
             sage: prec.precision_lattice([u,v])
             [  32 2016]
             [   0 2048]
+
+        If the precision module does not project to a lattice,
+        an error is raised.
+
+            sage: R = ZpLF(2, label='precision_lattice')
+            sage: prec = R.precision()
+            sage: x = R(1, 10); y = R(1, 5)
+            sage: u = x + y
+            sage: v = x - y
+            sage: prec.precision_lattice([x,y,u,v])
+            Traceback (most recent call last):
+            ...
+            PrecisionError: the differential is not surjective
         """
         pass
 
@@ -1642,7 +1657,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
 
         TESTS::
 
-            sage: import _weakref as weakref
+            sage: import weakref
 
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
@@ -1725,7 +1740,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
                 prec = col[j].valuation() - diffval[j-index]
                 for i in range(index,j):
                     col[i] = col[i].reduce(prec)
-                    col[i].normalize()  # seems to be faster then
+                    col[i].normalize()
                     dval = col[i].valuation() - prec
                     if dval < diffval[i-index]:
                         diffval[i-index] = dval
@@ -2057,7 +2072,7 @@ class PrecisionLattice(DifferentialPrecisionGeneric):
             sage: z.precision_absolute()  # indirect doctest
             5
 
-            sage: import _weakref as weakref
+            sage: import weakref
             sage: R.precision()._absolute_precisions[weakref.ref(z)]
             [5, False]
         """
@@ -2265,7 +2280,8 @@ class PrecisionModule(DifferentialPrecisionGeneric):
         """
         DifferentialPrecisionGeneric.__init__(self, p, 'module', label)
         self._absolute_precisions = { }
-        self._zero_cap = prec
+        # elements whose valuation are not less than self._zero_cap are assumed to vanish
+        self._zero_cap = prec   
         self._internal_prec = prec + STARTING_ADDITIONAL_PREC
         self._count = 0
         self._threshold = 1
@@ -2637,7 +2653,7 @@ class PrecisionModule(DifferentialPrecisionGeneric):
             sage: z.precision_absolute()  # indirect doctest
             5
 
-            sage: import _weakref as weakref
+            sage: import weakref
             sage: R.precision()._absolute_precisions[weakref.ref(z)]
             5
         """

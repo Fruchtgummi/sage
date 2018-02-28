@@ -931,6 +931,10 @@ class pAdicLatticeGeneric(pAdicGeneric):
             self._element_class = pAdicLatticeFloatElement
         else:
             raise ValueError("subtype must be either 'cap' or 'float'")
+        from sage.rings.padics.lattice_precision import pRational
+        self._approx_zero = pRational(p, 0)
+        self._approx_one = pRational(p, 1)
+        self._approx_minusone = pRational(p, -1)
 
     def _prec_type(self):
         """
