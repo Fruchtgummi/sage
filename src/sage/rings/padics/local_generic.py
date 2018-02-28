@@ -165,6 +165,31 @@ class LocalGeneric(CommutativeRing):
         """
         return False
 
+    def is_lattice_prec(self):
+        """
+        Returns whether this `p`-adic ring bounds precision using
+        a lattice model.
+
+        In lattice precision, relationships between elements
+        are stored in a precision object of the parent, which
+        allows for optimal precision tracking at the cost of
+        increased memory usage and runtime.
+
+        EXAMPLES::
+
+            sage: R = ZpCR(5, 15)
+            sage: R.is_lattice_prec()
+            False
+            sage: R(25,8) - R(25,8)
+            O(5^8)
+            sage: S = ZpLC(5, 15)
+            sage: S.is_lattice_prec()
+            True
+            sage: S(25,8) - S(25,8)
+            O(5^15)
+        """
+        return False
+
     def is_lazy(self):
         """
         Returns whether this `p`-adic ring bounds precision in a lazy

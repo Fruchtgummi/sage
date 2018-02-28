@@ -874,7 +874,7 @@ class pAdicLatticeElement(pAdicGenericElement):
 
             sage: c = R(0, 5); c
             O(17^5)
-            sage: c.unit_part()
+            sage: c.val_unit()
             Traceback (most recent call last):
             ...
             PrecisionError: Not enough precision
@@ -961,7 +961,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             except AttributeError:
                 raise TypeError("parent must share the same precision object")
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
-                raise ValueError("element of negative valuation cannot be convert to the integer ring")
+                raise ValueError("element of negative valuation cannot be converted to the integer ring")
         dx = [ [ self, self._approx_one ] ]
         return self.__class__(parent, self._value, dx=dx, check=False)
 
