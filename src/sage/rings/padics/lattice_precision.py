@@ -595,6 +595,7 @@ class DifferentialPrecisionGeneric(SageObject):
         self._matrix = { } # A dictionary whose keys are weak references to tracked elements
                            # and values corresponding columns in the matrix
                            # representing the precision lattice
+        self._collected_references = [ ]
         self._marked_for_deletion = [ ]
         self._approx_zero = pRational(p, ZZ(0))
         self._threshold_deletion = DEFAULT_THRESHOLD_DELETION
@@ -791,41 +792,8 @@ class DifferentialPrecisionGeneric(SageObject):
         """
         pass
 
-    @abstract_method
-    def _mark_for_deletion(self, ref):
-        r"""
-        Mark an element for deletion.
-
-        INPUT:
-
-        - ``ref`` -- a weak reference to the destroyed element
-
-        .. NOTE::
-
-            This function is not meant to be called manually.
-            It is automatically called by the garbage collection when 
-            an element is collected.
-
-            This method does not update the precision lattice.
-            The actual update is performed when the method :meth:`del_elements`
-            is called. This is automatically done at the creation of a new
-            element but can be done manually as well.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='mark_deletion')
-            sage: prec = R.precision()
-            sage: x = R(1, 10)
-            sage: prec
-            Precision lattice on 1 object (label: mark_deletion)
-            sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
-            Precision lattice on 1 object (label: mark_deletion)
-            sage: prec.del_elements()       # x is indeed deleted
-            sage: prec
-            Precision lattice on 0 objects (label: mark_deletion)
-        """
-        pass
+    def _new_collected_element(self, ref):
+        self._collected_references.append(ref)
 
     @abstract_method
     def del_elements(self, threshold=None):
@@ -1516,23 +1484,24 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         DifferentialPrecisionGeneric.__init__(self, p, label)
         self._repr_type = "Precision lattice"
         self._capped = { }
+        self._collected_references = [ ]
 
     def _index(self, ref):
         r"""
         Return the index of the element whose reference is ``ref``.
-
+    
         TESTS::
-
+    
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
             sage: x = R(1, 10)
             sage: y = R(1, 5)
-
+    
             sage: prec._index(weakref.ref(x))
             0
             sage: prec._index(weakref.ref(y))
             1
-
+    
             sage: del x
             sage: prec.del_elements()
             sage: prec._index(weakref.ref(y))
@@ -1681,14 +1650,14 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             sage: z = x*y    # indirect doctest
         """
         # First we delete some elements marked for deletion
-        if self._marked_for_deletion:
-            self.del_elements(threshold=self._threshold_deletion)
+        self.del_elements(threshold=self._threshold_deletion)
 
         # Then we add the new element
         tme = walltime()
         p = self._p
         n = len(self._elements)
-        x_ref = weakref.ref(x, self._mark_for_deletion)
+        x_ref = weakref.ref(x, self._new_collected_element)
+        #print("Add:  %s - %s" % (x_ref, x._value))
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
@@ -1718,47 +1687,12 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         if self._history is not None:
             self._history.append(('add', None, walltime(tme)))
 
-    def _mark_for_deletion(self, ref):
-        r"""
-        Mark an element for deletion.
-
-        INPUT:
-
-        - ``ref`` -- a weak reference to the destroyed element
-
-        .. NOTE::
-
-            This function is not meant to be called manually.
-            It is automatically called by the garbage collection when 
-            an element is collected.
-
-            This method does not update the precision lattice.
-            The actual update is performed when the method :meth:`del_elements`
-            is called. This is automatically done at the creation of a new
-            element but can be done manually as well.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2, label='markdel')
-            sage: prec = R.precision()
-            sage: x = R(1, 10)
-            sage: prec
-            Precision lattice on 1 object (label: markdel)
-            sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
-            Precision lattice on 1 object (label: markdel)
-            sage: prec.del_elements()       # x is indeed deleted
-            sage: prec
-            Precision lattice on 0 objects (label: markdel)
-        """
-        tme = walltime()
-        try:
-            index = self._index(ref)
-        except (IndexError, KeyError):
-            return
-        self._marked_for_deletion.append(index)
-        if self._history is not None:
-            self._history.append(('mark', index, walltime(tme)))
+        #print("Status:")
+        #for wref in self._elements:
+        #    if wref() is None:
+        #        print " * %s" % wref
+        #    else:
+        #        print " * %s - %s" % (wref, wref()._value)
 
     def del_elements(self, threshold=None):
         r"""
@@ -1798,6 +1732,21 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         p = self._p
         n = len(self._elements)
 
+        # We mark new collected elements for deletion
+        count = 0
+        for ref in self._collected_references:
+            count += 1
+            tme = walltime()
+            try:
+                index = self._index(ref)
+            except (IndexError, KeyError):
+                raise RuntimeError
+            self._marked_for_deletion.append(index)
+            if self._history is not None:
+                self._history.append(('mark', index, walltime(tme)))
+        del self._collected_references[:count]
+
+        # We erase corresponding columns and echelonize
         self._marked_for_deletion.sort(reverse=True)
         count = 0
         for index in self._marked_for_deletion:
@@ -1805,7 +1754,11 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             n -= 1; count += 1
 
             tme = walltime()
-            ref = self._elements[index]
+            try:
+                ref = self._elements[index]
+            except IndexError:
+                raise RuntimeError("index=%s, n=%s, %s elements" % (index, n, len(self._elements)))
+            #print("Del:  %s (index = %s)" % (ref, index))
             del self._elements[index]
             del self._matrix[ref]
             capped = self._capped[ref]
@@ -1837,6 +1790,13 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             self.reduce(index, partial=True)
 
         del self._marked_for_deletion[:count]
+
+        #print("Status:")
+        #for wref in self._elements:
+        #    if wref() is None:
+        #        print " * %s" % wref
+        #    else:
+        #        print " * %s - %s" % (wref, wref()._value)
 
     def _lift_to_precision(self, x, prec):
         r"""
@@ -2292,7 +2252,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = self.dimension()
-        x_ref = weakref.ref(x, self._mark_for_deletion)
+        x_ref = weakref.ref(x, self._new_collected_element)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
@@ -2364,30 +2324,6 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
             sage: prec
             Precision module on 0 objects (label: markdel)
         """
-        tme = walltime()
-        try:
-            index = self._index(ref)
-        except (IndexError, KeyError):
-            return
-        if index == 0:
-            length_before = 0
-        else:
-            length_before = len(self._matrix[self._elements[index-1]])
-        length = len(self._matrix[ref])
-        if length > length_before:
-            self._marked_for_deletion.append(index)
-            if self._history is not None:
-                self._history.append(('mark', index, walltime(tme)))
-        else:
-            # if the column is not a pivot, we erase it without delay
-            del self._elements[index]
-            def decr(i):
-                if i < index: return i
-                else: return i-1
-            self._marked_for_deletion = [ decr(i) for i in self._marked_for_deletion ]
-            if self._history is not None:
-                self._history.append(('del', index, walltime(tme)))
-
 
     def del_elements(self, threshold=None):
         r"""
@@ -2425,8 +2361,38 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
             []
         """
         p = self._p
-        n = len(self._elements)
 
+        # We mark new collected elements for deletion
+        count = 0
+        for ref in self._collected_references:
+            count += 1
+            tme = walltime()
+            try:
+                index = self._index(ref)
+            except (IndexError, KeyError):
+                return
+            if index == 0:
+                length_before = 0
+            else:
+                length_before = len(self._matrix[self._elements[index-1]])
+            length = len(self._matrix[ref])
+            if length > length_before:
+                self._marked_for_deletion.append(index)
+                if self._history is not None:
+                    self._history.append(('mark', index, walltime(tme)))
+            else:
+                # if the column is not a pivot, we erase it without delay
+                del self._elements[index]
+                def decr(i):
+                    if i < index: return i
+                    else: return i-1
+                self._marked_for_deletion = [ decr(i) for i in self._marked_for_deletion ]
+                if self._history is not None:
+                    self._history.append(('del', index, walltime(tme)))
+        del self._collected_references[:count]
+
+        # We erase corresponding columns and echelonize
+        n = len(self._elements)
         self._marked_for_deletion.sort(reverse=True)
         count = 0
         for index in self._marked_for_deletion:
