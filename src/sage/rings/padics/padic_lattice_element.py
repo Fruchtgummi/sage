@@ -30,6 +30,8 @@ import weakref
 
 from sage.misc.abstract_method import abstract_method
 
+from sage.rings.integer import Integer
+
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
 from sage.rings.infinity import Infinity
@@ -229,6 +231,72 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         return self._value.value()
 
+    def residue(self, absprec=1, field=None, check_prec=True):
+        """
+        Reduces this element modulo `p^{\mathrm{absprec}}`.
+
+        INPUT:
+
+        - ``absprec`` -- a non-negative integer (default: ``1``)
+
+        - ``field`` -- boolean (default ``None``).  Whether to return an element of GF(p) or Zmod(p).
+
+        - ``check_prec`` -- boolean (default ``True``).  Whether to raise an error if this
+          element has insufficient precision to determine the reduction.
+
+        OUTPUT:
+
+        This element reduced modulo `p^\mathrm{absprec}` as an element of
+        `\ZZ/p^\mathrm{absprec}\ZZ`
+
+        EXAMPLES::
+
+            sage: R = ZpLC(7,4)
+            sage: a = R(8)
+            sage: a.residue(1)
+            1
+
+        TESTS::
+
+            sage: R = ZpLC(7,4)
+            sage: a = R(8)
+            sage: a.residue(0)
+            0
+            sage: a.residue(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: cannot reduce modulo a negative power of p.
+            sage: a.residue(5)
+            Traceback (most recent call last):
+            ...
+            PrecisionError: not enough precision known in order to compute residue.
+            sage: a.residue(5, check_prec=False)
+            8
+
+            sage: a.residue(field=True).parent()
+            Finite Field of size 7
+        """
+        if not isinstance(absprec, Integer):
+            absprec = Integer(absprec)
+        if check_prec and absprec > self.precision_absolute():
+            raise PrecisionError("not enough precision known in order to compute residue.")
+        elif absprec < 0:
+            raise ValueError("cannot reduce modulo a negative power of p.")
+        if self.valuation() < 0:
+            raise ValueError("element must have non-negative valuation in order to compute residue.")
+        if field is None:
+            field = (absprec == 1)
+        elif field and absprec != 1:
+            raise ValueError("field keyword may only be set at precision 1")
+        p = self._parent.prime()
+        if field:
+            from sage.rings.finite_rings.finite_field_constructor import GF
+            ring = GF(p)
+        else:
+            from sage.rings.finite_rings.integer_mod_ring import Integers
+            ring = Integers(p**absprec)
+        return ring(self.value())
+
     def precision_lattice(self):
         """
         Return the precision object (which is a lattice in a possibly
@@ -403,6 +471,33 @@ class pAdicLatticeElement(pAdicGenericElement):
             return 0
         else:
             return self.lift()._cmp_(other.lift())
+
+    def is_equal_to(self, other, prec):
+        """
+        Return ``True`` if this element is indisting
+        from ``other`` at precision ``prec``
+
+        EXAMPLES::
+
+            sage: R = ZpLC(2)
+            sage: x = R(1, 5)
+            sage: y = R(128, 10)
+            sage: z = x + y
+
+            sage: x
+            1 + O(2^5)
+            sage: z
+            1 + O(2^5)
+
+            sage: x.is_equal_to(z, 5)
+            True
+
+            sage: x.is_equal_to(z, 10)
+            False
+            sage: z - x
+            2^7 + O(2^10)
+        """
+        return (self-other).is_zero(prec)
 
     def _add_(self, other):
         """

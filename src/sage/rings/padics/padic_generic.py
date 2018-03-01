@@ -637,7 +637,9 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             z = x + y
             tester.assertIs(z.parent(), self)
             zprec = min(x.precision_absolute(), y.precision_absolute())
-            if not self.is_floating_point():
+            if self.is_lattice_prec():
+                tester.assertGreaterEqual(z.precision_absolute(), zprec)
+            elif not self.is_floating_point():
                 tester.assertEqual(z.precision_absolute(), zprec)
             tester.assertGreaterEqual(z.valuation(), min(x.valuation(),y.valuation()))
             if x.valuation() != y.valuation():
@@ -675,7 +677,9 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             z = x - y
             tester.assertIs(z.parent(), self)
             zprec = min(x.precision_absolute(), y.precision_absolute())
-            if not self.is_floating_point():
+            if self.is_lattice_prec():
+                tester.assertGreaterEqual(z.precision_absolute(), zprec)
+            elif not self.is_floating_point():
                 tester.assertEqual(z.precision_absolute(), zprec)
             tester.assertGreaterEqual(z.valuation(), min(x.valuation(),y.valuation()))
             if x.valuation() != y.valuation():
