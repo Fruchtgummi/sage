@@ -877,7 +877,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         sage: R._prec_type()
         'lattice-float'
     """
-    def __init__(self, p, prec, subtype, label=None):
+    def __init__(self, p, prec, print_mode, names, label=None):
         """
         Initialization.
 
@@ -895,20 +895,23 @@ class pAdicLatticeGeneric(pAdicGeneric):
             sage: R._subtype
             'float'
         """
+        from sage.rings.padics.lattice_precision import pRational
+        self._approx_zero = pRational(p, 0)
+        self._approx_one = pRational(p, 1)
+        self._approx_minusone = pRational(p, -1)
         if label is None:
             self._label = None
         else:
             self._label = str(label)
-        self._subtype = subtype
         # We do not use the standard attribute element_class 
         # because we need to be careful with precision
         # Instead we implement _element_constructor_ (cf below)
-        if subtype == 'cap':
+        if self._subtype == 'cap':
             (self._prec_cap_relative, self._prec_cap_absolute) = prec
             self._zero_cap = None
             self._precision = PrecisionLattice(p, label)
             element_class = pAdicLatticeCapElement
-        elif subtype == 'float':
+        elif self._subtype == 'float':
             self._prec_cap_relative = prec
             self._prec_cap_absolute = Infinity
             self._zero_cap = prec
@@ -919,10 +922,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
         self._element_class = self.__make_element_class__(element_class,
                                                           name="%s.element_class" % self.__class__.__name__,
                                                           module=self.__class__.__module__)
-        from sage.rings.padics.lattice_precision import pRational
-        self._approx_zero = pRational(p, 0)
-        self._approx_one = pRational(p, 1)
-        self._approx_minusone = pRational(p, -1)
+        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
 
     def _prec_type(self):
         """
@@ -1306,12 +1306,14 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
             :meth:`label`
         """
-        pAdicLatticeGeneric.__init__(self, p, prec, subtype, label)
+        # We need to set the subtype first, so that
+        # pAdicRingBaseGeneric.__init__ can work
+        self._subtype = subtype
         if isinstance(prec,tuple):
             pAdicRingBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
         else:
             pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, None)
-        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
+        pAdicLatticeGeneric.__init__(self, p, prec, print_mode, names, label)
 
     def _repr_(self, do_latex=False):
         """
@@ -1559,12 +1561,14 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
             :meth:`label`
         """
-        pAdicLatticeGeneric.__init__(self, p, prec, subtype, label)
+        # We need to set the subtype first, so that
+        # pAdicFieldBaseGeneric.__init__ can work
+        self._subtype = subtype
         if isinstance(prec,tuple):
             pAdicFieldBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
         else:
             pAdicFieldBaseGeneric.__init__(self, p, prec, print_mode, names, None)
-        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
+        pAdicLatticeGeneric.__init__(self, p, prec, print_mode, names, label)
 
     def _repr_(self, do_latex=False):
         """
