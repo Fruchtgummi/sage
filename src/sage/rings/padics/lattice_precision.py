@@ -1,5 +1,5 @@
 r"""
-Lattice precision for the parents ``ZpLC`` and ``ZpLF``
+Lattice precision for the parents ``ZpLC``/``QpLC`` and ``ZpLF``/``QpLC``
 
 AUTHOR:
 

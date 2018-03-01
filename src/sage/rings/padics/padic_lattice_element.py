@@ -3,23 +3,23 @@ r"""
 
 AUTHOR:
 
-- Xavier caruso (2018-02): initial version
+- Xavier Caruso (2018-02): initial version
 
 TESTS::
 
     sage: R = ZpLC(2)
     doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
     See http://trac.sagemath.org/23505 for details.
-    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+    sage: TestSuite(R).run(skip=['_test_teichmuller'])
 
     sage: R = ZpLF(2)
-    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+    sage: TestSuite(R).run(skip=['_test_teichmuller'])
 
     sage: R = QpLC(2)
-    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+    sage: TestSuite(R).run(skip=['_test_teichmuller'])
 
     sage: R = QpLF(2)
-    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+    sage: TestSuite(R).run(skip=['_test_teichmuller'])
 """
 
 # ****************************************************************************
@@ -48,6 +48,30 @@ from sage.rings.padics.padic_generic_element import pAdicGenericElement
 from sage.rings.padics.lattice_precision import pRational
 
 from sage.rings.padics.precision_error import PrecisionError
+
+
+def unpickle_le(parent, value, prec):
+    """
+    Unpickle `p`-adic elements.
+
+    INPUT:
+
+    - ``parent`` -- the parent, a `p`-adic ring
+
+    - ``value`` -- a rational number
+
+    - ``prec`` -- an integer
+
+    EXAMPLES::
+
+        sage: from sage.rings.padics.padic_lattice_element import unpickle_le
+        sage: R = ZpLC(5,8)
+        sage: a = unpickle_le(R, 42, 6); a
+        2 + 3*5 + 5^2 + O(5^6)
+        sage: a.parent() is R
+        True
+    """
+    return parent(value, prec)
 
 
 class pAdicLatticeElement(pAdicGenericElement):
@@ -172,10 +196,31 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         return id(self)
 
-    # This doesn't work apparently (I don't know why)
-    # Deletion is currently handled in PrecisionLattice 
-    # def __del__(self):
-    #     self._precision._mark_for_deletion(weakref.ref(self))
+    def __reduce__(self):
+        """
+        Return a tuple of a function and data that can be used to unpickle this
+        element.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(5)
+            sage: a = R(-3)
+            sage: loads(dumps(a)) == a
+            True
+
+        For now, diffused digits of precision are not preserved by pickling::
+
+            sage: x, y = R(1, 10), R(1, 5)
+            sage: u, v = x+y, x-y
+            sage: u + v
+            2 + O(5^10)
+
+            sage: up = loads(dumps(u))
+            sage: vp = loads(dumps(v))
+            sage: up + vp
+            2 + O(5^5)
+        """
+        return unpickle_le, (self.parent(), self.value(), self.precision_absolute())
 
     def _is_base_elt(self, p):
         """
