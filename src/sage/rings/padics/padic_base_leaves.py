@@ -919,9 +919,7 @@ class pAdicLatticeGeneric(pAdicGeneric):
             element_class = pAdicLatticeFloatElement
         else:
             raise ValueError("subtype must be either 'cap' or 'float'")
-        self._element_class = self.__make_element_class__(element_class,
-                                                          name="%s.element_class" % self.__class__.__name__,
-                                                          module=self.__class__.__module__)
+        self._element_class = self.__make_element_class__(element_class)
         pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
 
     def _prec_type(self):

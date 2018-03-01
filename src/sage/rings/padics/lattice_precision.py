@@ -794,20 +794,43 @@ class DifferentialPrecisionGeneric(SageObject):
         """
         pass
 
-    def _new_collected_element(self, ref):
+    def _record_collected_element(self, ref):
+        """
+        Record that the element with weak reference ``ref``
+        has been collected by the garbage collector.
+
+        INPUT:
+
+        - ``ref`` -- the weak reference of the collected element
+
+        TESTS::
+
+            sage: R = ZpLC(2, label='gc')
+            sage: prec = R.precision()
+
+            sage: x = R.random_element()
+            sage: prec._collected_references
+            []
+
+            sage: del x
+            sage: prec._collected_references
+            [<weakref at 0x...; dead>]
+        """
         self._collected_references.append(ref)
 
     @abstract_method
     def del_elements(self, threshold=None):
         r"""
-        Delete all elements marked for deletion up to the given threshold.
+        Delete (or mark for future deletion) the columns of precision 
+        matrix corresponding to elements that were collected by the 
+        garbage collector.
 
         INPUT:
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
           a column whose distance to the right is greater than the
-          threshold is not erased; if ``None``, all columns which are
-          marked for deletion are erased.
+          threshold is not erased but marked for deletion; 
+          if ``None``, always erase (never mark for deletion).
 
         EXAMPLES::
 
@@ -994,30 +1017,30 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
              <weakref at 0x...; dead>]
             sage: prec.tracked_elements(values=False, dead=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
+            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>]
 
             sage: u = x + y
             sage: v = x - y
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5), 2 + O(2^5), O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
              <weakref at 0x...; dead>]
 
             sage: del x; del y
             sage: prec.tracked_elements()
             [None, None, 2 + O(2^5), O(2^5), None]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
+            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
              <weakref at 0x...; dead>]
         """
         ret = [ ref for ref in self._elements if dead or ref() is not None]
@@ -1109,20 +1132,20 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: print(prec.history())
              Timings
                ...     oooo
-               ...     ~~oo
 
         When we clear history, only the last line is kept::
 
             sage: prec.history_clear()
             sage: print(prec.history())
-             Timings   ~~oo
-               ---     ~~oo
+             Timings   oooo
+               ---     oooo
 
-            sage: del x;
+            sage: prec.del_elements()
 
             sage: print(prec.history())
-             Timings   ~~oo
-               ...     ~~~o
+             Timings   oooo
+               ...     ~~oo
+               ...     oo
 
         .. SEEALSO::
 
@@ -1244,7 +1267,7 @@ class DifferentialPrecisionGeneric(SageObject):
             oo~~o~o~ooo~o~ooo~o~
             oooooooooooo
 
-            sage: print(prec.history(separate_reduce=True))   # somewhat random
+            sage: print(prec.history(separate_reduce=True))  # somewhat random
              Timings
             0.001063s  oooooooooooooooooooo
             0.000014s  oo~~o~o~ooo~o~ooo~o~
@@ -1273,7 +1296,7 @@ class DifferentialPrecisionGeneric(SageObject):
         automatically but needs to be called by hand::
 
             sage: prec.reduce()
-            sage: print(prec.history(separate_reduce=True))   # somewhat random
+            sage: print(prec.history(separate_reduce=True))  # somewhat random
              Timings
             0.001063s  oooooooooooooooooooo
             0.000014s  oo~~o~o~ooo~o~ooo~o~
@@ -1314,7 +1337,7 @@ class DifferentialPrecisionGeneric(SageObject):
             0.000005s  ooooooooooooooooooooooooooooooooo~oooo~~o
             0.000853s  oooooooooooooooooooooooooooooooooooooo
             0.000610s  ooooooooooooooooooooooooooooooooooooooo
-            ...
+             [...]
             0.003879s  ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
             0.000006s  oooooooooooooooooooooooooooooooooooooooooooooooooooo~~~~~
             0.000036s  oooooooooooooooooooooooooooooooooooooooooooooooooooo
@@ -1334,7 +1357,6 @@ class DifferentialPrecisionGeneric(SageObject):
             0.000022s  ooooooooooooooooooooooooooooo~~~~~~~~~~~~~~~~~~~~~~oooo~o~o
             0.014705s  ooooooooooooooooooooooooooooooooooo
             0.001292s  ooooooooooooooooooooooooooooooooooooo
-            0.000002s  ooooooooooooooooooooooooooooooooooo~o
 
         We observe that deleted variables appear mostly on the right.
         This is the so-called principal of temporal locality.
@@ -1657,7 +1679,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = len(self._elements)
-        x_ref = weakref.ref(x, self._new_collected_element)
+        x_ref = weakref.ref(x, self._record_collected_element)
         #print("Add:  %s - %s" % (x_ref, x._value))
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
@@ -2253,7 +2275,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = self.dimension()
-        x_ref = weakref.ref(x, self._new_collected_element)
+        x_ref = weakref.ref(x, self._record_collected_element)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
@@ -2292,51 +2314,17 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
             self._history.append(('add', None, walltime(tme)))
 
 
-    def _mark_for_deletion(self, ref):
-        r"""
-        Mark an element for deletion.
-
-        INPUT:
-
-        - ``ref`` -- a weak reference to the destroyed element
-
-        .. NOTE::
-
-            This function is not meant to be called manually.
-            It is automatically called by the garbage collection when 
-            an element is collected.
-
-            This method does not update the precision lattice.
-            The actual update is performed when the method :meth:`del_elements`
-            is called. This is automatically done at the creation of a new
-            element but can be done manually as well.
-
-        EXAMPLES::
-
-            sage: R = ZpLF(2, label='markdel')
-            sage: prec = R.precision()
-            sage: x = R(1, 10)
-            sage: prec
-            Precision module on 1 object (label: markdel)
-            sage: del x   # indirect doctest: x is here marked for deletion
-            sage: prec
-            Precision module on 1 object (label: markdel)
-            sage: prec.del_elements()       # x is indeed deleted
-            sage: prec
-            Precision module on 0 objects (label: markdel)
-        """
-
     def del_elements(self, threshold=None):
         r"""
         Erase columns of the lattice precision matrix corresponding to
-        elements which are marked for deletion and reduce the matrix
-        in order to keep it in echelon form.
+        elements which were collected by the garbage collector.
+        Then reduce the matrix in order to keep it in echelon form.
 
         INPUT:
 
         - ``threshold`` -- an integer or ``None`` (default: ``None``):
-          a column whose distance to the right is greater than the
-          threshold is not erased
+          a non-pivot column whose distance to the right is greater than 
+          the threshold is not erased but only marked for future deletion
 
         EXAMPLES::
 
@@ -2598,10 +2586,10 @@ def list_of_padics(elements):
         sage: R = ZpLC(2)
         sage: M = random_matrix(R, 2, 2)
         sage: list_of_padics(M)
-        [<weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement' at 0x...>]
+        [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
+         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>]
     """
     from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
     if isinstance(elements, pAdicLatticeElement):
