@@ -61,14 +61,21 @@ cat "$SECRET_SAGE_BINDER_ENV_KEY" | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/id_rsa
 
+# escape_md: Escape for interpolation in Markdown literal blocks by stripping out all backticks.
+escape_md() {
+    echo -n "$1" | sed 's/`//g'
+}
+# escape_json: Escape for interpolation in JSON double quoted strings.
+escape_json() {
+    echo -n "$1" | python -c 'import json,sys; print(repr(json.dumps(sys.stdin.read()))[2:-2])'
+}
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SAGE_BINDER_ENV_GITHUB.
-json_escape() {
-    echo -n "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
-}
-export AUTHOR=$(json_escape "`git log -1 --format=format:%an`")
-export COMMIT_MESSAGE=$(json_escape "`git log -1 --format=format:%s%n%n%-b`")
-export COMMIT_TIMESTAMP=$(json_escape "`git log -1 --format=format:%aD`")
+export AUTHOR_MD=$(escape_md "`git log -1 --format=format:%an`")
+export AUTHOR_JSON=$(escape_json "$AUTHOR_MD")
+export COMMIT_MESSAGE_MD=$(escape_md "`git log -1 --format=format:%s%n%n%-b`")
+export COMMIT_MESSAGE_JSON=$(escape_json "$COMMIT_MESSAGE_MD")
+export COMMIT_TIMESTAMP=`git log -1 --format=format:%aD`
 export COMMIT_URL="https://github.com/${SAGE_GITHUB:-sagemath/sage}/commit/$(git log -1 --format=%H)"
 export BINDER_URL="https://mybinder.org/v2/gh/${SAGE_BINDER_ENV_GITHUB}/${BRANCH}?filepath=review.ipynb"
 
@@ -78,6 +85,7 @@ git init
 for template in *;do
     mv "$template" "${template}.tmpl"
     envsubst < "${template}.tmpl" > "$template"
+    rm -f "${template}.tmpl"
     git add "$template"
 done
 # Verify that the notebook is valid JSON
