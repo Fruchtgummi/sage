@@ -312,6 +312,8 @@ class pRational:
         p = self.p
         sexp = self.exponent
         oexp = other.exponent
+        if sexp is Infinity: return other
+        if oexp is Infinity: return self
         if self._valuation is None or other._valuation is None:
             val = None
         elif self._valuation < other._valuation:

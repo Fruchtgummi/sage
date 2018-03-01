@@ -789,8 +789,10 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
                 else:
                     tester.assertFalse(y.is_zero())
                     tester.assertIs(z.parent(), self if self.is_fixed_mod() else self.fraction_field())
-                    tester.assertEqual(z.precision_relative(), min(x.precision_relative(), y.precision_relative()))
-                    tester.assertEqual(z.valuation(), x.valuation() - y.valuation())
+                    # The following might be false if there is an absolute cap
+                    # tester.assertEqual(z.precision_relative(), min(x.precision_relative(), y.precision_relative()))
+                    if not x.is_zero():
+                        tester.assertEqual(z.valuation(), x.valuation() - y.valuation())
                     tester.assertEqual(xx, x)
 
     def _test_neg(self, **options):

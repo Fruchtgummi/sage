@@ -889,7 +889,7 @@ class LocalGeneric(CommutativeRing):
             if self.is_capped_absolute():
                 tester.assertEqual(y.precision_absolute(), 0)
                 tester.assertEqual(y, self.zero())
-            elif self.is_capped_relative():
+            elif self.is_capped_relative() or self.is_lattice_prec():
                 tester.assertLessEqual(y.precision_absolute(), 0)
             elif self.is_fixed_mod() or self.is_floating_point():
                 tester.assertGreaterEqual((x-y).valuation(), 0)
@@ -903,8 +903,9 @@ class LocalGeneric(CommutativeRing):
                 tester.assertLessEqual(y.precision_absolute(), -1)
 
             # make sure that we handle very large values correctly
-            absprec = Integer(2)**1000
-            tester.assertEqual(x.add_bigoh(absprec), x)
+            if self._prec_type() != 'lattice-float':   # in the lattice-float model, there is no cap
+                absprec = Integer(2)**1000
+                tester.assertEqual(x.add_bigoh(absprec), x)
 
     def _test_residue(self, **options):
         r"""

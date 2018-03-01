@@ -10,9 +10,16 @@ TESTS::
     sage: R = ZpLC(2)
     doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
     See http://trac.sagemath.org/23505 for details.
+    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+
     sage: R = ZpLF(2)
+    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+
     sage: R = QpLC(2)
+    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
+
     sage: R = QpLF(2)
+    sage: TestSuite(R).run(skip=['_test_teichmuller', '_test_elements'])
 """
 
 # ****************************************************************************
@@ -444,6 +451,8 @@ class pAdicLatticeElement(pAdicGenericElement):
             ...
             PrecisionError: Not enough precision
         """
+        if not secure and self.is_zero():
+            return ZZ(0)
         return self.precision_absolute() - self.valuation(secure=secure)
 
     def _cmp_(self, other):
@@ -470,7 +479,7 @@ class pAdicLatticeElement(pAdicGenericElement):
         if (self-other).is_zero():
             return 0
         else:
-            return self.lift()._cmp_(other.lift())
+            return QQ(self.lift())._cmp_(QQ(other.lift()))
 
     def is_equal_to(self, other, prec):
         """
@@ -691,7 +700,20 @@ class pAdicLatticeElement(pAdicGenericElement):
 
            sage: R(4).add_bigoh(2).add_bigoh(4)
            4 + O(7^2)
+
+        If ``prec`` is negative, the output is an element of the
+        fraction field::
+
+           sage: c = a.add_bigoh(-1); c
+           O(7^-1)
+           sage: c.parent()
+           7-adic Field with lattice-cap precision
         """
+        if prec is Infinity:
+            return self
+        if not self._parent.is_field() and prec < 0:
+            field = self._parent.fraction_field()
+            return self.copy(field).add_bigoh(prec)
         x = self._value
         dx = [ [self, self._parent._approx_one ] ]
         return self.__class__(self._parent, x, prec, dx=dx, check=False)
@@ -1083,10 +1105,23 @@ class pAdicLatticeElement(pAdicGenericElement):
         """
         return self.copy()
 
-    def expansion(self):
+    def expansion(self, n=None, lift_mode='simple', start_val=None):
         """
-        Return the coefficients in the `p`-adic expansion of this element
-        starting from its valuation and ending at its absolute precision
+        Return a list giving the `p`-adic expansion of this element.
+        If this is a field element, start at
+        `p^{\mbox{valuation}}`, if a ring element at `p^0`.
+
+        INPUT:
+
+        - ``n`` -- an integer or ``None`` (default ``None``); if given, 
+          return the corresponding entry in the expansion.
+
+        - ``lift_mode`` -- a string (default: ``simple``); currently
+          only ``simple`` is implemented.
+
+        - ``start_val`` -- an integer or ``None`` (default: ``None``);
+          start at this valuation rather than the default (`0` or the 
+          valuation of this element).
 
         EXAMPLES::
 
@@ -1096,17 +1131,71 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: x.expansion()
             [4, 2, 1, 4, 0, 1, 1, 0, 1, 3]
 
-        If any, final are included in the expansion::
+            sage: x.expansion(3)
+            4
+
+            sage: x.expansion(start_val=5)
+            [1, 1, 0, 1, 3]
+
+        If any, trailing zeros are included in the expansion::
 
             sage: y = R(1234); y
             4 + 5 + 4*5^2 + 4*5^3 + 5^4 + O(5^10)
             sage: y.expansion()
             [4, 1, 4, 4, 1, 0, 0, 0, 0, 0]
         """
-        # TODO: implement other lift modes
+        if lift_mode != 'simple':
+            raise NotImplementedError("Other modes than 'simple' are not implemented yet")
         p = self._parent.prime()
         prec = self.precision_absolute()
-        return self._value.list(prec)
+        val = self.valuation()
+        expansion = self._value.list(prec)
+        if n is not None:
+            if n < val:
+                return ZZ(0)
+            try:
+                return expansion[n-val]
+            except KeyError:
+                raise PrecisionError("The digit in position %s is not determined" % n)
+        if start_val is None:
+            if self._parent.is_field():
+                start_val = val
+            else:
+                start_val = 0
+        if start_val > val:
+            return expansion[start_val-val:]
+        else:
+            return (val-start_val)*[ZZ(0)] + expansion
+
+    def dist(self, other):
+        """
+        Return the distance between this element and ``other``.
+        The distance is normalized so that `dist(0,p) = 1/p`.
+
+        EXAMPLES::
+
+            sage: R = ZpLC(3)
+            sage: x = R(1, 5)
+            sage: y = R(4, 5)
+            sage: x.dist(y)
+            1/3
+
+        TESTS::
+
+            sage: z = R(3^7,10)
+            sage: x
+            1 + O(3^5)
+            sage: x + z
+            1 + O(3^5)
+            sage: x.dist(x+z)
+            1/2187
+        """
+        x = self - other
+        p = self._parent.prime()
+        if x.is_zero():
+            return ZZ(0)
+        else:
+            return p**(-x.valuation())
 
 
 class pAdicLatticeCapElement(pAdicLatticeElement):

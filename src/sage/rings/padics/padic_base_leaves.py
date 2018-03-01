@@ -907,15 +907,18 @@ class pAdicLatticeGeneric(pAdicGeneric):
             (self._prec_cap_relative, self._prec_cap_absolute) = prec
             self._zero_cap = None
             self._precision = PrecisionLattice(p, label)
-            self._element_class = pAdicLatticeCapElement
+            element_class = pAdicLatticeCapElement
         elif subtype == 'float':
             self._prec_cap_relative = prec
             self._prec_cap_absolute = Infinity
             self._zero_cap = prec
             self._precision = PrecisionModule(p, label, prec)
-            self._element_class = pAdicLatticeFloatElement
+            element_class = pAdicLatticeFloatElement
         else:
             raise ValueError("subtype must be either 'cap' or 'float'")
+        self._element_class = self.__make_element_class__(element_class,
+                                                          name="%s.element_class" % self.__class__.__name__,
+                                                          module=self.__class__.__module__)
         from sage.rings.padics.lattice_precision import pRational
         self._approx_zero = pRational(p, 0)
         self._approx_one = pRational(p, 1)
@@ -1308,6 +1311,7 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
             pAdicRingBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
         else:
             pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, None)
+        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
 
     def _repr_(self, do_latex=False):
         """
@@ -1560,6 +1564,7 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
             pAdicFieldBaseGeneric.__init__(self, p, prec[1], print_mode, names, None)
         else:
             pAdicFieldBaseGeneric.__init__(self, p, prec, print_mode, names, None)
+        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
 
     def _repr_(self, do_latex=False):
         """
