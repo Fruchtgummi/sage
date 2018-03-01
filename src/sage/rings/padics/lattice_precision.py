@@ -1484,7 +1484,6 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         DifferentialPrecisionGeneric.__init__(self, p, label)
         self._repr_type = "Precision lattice"
         self._capped = { }
-        self._collected_references = [ ]
 
     def _index(self, ref):
         r"""
@@ -1734,7 +1733,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         # We mark new collected elements for deletion
         count = 0
-        for ref in self._collected_references:
+        for ref in self._collected_references[:]:
             count += 1
             tme = walltime()
             try:
@@ -2364,13 +2363,13 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         # We mark new collected elements for deletion
         count = 0
-        for ref in self._collected_references:
+        for ref in self._collected_references[:]:
             count += 1
             tme = walltime()
             try:
                 index = self._index(ref)
             except (IndexError, KeyError):
-                return
+                raise RuntimeError
             if index == 0:
                 length_before = 0
             else:
