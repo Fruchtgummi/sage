@@ -604,6 +604,19 @@ class DifferentialPrecisionGeneric(SageObject):
         self._history_init = None
         self._history = None
 
+    def __reduce__(self):
+        """
+        TESTS::
+
+            sage: R = ZpLF(2)
+            sage: prec = R.precision()
+            sage: dumps(prec)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: pickling/unpickling precision modules is not implemented yet
+        """
+        raise NotImplementedError("pickling/unpickling precision modules is not implemented yet")
+
     def _repr_(self):
         r"""
         Return a string representation of this precision object.
@@ -1509,6 +1522,21 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         self._repr_type = "Precision lattice"
         self._capped = { }
 
+    # We need to copy this method.
+    # Indeed otherwise it is inherited from UniqueRepresentation
+    def __reduce__(self):
+        """
+        TESTS::
+
+            sage: R = ZpLC(2)
+            sage: prec = R.precision()
+            sage: dumps(prec)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: pickling/unpickling precision modules is not implemented yet
+        """
+        raise NotImplementedError("pickling/unpickling precision modules is not implemented yet")
+
     def _index(self, ref):
         r"""
         Return the index of the element whose reference is ``ref``.
@@ -2119,6 +2147,21 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         self._count = 0
         self._threshold = 1
         self._repr_type = "Precision module"
+
+    # We need to copy this method.
+    # Indeed otherwise it is inherited from UniqueRepresentation
+    def __reduce__(self):
+        """
+        TESTS::
+
+            sage: R = ZpLF(2)
+            sage: prec = R.precision()
+            sage: dumps(prec)
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: pickling/unpickling precision modules is not implemented yet
+        """
+        raise NotImplementedError("pickling/unpickling precision modules is not implemented yet")
 
     def internal_prec(self):
         r"""
