@@ -1757,7 +1757,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         # We mark new collected elements for deletion
         count = 0
-        for ref in self._collected_references[:]:
+        for ref in self._collected_references:
             count += 1
             tme = walltime()
             try:
@@ -2353,7 +2353,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         # We mark new collected elements for deletion
         count = 0
-        for ref in self._collected_references[:]:
+        for ref in self._collected_references:
             count += 1
             tme = walltime()
             try:
@@ -2371,11 +2371,9 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
                     self._history.append(('mark', index, walltime(tme)))
             else:
                 # if the column is not a pivot, we erase it without delay
+                # (btw, is it a good idea?)
                 del self._elements[index]
-                def decr(i):
-                    if i < index: return i
-                    else: return i-1
-                self._marked_for_deletion = [ decr(i) for i in self._marked_for_deletion ]
+                self._marked_for_deletion = [ i if i < index else i-1 for i in self._marked_for_deletion ]
                 if self._history is not None:
                     self._history.append(('del', index, walltime(tme)))
         del self._collected_references[:count]
