@@ -33,8 +33,6 @@ TESTS::
 # ****************************************************************************
 
 
-import weakref
-
 from sage.misc.abstract_method import abstract_method
 
 from sage.rings.integer import Integer

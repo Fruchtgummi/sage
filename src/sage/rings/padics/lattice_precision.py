@@ -31,7 +31,6 @@ TESTS::
 # ****************************************************************************
 
 
-import weakref
 from sage.misc.misc import walltime
 
 from sage.structure.sage_object import SageObject
@@ -55,7 +54,6 @@ DEFAULT_THRESHOLD_DELETION = 50
 
 # The number of additional digits used for internal computations
 STARTING_ADDITIONAL_PREC = 5
-
 
 class pRational:
     r"""
@@ -712,19 +710,20 @@ class DifferentialPrecisionGeneric(SageObject):
 
         TESTS::
 
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
             sage: x = R(1, 10)
             sage: y = R(1, 5)
 
-            sage: prec._index(weakref.ref(x))
+            sage: prec._index(pAdicLatticeElementWeakProxy(x))
             0
-            sage: prec._index(weakref.ref(y))
+            sage: prec._index(pAdicLatticeElementWeakProxy(y))
             1
 
             sage: del x
             sage: prec.del_elements()
-            sage: prec._index(weakref.ref(y))
+            sage: prec._index(pAdicLatticeElementWeakProxy(y))
             0
         """
         return self._elements.index(ref)
@@ -827,7 +826,7 @@ class DifferentialPrecisionGeneric(SageObject):
 
             sage: del x
             sage: prec._collected_references
-            [<weakref at 0x...; dead>]
+            [WeakProxy#...]
         """
         self._collected_references.append(ref)
 
@@ -1030,31 +1029,31 @@ class DifferentialPrecisionGeneric(SageObject):
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; dead>]
+            [WeakProxy#...,
+             WeakProxy#...,
+             WeakProxy#...]
             sage: prec.tracked_elements(values=False, dead=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>]
+            [WeakProxy#...,
+             WeakProxy#...]
 
             sage: u = x + y
             sage: v = x - y
             sage: prec.tracked_elements()
             [1 + O(2^10), 1 + O(2^5), 2 + O(2^5), O(2^5)]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; dead>]
+            [WeakProxy#...,
+             WeakProxy#...,
+             WeakProxy#...,
+             WeakProxy#...,
+             WeakProxy#...]
 
             sage: del x; del y
             sage: prec.tracked_elements()
             [None, None, 2 + O(2^5), O(2^5), None]
             sage: prec.tracked_elements(values=False)
-            [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-             <weakref at 0x...; dead>]
+            [WeakProxy#...,
+             WeakProxy#...,
+             WeakProxy#...]
         """
         ret = [ ref for ref in self._elements if dead or ref() is not None]
         if values:
@@ -1543,19 +1542,20 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
     
         TESTS::
     
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
             sage: R = ZpLC(2, label="index")
             sage: prec = R.precision()
             sage: x = R(1, 10)
             sage: y = R(1, 5)
     
-            sage: prec._index(weakref.ref(x))
+            sage: prec._index(pAdicLatticeElementWeakProxy(x))
             0
-            sage: prec._index(weakref.ref(y))
+            sage: prec._index(pAdicLatticeElementWeakProxy(y))
             1
     
             sage: del x
             sage: prec.del_elements()
-            sage: prec._index(weakref.ref(y))
+            sage: prec._index(pAdicLatticeElementWeakProxy(y))
             0
         """
         return len(self._matrix[ref]) - 1
@@ -1707,13 +1707,13 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = len(self._elements)
-        x_ref = weakref.ref(x, self._record_collected_element)
+        x_ref = pAdicLatticeElementWeakProxy(x, self._record_collected_element)
         #print("Add:  %s - %s" % (x_ref, x._value))
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             for elt, scalar in dx:
-                ref = weakref.ref(elt)
+                ref = pAdicLatticeElementWeakProxy(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
                 c = self._matrix[ref]
@@ -1721,7 +1721,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
                     col[i] += scalar * c[i]
         elif dx_mode == 'values':
             for elt, scalar in dx:
-                ref = weakref.ref(elt)
+                ref = pAdicLatticeElementWeakProxy(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
                 i = self._index(ref)
@@ -1893,7 +1893,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             sage: y
             1 + O(2^10)
         """
-        ref = weakref.ref(x)
+        ref = pAdicLatticeElementWeakProxy(x)
         col = self._matrix[ref]
         n = len(self._elements)
 
@@ -1932,7 +1932,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         self._precision_absolute_data.clear_cache()
 
-    @cached_method(key=lambda self, x: weakref.ref(x))
+    @cached_method(key=lambda self, x: pAdicLatticeElementWeakProxy(x))
     def _precision_absolute_data(self, x):
         r"""
         Return absolute precision data for ``x``.
@@ -1954,7 +1954,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             sage: z.precision_absolute()  # indirect doctest
             5
         """
-        ref = weakref.ref(x)
+        ref = pAdicLatticeElementWeakProxy(x)
         col = self._matrix[ref]
         absprec = Infinity
         capped = False
@@ -2318,12 +2318,12 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         tme = walltime()
         p = self._p
         n = self.dimension()
-        x_ref = weakref.ref(x, self._record_collected_element)
+        x_ref = pAdicLatticeElementWeakProxy(x, self._record_collected_element)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
             expected_vals = n * [ Infinity ]
             for elt, scalar in dx:
-                ref = weakref.ref(elt)
+                ref = pAdicLatticeElementWeakProxy(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
                 c = self._matrix[ref]
@@ -2336,7 +2336,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
                     col[i] = self._approx_zero
         elif dx_mode == 'values':
             for elt, scalar in dx:
-                ref = weakref.ref(elt)
+                ref = pAdicLatticeElementWeakProxy(elt)
                 if not isinstance(scalar, pRational):
                     scalar = pRational(p, scalar)
                 i = self._index(ref)
@@ -2485,7 +2485,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
 
         del self._marked_for_deletion[:count]
 
-    @cached_method(key=lambda self, x: weakref.ref(x))
+    @cached_method(key=lambda self, x: pAdicLatticeElementWeakProxy(x))
     def _precision_absolute(self, x):
         r"""
         Return the absolute precision of the given element.
@@ -2529,7 +2529,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
             sage: y.precision_absolute()
             20
         """
-        ref = weakref.ref(x)
+        ref = pAdicLatticeElementWeakProxy(x)
         col = self._matrix[ref]
         if len(col) == 0:
             return Infinity
@@ -2614,6 +2614,123 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
             M *= self._p ** val
         return M
 
+class pAdicLatticeElementWeakProxy(object):
+    r"""
+    The implementations of :class:`DifferentialPrecisionGeneric` hold
+    weak references to :class:`pAdicLatticeElement`. They are stored in
+    dictionaries, e.g., a dictionary that maps an element to the corresponding
+    column in the precision lattice matrix.
+    However, weak references as implemented by Python are tricky to use as
+    dictionary keys. Their equality depends on the equality of the element they
+    point to (as long as that element is alive) and then on the equlity by
+    ``id``. This means that statements such as: ``ref in D == ref in D`` could
+    be false if the garbage collector kicks in between the two invocations.
+    To prevent very subtle and hardly reproducible bugs, we wrap weak
+    references in a proxy that gives every lattice element a unique increasing
+    id and uses that id for comparisons.
+
+    EXAMPLES:
+
+    Proxy elements exist only internally and or not usually exposed to the user::
+
+        sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+        sage: R = ZpLF(2, label='proxy')
+        sage: p = R(2)
+        sage: prec = R.precision()
+        sage: proxy = prec._elements[0]
+        sage: isinstance(proxy, pAdicLatticeElementWeakProxy)
+        True
+
+    """
+    _next_id = 0
+
+    def __init__(self, element, callback=None):
+        r"""
+        TESTS::
+
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+            sage: R = ZpLF(2, label='proxy')
+            sage: p = R(2)
+            sage: pAdicLatticeElementWeakProxy(p) == pAdicLatticeElementWeakProxy(p)
+            True
+            sage: pAdicLatticeElementWeakProxy(p) is pAdicLatticeElementWeakProxy(p)
+            False
+
+        """
+        if not hasattr(element, '_proxy_id'):
+            element._proxy_id = pAdicLatticeElementWeakProxy._next_id
+            pAdicLatticeElementWeakProxy._next_id +=1
+        self._id = element._proxy_id
+        from weakref import ref
+        proxy_callback = callback
+        if callback is not None:
+            proxy_callback = lambda _: callback(self)
+        self._weakref = ref(element, proxy_callback)
+
+    def __hash__(self):
+        r"""
+        Return a hash value for this proxy.
+
+        EXAMPLES::
+
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+            sage: R = ZpLF(2, label='proxy')
+            sage: p = R(2)
+            sage: hash(pAdicLatticeElementWeakProxy(p)) == hash(pAdicLatticeElementWeakProxy(p))
+            True
+
+        """
+        return self._id
+
+    def __eq__(self, other):
+        r"""
+        Return whether this proxy is undistinguishable from ``other``.
+
+        EXAMPLES::
+
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+            sage: R = ZpLF(2, label='proxy')
+            sage: p = R(2)
+            sage: q = R(2)
+            sage: pAdicLatticeElementWeakProxy(p) == pAdicLatticeElementWeakProxy(p)
+            True
+            sage: pAdicLatticeElementWeakProxy(q) == pAdicLatticeElementWeakProxy(p)
+            False
+
+        """
+        return isinstance(other, pAdicLatticeElementWeakProxy) and self._id == other._id
+
+    def __call__(self):
+        r"""
+        Return the lattice element this proxy points to, or ``None`` if the
+        target has already been finalized.
+
+        EXAMPLES::
+
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+            sage: R = ZpLF(2, label='proxy')
+            sage: p = R(2)
+            sage: pAdicLatticeElementWeakProxy(p)()
+            2 + O(2^21)
+
+        """
+        return self._weakref()
+
+    def __repr__(self):
+        r"""
+        Return a printable representation of this proxy.
+
+        EXAMPLES::
+
+            sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
+            sage: R = ZpLF(2, label='proxy_repr')
+            sage: p = R(2)
+            sage: R.precision()._elements # indirect doctest
+            [WeakProxy#...]
+
+        """
+        return "WeakProxy#%s"%(self._id,)
+
 def list_of_padics(elements):
     r"""
     Convert a list of p-adic composed elements (such as polynomials, matrices)
@@ -2627,14 +2744,14 @@ def list_of_padics(elements):
         sage: R = ZpLC(2)
         sage: M = random_matrix(R, 2, 2)
         sage: list_of_padics(M)
-        [<weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>,
-         <weakref at 0x...; to 'pAdicLatticeCapElement_with_category' at 0x...>]
+        [WeakProxy#...,
+         WeakProxy#...,
+         WeakProxy#...,
+         WeakProxy#...]
     """
     from sage.rings.padics.padic_lattice_element import pAdicLatticeElement
     if isinstance(elements, pAdicLatticeElement):
-        return [ weakref.ref(elements) ]
+        return [ pAdicLatticeElementWeakProxy(elements) ]
     try:
         if elements.parent().is_sparse():
             elements = elements.coefficients()
