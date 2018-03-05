@@ -67,7 +67,7 @@ escape_md() {
 }
 # escape_json: Escape for interpolation in JSON double quoted strings.
 escape_json() {
-    echo -n "$1" | python -c 'import json,sys; print(repr(json.dumps(sys.stdin.read()))[2:-2])'
+    echo -nE "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read())[2:-2])'
 }
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SAGE_BINDER_ENV_GITHUB.
