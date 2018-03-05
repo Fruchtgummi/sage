@@ -37,6 +37,12 @@ before_script:
   # GitLab has no mechanism yet to hide secret variables: https://gitlab.com/gitlab-org/gitlab-ce/issues/13784
   # So we roll our own which protects all variables that start with SECRET_
   - . .ci/protect-secrets.sh
+  # Collect debug infos about the system we are running on
+  - . .ci/describe-system.sh
+  # Set DOCKER_TAG according to the current branch/tag
+  - . .ci/update-env.sh
+  # Set MAKE and NTHREADS according to the machine we are running on
+  - . .ci/setup-make-parallelity.sh
 
 # We use docker-in-docker to build our docker images.  It can be faster to
 # expose your outer docker daemon by mounting /var/run/docker.sock to
@@ -107,18 +113,52 @@ test-jupyter:
     - . .ci/pull-gitlab.sh sagemath
     - . .ci/test-jupyter.sh "$DOCKER_IMAGE" docker
 
+# Run doctests
+test-doctest: &doctest
+  stage: test
+  script:
+    - . .ci/setup-make-parallelity.sh
+    - . .ci/pull-gitlab.sh sagemath
+    - . .ci/test-doctest.sh sagemath
+  # Don't stop the pipeline just because a few doctests fail. The docker images
+  # are still valuable.
+  allow_failure: true
+
+# Run the --long doctests
+test-doctest-long:
+  << : *doctest
+  variables:
+    DOCTEST_PARAMETERS: "--long"
+  when: manual
+
+test-pdf:
+  stage: test
+  script:
+    - . .ci/pull-gitlab.sh sagemath-dev
+    - . .ci/test-pdf.sh "$DOCKER_IMAGE"
+  when: manual
+
 # Pushes the built images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
-dockerhub:
+push-dockerhub:
   stage: upload
   only:
     - branches
     - tags
   script:
-    - . .ci/pull-gitlab.sh sagemath-dev
-    - . .ci/push-dockerhub.sh sagemath-dev
     - . .ci/pull-gitlab.sh sagemath
     - . .ci/push-dockerhub.sh sagemath
+
+# Pushes the built dev images to Docker Hub if the Settings -> CI/CD -> Secret
+# variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
+push-dockerhub-dev:
+  stage: upload
+  only:
+    - master
+    - develop
+  script:
+    - . .ci/pull-gitlab.sh sagemath-dev
+    - . .ci/push-dockerhub.sh sagemath-dev
 
 # Create a configuration for binder to allow experimenting with the image that
 # we have just built.
