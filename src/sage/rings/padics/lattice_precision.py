@@ -2539,6 +2539,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
                     col_cur = self._matrix[self._elements[j]]
                     if len(col_cur) > piv:
                         col_cur[i] -= scalar*col_cur[piv]
+                        col_cur[i] = col_cur[i].reduce_relative(self._internal_prec)
             # We rescale the piv-th line
             for j in range(n):
                 col_cur = self._matrix[self._elements[j]]
