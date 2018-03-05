@@ -1909,7 +1909,7 @@ def Zq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
         sage: b.precision_absolute()
         22
 
-    There are manyy types of `p`-adic rings: capped relative rings
+    There are many types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
     and floating point rings (type=``'floating-point'``).
