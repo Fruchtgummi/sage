@@ -2539,7 +2539,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: z*y  # which is x
         28888 + O(2^15)
 
-    The SOMOS sequence is the sequence defined by the recurrence::
+    The SOMOS sequence is the sequence defined by the recurrence:
 
     ..MATH::
 
