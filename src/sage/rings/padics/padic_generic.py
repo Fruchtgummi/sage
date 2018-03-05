@@ -402,6 +402,25 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             Unramified Extension in a defined by x^4 + 7*x^2 + 10*x + 3 with capped relative precision 6 over 17-adic Field
             sage: U.fraction_field({"pos":False}) == U.fraction_field()
             False
+
+        TESTS::
+
+            sage: R = ZpLC(2); R
+            doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+            See http://trac.sagemath.org/23505 for details.
+            2-adic Ring with lattice-cap precision
+            sage: K = R.fraction_field(); K
+            2-adic Field with lattice-cap precision
+
+            sage: K = QpLC(2); K2 = K.fraction_field({'mode':'terse'})
+            sage: K2 is K
+            False
+            sage: K = QpLC(2, label='test'); K
+            2-adic Field with lattice-cap precision (label: test)
+            sage: K.fraction_field()
+            2-adic Field with lattice-cap precision (label: test)
+            sage: K.fraction_field({'mode':'series'}) is K
+            True
         """
         if self.is_field() and print_mode is None:
             return self
@@ -439,6 +458,23 @@ class pAdicGeneric(PrincipalIdealDomain, LocalGeneric):
             Unramified Extension in a defined by x^4 + 7*x^2 + 10*x + 3 with capped relative precision 6 over 17-adic Ring
             sage: U.fraction_field({"pos":False}) == U.fraction_field()
             False
+
+        TESTS::
+
+            sage: K = QpLC(2); K
+            2-adic Field with lattice-cap precision
+            sage: R = K.integer_ring(); R
+            2-adic Ring with lattice-cap precision
+
+            sage: R = ZpLC(2); R2 = R.integer_ring({'mode':'terse'})
+            sage: R2 is R
+            False
+            sage: R = ZpLC(2, label='test'); R
+            2-adic Ring with lattice-cap precision (label: test)
+            sage: R.integer_ring()
+            2-adic Ring with lattice-cap precision (label: test)
+            sage: R.integer_ring({'mode':'series'}) is R
+            True
         """
         #Currently does not support fields with non integral defining polynomials.  This should change when the padic_general_extension framework gets worked out.
         if not self.is_field() and print_mode is None:
