@@ -41,7 +41,6 @@ from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
 from sage.rings.infinity import Infinity
 
-from sage.rings.padics.generic_nodes import pAdicRingBaseGeneric
 from sage.rings.padics.padic_generic_element import pAdicGenericElement
 from sage.rings.padics.lattice_precision import pRational
 
@@ -954,6 +953,7 @@ class pAdicLatticeElement(pAdicGenericElement):
             sage: S = Zp(5); b = S(1000); b
             3*5^3 + 5^4 + O(5^23)
         """
+        from sage.rings.padics.generic_nodes import pAdicRingBaseGeneric
         parent = self._parent
         p = parent.prime()
         if isinstance(parent, pAdicRingBaseGeneric):
@@ -1101,6 +1101,7 @@ class pAdicLatticeElement(pAdicGenericElement):
                     raise TypeError("parent must share the same precision object")
             except AttributeError:
                 raise TypeError("parent must share the same precision object")
+            from sage.rings.padics.generic_nodes import pAdicRingBaseGeneric
             if isinstance(parent, pAdicRingBaseGeneric) and self.valuation() < 0:
                 raise ValueError("element of negative valuation cannot be converted to the integer ring")
         dx = [ [ self, self._parent._approx_one ] ]

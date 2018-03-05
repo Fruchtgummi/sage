@@ -97,6 +97,12 @@ class pAdicBaseGeneric(pAdicGeneric):
             7-adic Ring of fixed modulus 7^20
             sage: latex(K) #indirect doctest
             \ZZ_{7}
+            sage: K = ZpLF(2); K   # indirect doctest
+            doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+            See http://trac.sagemath.org/23505 for details.
+            2-adic Ring with lattice-float precision
+            sage: latex(K)
+            \ZZ_{2}
             sage: K = Qp(17); K #indirect doctest
             17-adic Field with capped relative precision 20
             sage: latex(K)
@@ -105,13 +111,24 @@ class pAdicBaseGeneric(pAdicGeneric):
             17-adic Field with floating precision 20
             sage: latex(K)
             \QQ_{17}
+            sage: K = QpLC(2); K   # indirect doctest
+            2-adic Field with lattice-cap precision
+            sage: latex(K)
+            \QQ_{2}
         """
         if do_latex:
             if self.is_field():
-                return r"\QQ_{%s}" % self.prime()
+                s = r"\QQ_{%s}" % self.prime()
             else:
-                return r"\ZZ_{%s}" % self.prime()
-        return "%s-adic %s %s"%(self.prime(), "Field" if self.is_field() else "Ring", precprint(self._prec_type(), self.precision_cap(), self.prime()))
+                s = r"\ZZ_{%s}" % self.prime()
+            if hasattr(self, '_label') and self._label:
+                s = r"\verb'%s' (\simeq %s)"%(self._label, s)
+        else:
+            s = "Field " if self.is_field() else "Ring "
+            s = "%s-adic "%self.prime() + s + precprint(self._prec_type(), self.precision_cap(), self.prime())
+            if hasattr(self, '_label') and self._label:
+                s+= " (label: %s)"%self._label
+        return s
 
     def exact_field(self):
         """
