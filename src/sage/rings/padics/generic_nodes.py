@@ -670,7 +670,10 @@ class pAdicLatticeGeneric(pAdicGeneric):
                     for i in indices[id(x)]:
                         ans[i] = y
             else:
-                lattice = prec.precision_lattice(L)
+                try:
+                    lattice = prec.precision_lattice(L)
+                except PrecisionError:
+                    raise NotImplementedError("multiple conversion of a set of variables for which the module precision is not a lattice is not implemented yet")
                 for j in range(len(L)):
                     x = L[j]; dx = [ ]
                     for i in range(j):
