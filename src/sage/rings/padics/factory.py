@@ -61,27 +61,21 @@ from functools import reduce
 
 ext_table = {}
 ext_table['e', pAdicFieldCappedRelative] = EisensteinExtensionFieldCappedRelative
-#ext_table['e', pAdicFieldLazy] = EisensteinExtensionFieldLazy
 ext_table['e', pAdicRingCappedAbsolute] = EisensteinExtensionRingCappedAbsolute
 ext_table['e', pAdicRingCappedRelative] = EisensteinExtensionRingCappedRelative
 ext_table['e', pAdicRingFixedMod] = EisensteinExtensionRingFixedMod
 #ext_table['e', pAdicRingFloatingPoint] = EisensteinExtensionRingFloatingPoint
 #ext_table['e', pAdicFieldFloatingPoint] = EisensteinExtensionFieldFloatingPoint
-#ext_table['e', pAdicRingLazy] = EisensteinExtensionRingLazy
 #ext_table['p', pAdicFieldCappedRelative] = pAdicGeneralExtensionFieldCappedRelative
-#ext_table['p', pAdicFieldLazy] = pAdicGeneralExtensionFieldLazy
 #ext_table['p', pAdicRingCappedAbsolute] = pAdicGeneralExtensionRingCappedAbsolute
 #ext_table['p', pAdicRingCappedRelative] = pAdicGeneralExtensionRingCappedRelative
 #ext_table['p', pAdicRingFixedMod] = pAdicGeneralExtensionRingFixedMod
-#ext_table['p', pAdicRingLazy] = pAdicGeneralExtensionRingLazy
 ext_table['u', pAdicFieldCappedRelative] = UnramifiedExtensionFieldCappedRelative
-#ext_table['u', pAdicFieldLazy] = UnramifiedExtensionFieldLazy
 ext_table['u', pAdicRingCappedAbsolute] = UnramifiedExtensionRingCappedAbsolute
 ext_table['u', pAdicRingCappedRelative] = UnramifiedExtensionRingCappedRelative
 ext_table['u', pAdicRingFixedMod] = UnramifiedExtensionRingFixedMod
 ext_table['u', pAdicRingFloatingPoint] = UnramifiedExtensionRingFloatingPoint
 ext_table['u', pAdicFieldFloatingPoint] = UnramifiedExtensionFieldFloatingPoint
-#ext_table['u', pAdicRingLazy] = UnramifiedExtensionRingLazy
 
 def _default_show_prec(type, print_mode):
     """
@@ -110,7 +104,7 @@ def _default_show_prec(type, print_mode):
     else:
         return False
 
-def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_non_lazy_types, label=None):
+def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, valid_types, label=None):
     """
     This implements create_key for Zp and Qp: moving it here prevents code duplication.
 
@@ -242,10 +236,10 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
             name = str(names)
     if show_prec is None:
         show_prec = _default_show_prec(type, print_mode)
-    if type in valid_non_lazy_types:
+    if type in valid_types:
         key = (p, prec, type, print_mode, name, print_pos, print_sep, tuple(print_alphabet), print_max_terms, show_prec, label)
     else:
-        raise ValueError("type must be %s"%(", ".join(valid_non_lazy_types)))
+        raise ValueError("type must be %s"%(", ".join(valid_types)))
     return key
 
 #######################################################################################################
@@ -253,7 +247,7 @@ def get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_se
 #  p-Adic Fields
 #  Qp -- base field
 #  Qq -- unramified extension field of Qp
-#  QpCR, QpL, QqCR, QqL -- shortcuts for capped relative and lazy versions of Qp and Qq
+#  QpCR, QpLC, QpLF, QqCR -- shortcuts for capped relative and lattice versions of Qp and Qq
 #
 #######################################################################################################
 
@@ -269,12 +263,14 @@ class Qp_class(UniqueFactory):
     - ``p`` -- integer: the `p` in `\mathbb{Q}_p`
 
     - ``prec`` -- integer (default: ``20``) the precision cap of the field.
-      Individual elements keep track of their own precision.  See
-      TYPES and PRECISION below.
+      In the lattice capped case, ``prec`` can either be a
+      pair (``relative_cap``, ``absolute_cap``) or an integer
+      (understood at relative cap).
+      Except in the floating point case, individual elements keep track of
+      their own precision.  See TYPES and PRECISION below.
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
-      ``'capped-rel'``, ``'floating-point'``, ``'lattice-cap'``, ``'lattice-float'``
-      and ``'lazy'`` (though ``'lazy'`` currently doesn't work).
+      ``'capped-rel'``, ``'floating-point'``, ``'lattice-cap'``, ``'lattice-float'``.
       See TYPES and PRECISION below
 
     - ``print_mode`` -- string (default: ``None``).  Valid modes are 'series',
@@ -305,6 +301,9 @@ class Qp_class(UniqueFactory):
       Non-prime input may cause seg-faults (but can also be useful for
       base n expansions for example)
 
+    - ``label`` -- string (default ``None``) used for lattice precision to
+      create parents with different lattices.
+
     OUTPUT:
 
     - The corresponding `p`-adic field.
@@ -327,7 +326,7 @@ class Qp_class(UniqueFactory):
         22
 
     There are three types of `p`-adic fields: capped relative fields,
-    floating point fields and lazy fields.
+    floating point fields and lattice precision fields.
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -348,8 +347,9 @@ class Qp_class(UniqueFactory):
     precision, but the relative precision of elements is truncated
     during arithmetic to the precision cap of the field.
 
-    The lazy case will eventually support elements that can increase
-    their precision upon request.  It is not currently implemented.
+    In the lattice case, precision on elements is tracked by a global
+    lattice that is updated after every operation, yielding better
+    precision behavior at the cost of higher memory and runtime usage.
 
     PRINTING:
 
@@ -487,9 +487,9 @@ class Qp_class(UniqueFactory):
         '...444444444444444341.33'
 
     Observe that the significant 0's are printed even if they are
-    located in front of the number. On the contrary, unknown digits 
+    located in front of the number. On the contrary, unknown digits
     located after the comma appears as question marks.
-    The precision can therefore be read in this mode as well. 
+    The precision can therefore be read in this mode as well.
     Here are more examples::
 
         sage: p = 7
@@ -614,6 +614,8 @@ class Qp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
+        if label is not None and type not in ['lattice-cap','lattice-float']:
+            raise ValueError("label keyword only supported for lattice precision")
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, check, ['capped-rel', 'floating-point', 'lattice-cap', 'lattice-float'], label)
 
     def create_object(self, version, key):
@@ -636,9 +638,6 @@ class Qp_class(UniqueFactory):
             label = None
         else:
             p, prec, type, print_mode, name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, label = key
-        if isinstance(type, Integer):
-            # lazy
-            raise NotImplementedError("lazy p-adics need more work.  Sorry.")
         if (version[0] < 4 or (len(version) > 1 and version[0] == 4 and version[1] < 5) or
             (len(version) > 2 and version[0] == 4 and version[1] == 5 and version[2] < 3)):
             # keys changed in order to reduce irrelevant duplications: e.g. two Qps with print_mode 'series'
@@ -706,8 +705,8 @@ def Qq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
       TYPES and PRECISION below.
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
-      ``'capped-rel'``, ``'floating-point'`` and ``'lazy'`` (though ``'lazy'``
-      doesn't currently work).  See TYPES and PRECISION below
+      ``'capped-rel'``, ``'floating-point'``, ``'lattice-cap'``
+      and ``'lattice-float'``.  See TYPES and PRECISION below
 
     - ``modulus`` -- polynomial (default ``None``) A polynomial defining an
       unramified extension of `\mathbb{Q}_p`.  See MODULUS below.
@@ -770,8 +769,8 @@ def Qq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
         sage: b.precision_absolute()
         22
 
-    There are three types of unramified `p`-adic fields: capped relative
-    fields, floating point fields and lazy fields.
+    There are two types of unramified `p`-adic fields: capped relative
+    fields, floating point fields.
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -791,9 +790,6 @@ def Qq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
     In the floating point case, elements do not track their
     precision, but the relative precision of elements is truncated
     during arithmetic to the precision cap of the field.
-
-    The lazy case will eventually support elements that can increase
-    their precision upon request.  It is not currently implemented.
 
     MODULUS:
 
@@ -1315,7 +1311,7 @@ def QpLF(p, prec = None, *args, **kwds):
 #  p-Adic Rings
 #  Zp -- base rings
 #  Zq -- unramified extension ring of Zp
-#  ZpCR, ZpCA, ZpFM, ZpL, ZqCR, ZqCA, ZqFM, ZqL -- shortcuts for capped relative and lazy versions of Zp and Zq
+#  ZpCR, ZpCA, ZpFM, ZpL, ZqCR, ZqCA, ZqFM, ZqL -- shortcuts for precision-type versions of Zp and Zq
 #
 #######################################################################################################
 
@@ -1331,7 +1327,7 @@ class Zp_class(UniqueFactory):
       ring.  In the lattice capped case, ``prec`` can either be a
       pair (``relative_cap``, ``absolute_cap``) or an integer
       (understood at relative cap).
-      Except for the fixed modulus case, individual elements
+      Except for the fixed modulus and floating point cases, individual elements
       keep track of their own precision.  See TYPES and PRECISION
       below.
 
@@ -1367,6 +1363,9 @@ class Zp_class(UniqueFactory):
       prime.  Non-prime input may cause seg-faults (but can also be
       useful for base `n` expansions for example)
 
+    - ``label`` -- string (default ``None``) used for lattice precision to
+      create parents with different lattices.
+
     OUTPUT:
 
     - The corresponding `p`-adic ring.
@@ -1374,7 +1373,7 @@ class Zp_class(UniqueFactory):
     TYPES AND PRECISION:
 
     There are three types of precision.
-    The first is relative precision; it gives the number of known 
+    The first is relative precision; it gives the number of known
     `p`-adic digits::
 
         sage: R = Zp(5, 20, 'capped-rel', 'series'); a = R(675); a
@@ -1390,7 +1389,7 @@ class Zp_class(UniqueFactory):
 
     The third one is lattice precision.
     It is not attached to a single `p`-adic number but is a unique
-    object modeling the precision on a set of `p`-adics, which is 
+    object modeling the precision on a set of `p`-adics, which is
     typically the set of all elements within the same parent.
 
         sage: R = ZpLC(17)
@@ -1407,9 +1406,8 @@ class Zp_class(UniqueFactory):
     There are many types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
-    floating point rings (type=``'floating-point'``), lattice capped rings 
-    (type=``'lattice-cap'``), lattice float rings (type=``'lattice-float'``)
-    and lazy rings (type= ``'lazy'``).
+    floating point rings (type=``'floating-point'``), lattice capped rings
+    (type=``'lattice-cap'``) and lattice float rings (type=``'lattice-float'``).
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -1456,14 +1454,11 @@ class Zp_class(UniqueFactory):
     in that elements do not trac their own precision.  However, relative
     precision is truncated with each operation rather than absolute precision.
 
-    On the contrary, the lattice type tracks precision using lattices 
-    and automatic differentiation. It is rather slow but provides sharp 
+    On the contrary, the lattice type tracks precision using lattices
+    and automatic differentiation. It is rather slow but provides sharp
     (often optimal) results regarding precision.
     We refer to the documentation of the function :func:`ZpLC` for a
     small demonstration of the capabilities of this precision model.
-
-    The lazy case will eventually support elements that can increase
-    their precision upon request.  It is not currently implemented.
 
     PRINTING:
 
@@ -1760,6 +1755,8 @@ class Zp_class(UniqueFactory):
             print_alphabet = print_max_terms
             print_max_terms = check
             check = True
+        if label is not None and type not in ['lattice-cap','lattice-float']:
+            raise ValueError("label keyword only supported for lattice precision")
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
                             print_max_terms, show_prec, check,
                             ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap', 'lattice-float'], 
@@ -1786,9 +1783,6 @@ class Zp_class(UniqueFactory):
             label = None
         else:
             p, prec, type, print_mode, name, print_pos, print_sep, print_alphabet, print_max_terms, show_prec, label = key
-        if isinstance(type, Integer):
-            # lazy
-            raise NotImplementedError("lazy p-adics need more work.  Sorry.")
         if (version[0] < 4 or (len(version) > 1 and version[0] == 4 and version[1] < 5) or
             (len(version) > 2 and version[0] == 4 and version[1] == 5 and version[2] < 3)):
             # keys changed in order to reduce irrelevant duplications: e.g. two Zps with print_mode 'series'
@@ -1847,9 +1841,8 @@ def Zq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
       See TYPES and PRECISION below.
 
     - ``type`` -- string (default: ``'capped-rel'``) Valid types are
-      ``'capped-abs'``, ``'capped-rel'``, ``'fixed-mod'``,
-      ``'floating-point'`` and ``'lazy'`` (though ``'lazy'`` doesn't
-      currently work).  See TYPES and PRECISION below
+      ``'capped-abs'``, ``'capped-rel'``, ``'fixed-mod'``, and
+      ``'floating-point'``.  See TYPES and PRECISION below
 
     - modulus -- polynomial (default None) A polynomial defining an
       unramified extension of `\mathbb{Z}_p`.  See MODULUS below.
@@ -1916,11 +1909,10 @@ def Zq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
         sage: b.precision_absolute()
         22
 
-    There are five types of `p`-adic rings: capped relative rings
+    There are manyy types of `p`-adic rings: capped relative rings
     (type= ``'capped-rel'``), capped absolute rings
     (type= ``'capped-abs'``), fixed modulus rings (type= ``'fixed-mod'``),
-    floating point rings (type=``'floating-point'``),
-    and lazy rings (type= ``'lazy'``).
+    and floating point rings (type=``'floating-point'``).
 
     In the capped relative case, the relative precision of an element
     is restricted to be at most a certain value, specified at the
@@ -1972,9 +1964,6 @@ def Zq(q, prec = None, type = 'capped-rel', modulus = None, names=None,
     The floating point case is similar to the fixed modulus type
     in that elements do not trac their own precision.  However, relative
     precision is truncated with each operation rather than absolute precision.
-
-    The lazy case will eventually support elements that can increase
-    their precision upon request.  It is not currently implemented.
 
     MODULUS:
 

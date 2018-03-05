@@ -238,6 +238,7 @@ class LocalGeneric(CommutativeRing):
         - ``print_alphabet`` -- dict
         - ``show_prec`` -- bool
         - ``check`` -- bool
+        - ``label`` -- string (only for lattice precision)
 
         The following arguments are only applied to the top ring in the tower:
 
@@ -353,6 +354,14 @@ class LocalGeneric(CommutativeRing):
             sage: S = R.change(prec=50)
             sage: S.defining_polynomial(exact=True)
             x^3 + 3*x + 3
+
+        Changing label for lattice precision (the precision lattice is not copied)::
+
+            sage: R = ZpLC(37, (8,11))
+            sage: S = R.change(label = "change"); S
+            37-adic Ring with lattice-cap precision (label: change)
+            sage: S.change(label = "new")
+            37-adic Ring with lattice-cap precision (label: new)
         """
         # We support both print_* and * for *=mode, pos, sep, alphabet
         for atr in ('print_mode', 'print_pos', 'print_sep', 'print_alphabet'):
@@ -434,6 +443,11 @@ class LocalGeneric(CommutativeRing):
                 functor.extras['names'] = kwds.pop('names')
             elif functor.extras['names'][0] == curpstr:
                 functor.extras['names'] = (str(p),)
+            # labels for lattice precision
+            if 'label' in kwds:
+                functor.extras['label'] = kwds.pop('label')
+            elif 'label' in functor.extras and functor.type not in ['lattice-cap','lattice-float']:
+                del functor.extras['label']
             for atr in ('ram_name', 'var_name'):
                 if atr in kwds:
                     functor.extras['print_mode'][atr] = kwds.pop(atr)
@@ -456,6 +470,7 @@ class LocalGeneric(CommutativeRing):
             functor.kwds = copy(functor.kwds)
             functor.kwds['print_mode'] = copy(functor.kwds['print_mode'])
             if 'prec' in kwds:
+                # This will need to be modified once lattice precision supports extensions
                 prec = kwds.pop('prec')
                 baseprec = (prec - 1) // self.e() + 1
                 if baseprec > self.base_ring().precision_cap():
@@ -497,15 +512,7 @@ class LocalGeneric(CommutativeRing):
 
     def precision_cap(self):
         r"""
-        Returns the precision cap for ``self``.
-
-        INPUT:
-
-        - ``self`` -- a local ring
-
-        OUTPUT:
-
-        - integer -- ``self``'s precision cap
+        Returns the precision cap for this ring.
 
         EXAMPLES::
 
@@ -527,8 +534,22 @@ class LocalGeneric(CommutativeRing):
             ``self.precision_cap()``.  Rings with relative caps
             (e.g. the class ``pAdicRingCappedRelative``) are the same
             except that the precision is the precision of the unit
-            part of each element.  For lazy rings, this gives the
-            initial precision to which elements are computed.
+            part of each element.
+        """
+        return self._prec
+
+    def _precision_cap(self):
+        r"""
+        Returns the precision cap for this ring, in the format
+        used by the factory methods to create the ring.
+
+        For most `p`-adic types, this is the same as :meth:`precision_cap`,
+        but there is a difference for lattice precision.
+
+        EXAMPLES::
+
+            sage: Zp(17,34)._precision_cap()
+            34
         """
         return self._prec
 

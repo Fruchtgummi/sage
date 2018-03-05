@@ -146,11 +146,11 @@ class pAdicBaseGeneric(pAdicGeneric):
 
     def exact_ring(self):
         """
-        Returns the integer ring.  
+        Returns the integer ring.
 
         EXAMPLES::
 
-            sage: Zp(5).exact_ring() 
+            sage: Zp(5).exact_ring()
             Integer Ring
         """
         from sage.rings.integer_ring import ZZ

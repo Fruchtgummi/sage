@@ -1895,18 +1895,17 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             v, w = vals[t], vals[t+1]
             rows = rows_by_val[v]
             piv = max(rows)
-            alpha = col[piv].unit_part()
             for i in rows:
                 if i == piv: continue
                 # We clear the entry on the i-th line
-                beta = col[i].unit_part()
-                for j in range(piv, n):
+                scalar = (col[i]/col[piv]).reduce(prec-v)
+                for j in range(piv,n):
                     col_cur = self._matrix[self._elements[j]]
-                    col_cur[i] = alpha*col_cur[i] - beta*col_cur[piv]
+                    col_cur[i] -= scalar*col_cur[piv]
             # We rescale the piv-th line
-            for j in range(piv, n):
+            for j in range(piv,n):
                 col_cur = self._matrix[self._elements[j]]
-                col_cur[piv] = col_cur[piv] << (w-v)
+                col_cur[piv] <<= w - v
             # Now the entry on the piv-th line has valuation w
             # We update the dictionary accordingly
             if w < prec:
@@ -2338,7 +2337,6 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         if self._history is not None:
             self._history.append(('add', None, walltime(tme)))
 
-
     def del_elements(self, threshold=None):
         r"""
         Erase columns of the lattice precision matrix corresponding to
@@ -2467,6 +2465,92 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
                 self._history.append(('del', index, walltime(tme)))
 
         del self._marked_for_deletion[:count]
+
+    def _lift_to_precision(self, x, prec):
+        r"""
+        Lift the specified element to the specified precision.
+
+        INPUT:
+
+        - ``x`` -- the element whose precision has to be lifted
+
+        - ``prec`` -- the new precision
+
+        NOTE:
+
+        The new precision lattice is computed as the intersection
+        of the current precision lattice with the subspace
+
+        ..MATH::
+
+            p^{prec} \Z_p dx \oplus \bigoplus_{y \neq x} \Q_p dy
+
+        This function may change at the same time the precision of 
+        other elements having the same parent.
+
+        .. NOTE::
+
+            This function is not meant to be called directly. Use
+            ``x.lift_to_precision`` instead.
+
+        EXAMPLES::
+
+            sage: R = ZpLF(2)
+            sage: x = R(1, 10); x
+            1 + O(2^10)
+            sage: y = R(1, 5); y
+            1 + O(2^5)
+            sage: u = x^2 + x*y
+            sage: v = y^2 + x*y
+            sage: w = u + v
+
+            sage: prec = R.precision()
+            sage: prec._lift_to_precision(w, 11)
+            sage: w
+            2^2 + O(2^11)
+            sage: y
+            1 + O(2^9)
+        """
+        ref = pAdicLatticeElementWeakProxy(x)
+        col = self._matrix[ref]
+        n = len(self._elements)
+
+        rows_by_val = { }
+        for i in range(len(col)):
+            v = col[i].valuation()
+            if v >= prec: continue
+            if rows_by_val.has_key(v):
+                rows_by_val[v].append(i)
+            else:
+                rows_by_val[v] = [i]
+        vals = rows_by_val.keys()
+        vals.sort()
+        vals.append(prec)
+
+        for t in range(len(vals)-1):
+            v, w = vals[t], vals[t+1]
+            rows = rows_by_val[v]
+            piv = max(rows)
+            for i in rows:
+                if i == piv: continue
+                # We clear the entry on the i-th line
+                scalar = (col[i]/col[piv]).reduce(prec-v)
+                for j in range(n):
+                    col_cur = self._matrix[self._elements[j]]
+                    if len(col_cur) > piv:
+                        col_cur[i] -= scalar*col_cur[piv]
+                        col_cur[i] = col_cur[i].reduce_relative(self._internal_prec)
+            # We rescale the piv-th line
+            for j in range(n):
+                col_cur = self._matrix[self._elements[j]]
+                if len(col_cur) > piv:
+                    col_cur[piv] <<= w - v
+            # Now the entry on the piv-th line has valuation w
+            # We update the dictionary accordingly
+            if w < prec:
+                rows_by_val[w].append(piv)
+
+        self._precision_absolute.clear_cache()
 
     @cached_method(key=lambda self, x: pAdicLatticeElementWeakProxy(x))
     def _precision_absolute(self, x):

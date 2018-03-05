@@ -413,6 +413,25 @@ class pAdicLatticeGeneric(pAdicGeneric):
         else:
             return self._prec_cap_absolute
 
+    def _precision_cap(self):
+        """
+        Return the pair of precisions (for ``lattice-cap``)
+        or the relative precision cap (for ``lattice-float``).
+
+        EXAMPLES::
+
+            sage: R = ZpLC(11, (27,37))
+            sage: R._precision_cap()
+            (27, 37)
+            sage: R = ZpLF(11, 14)
+            sage: R._precision_cap()
+            14
+        """
+        if self._subtype == 'cap':
+            return (self._prec_cap_relative, self._prec_cap_absolute)
+        else:
+            return self._prec_cap_relative
+
     def precision_cap_relative(self):
         """
         Return the relative precision cap for this ring.
@@ -651,7 +670,10 @@ class pAdicLatticeGeneric(pAdicGeneric):
                     for i in indices[id(x)]:
                         ans[i] = y
             else:
-                lattice = prec.precision_lattice(L)
+                try:
+                    lattice = prec.precision_lattice(L)
+                except PrecisionError:
+                    raise NotImplementedError("multiple conversion of a set of variables for which the module precision is not a lattice is not implemented yet")
                 for j in range(len(L)):
                     x = L[j]; dx = [ ]
                     for i in range(j):
@@ -794,14 +816,22 @@ class pAdicRingBaseGeneric(pAdicBaseGeneric, pAdicRingGeneric):
             17-adic Ring with capped relative precision 8
             sage: K == c(L)
             True
+
+        TESTS::
+
+            sage: R = ZpLC(13,(31,41))
+            sage: R._precision_cap()
+            (31, 41)
+            sage: F, Z = R.construction()
+            sage: S = F(Z)
+            sage: S._precision_cap()
+            (31, 41)
         """
         from sage.categories.pushout import CompletionFunctor
         extras = {'print_mode':self._printer.dict(), 'type':self._prec_type(), 'names':self._names}
-        try:
+        if hasattr(self, '_label'):
             extras['label'] = self._label
-        except AttributeError:
-            pass
-        return (CompletionFunctor(self.prime(), self.precision_cap(), extras), ZZ)
+        return (CompletionFunctor(self.prime(), self._precision_cap(), extras), ZZ)
 
     def random_element(self, algorithm='default'):
         r"""
@@ -935,9 +965,19 @@ class pAdicFieldBaseGeneric(pAdicBaseGeneric, pAdicFieldGeneric):
             17-adic Field with capped relative precision 8
             sage: K == c(L)
             True
+
+        TESTS::
+
+            sage: R = QpLC(13,(31,41))
+            sage: R._precision_cap()
+            (31, 41)
+            sage: F, Z = R.construction()
+            sage: S = F(Z)
+            sage: S._precision_cap()
+            (31, 41)
         """
         from sage.categories.pushout import CompletionFunctor
-        return (CompletionFunctor(self.prime(),
-                                  self.precision_cap(),
-                                  {'print_mode':self._printer.dict(), 'type':self._prec_type(), 'names':self._names}),
-                QQ)
+        extras = {'print_mode':self._printer.dict(), 'type':self._prec_type(), 'names':self._names}
+        if hasattr(self, '_label'):
+            extras['label'] = self._label
+        return (CompletionFunctor(self.prime(), self._precision_cap(), extras), QQ)
