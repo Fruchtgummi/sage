@@ -603,7 +603,7 @@ class DifferentialPrecisionGeneric(SageObject):
         self._history = None
 
     def __reduce__(self):
-        """
+        r"""
         TESTS::
 
             sage: R = ZpLF(2)
@@ -807,7 +807,7 @@ class DifferentialPrecisionGeneric(SageObject):
         pass
 
     def _record_collected_element(self, ref):
-        """
+        r"""
         Record that the element with weak reference ``ref``
         has been collected by the garbage collector.
 
@@ -1524,7 +1524,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
     # We need to copy this method.
     # Indeed otherwise it is inherited from UniqueRepresentation
     def __reduce__(self):
-        """
+        r"""
         TESTS::
 
             sage: R = ZpLC(2)
@@ -1708,7 +1708,6 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         p = self._p
         n = len(self._elements)
         x_ref = pAdicLatticeElementWeakProxy(x, self._record_collected_element)
-        #print("Add:  %s - %s" % (x_ref, x._value))
         self._elements.append(x_ref)
         col = n * [self._approx_zero]
         if dx_mode == 'linear_combination':
@@ -1737,13 +1736,6 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         # We update history
         if self._history is not None:
             self._history.append(('add', None, walltime(tme)))
-
-        #print("Status:")
-        #for wref in self._elements:
-        #    if wref() is None:
-        #        print " * %s" % wref
-        #    else:
-        #        print " * %s - %s" % (wref, wref()._value)
 
     def del_elements(self, threshold=None):
         r"""
@@ -1784,14 +1776,15 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
         n = len(self._elements)
 
         # We mark new collected elements for deletion
+        # The list self._collected_references can be updated while
+        # the loop runs.
+        # However, we do not need to copy it because Python supports
+        # iteration over a list to which elements are added.
         count = 0
         for ref in self._collected_references:
             count += 1
             tme = walltime()
-            try:
-                index = self._index(ref)
-            except (IndexError, KeyError):
-                raise RuntimeError
+            index = self._index(ref)
             self._marked_for_deletion.append(index)
             if self._history is not None:
                 self._history.append(('mark', index, walltime(tme)))
@@ -1805,11 +1798,7 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             n -= 1; count += 1
 
             tme = walltime()
-            try:
-                ref = self._elements[index]
-            except IndexError:
-                raise RuntimeError("index=%s, n=%s, %s elements" % (index, n, len(self._elements)))
-            #print("Del:  %s (index = %s)" % (ref, index))
+            ref = self._elements[index]
             del self._elements[index]
             del self._matrix[ref]
             capped = self._capped[ref]
@@ -1841,13 +1830,6 @@ class PrecisionLattice(UniqueRepresentation, DifferentialPrecisionGeneric):
             self.reduce(index, partial=True)
 
         del self._marked_for_deletion[:count]
-
-        #print("Status:")
-        #for wref in self._elements:
-        #    if wref() is None:
-        #        print " * %s" % wref
-        #    else:
-        #        print " * %s - %s" % (wref, wref()._value)
 
     def _lift_to_precision(self, x, prec):
         r"""
@@ -2151,7 +2133,7 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
     # We need to copy this method.
     # Indeed otherwise it is inherited from UniqueRepresentation
     def __reduce__(self):
-        """
+        r"""
         TESTS::
 
             sage: R = ZpLF(2)
@@ -2395,14 +2377,15 @@ class PrecisionModule(UniqueRepresentation, DifferentialPrecisionGeneric):
         p = self._p
 
         # We mark new collected elements for deletion
+        # The list self._collected_references can be updated while
+        # the loop runs.
+        # However, we do not need to copy it because Python supports
+        # iteration over a list to which elements are added.
         count = 0
         for ref in self._collected_references:
             count += 1
             tme = walltime()
-            try:
-                index = self._index(ref)
-            except (IndexError, KeyError):
-                raise RuntimeError
+            index = self._index(ref)
             if index == 0:
                 length_before = 0
             else:
@@ -2622,7 +2605,7 @@ class pAdicLatticeElementWeakProxy(object):
     column in the precision lattice matrix.
     However, weak references as implemented by Python are tricky to use as
     dictionary keys. Their equality depends on the equality of the element they
-    point to (as long as that element is alive) and then on the equlity by
+    point to (as long as that element is alive) and then on the equality by
     ``id``. This means that statements such as: ``ref in D == ref in D`` could
     be false if the garbage collector kicks in between the two invocations.
     To prevent very subtle and hardly reproducible bugs, we wrap weak
@@ -2631,7 +2614,7 @@ class pAdicLatticeElementWeakProxy(object):
 
     EXAMPLES:
 
-    Proxy elements exist only internally and or not usually exposed to the user::
+    Proxy elements exist only internally and are not usually exposed to the user::
 
         sage: from sage.rings.padics.lattice_precision import pAdicLatticeElementWeakProxy
         sage: R = ZpLF(2, label='proxy')
@@ -2640,7 +2623,6 @@ class pAdicLatticeElementWeakProxy(object):
         sage: proxy = prec._elements[0]
         sage: isinstance(proxy, pAdicLatticeElementWeakProxy)
         True
-
     """
     _next_id = 0
 
@@ -2734,7 +2716,7 @@ class pAdicLatticeElementWeakProxy(object):
 def list_of_padics(elements):
     r"""
     Convert a list of p-adic composed elements (such as polynomials, matrices)
-    to a list of weak refererences of their p-adic coefficients.
+    to a list of weak references of their p-adic coefficients.
 
     This is a helper function for the method :meth:`precision_lattice`.
 
@@ -2763,4 +2745,3 @@ def list_of_padics(elements):
     for x in elements:
         ans += list_of_padics(x)
     return ans
-

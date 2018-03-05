@@ -177,7 +177,6 @@ TESTS::
 
 """
 from __future__ import absolute_import
-from six import iteritems
 
 #*****************************************************************************
 #       Copyright (C) 2008 David Roe <roed.math@gmail.com>
@@ -199,17 +198,15 @@ from .generic_nodes import pAdicFieldBaseGeneric, \
                           pAdicCappedAbsoluteRingGeneric, \
                           pAdicFloatingPointRingGeneric, \
                           pAdicFloatingPointFieldGeneric, \
-                          pAdicGeneric
+                          pAdicGeneric, \
+                          pAdicLatticeGeneric
 from .padic_capped_relative_element import pAdicCappedRelativeElement
 from .padic_capped_absolute_element import pAdicCappedAbsoluteElement
 from .padic_fixed_mod_element import pAdicFixedModElement
 from .padic_floating_point_element import pAdicFloatingPointElement
-from .padic_lattice_element import pAdicLatticeElement, pAdicLatticeCapElement, pAdicLatticeFloatElement
-from .lattice_precision import PrecisionLattice, PrecisionModule
 
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
-from sage.rings.infinity import Infinity
 
 
 class pAdicRingCappedRelative(pAdicRingBaseGeneric, pAdicCappedRelativeRingGeneric):
@@ -835,418 +832,8 @@ class pAdicFieldFloatingPoint(pAdicFieldBaseGeneric, pAdicFloatingPointFieldGene
                 from sage.rings.padics.padic_generic import ResidueLiftingMap
                 return ResidueLiftingMap._create_(R, self)
 
-
-
 # Lattice precision
 ###################
-
-# Maybe the next class should go to sage.rings.padics.generic_nodes but I 
-# don't understand quite well the structure of all classes in this directory
-class pAdicLatticeGeneric(pAdicGeneric):
-    r"""
-    An implementation of the `p`-adic rationals with lattice precision.
-
-    INPUT:
-
-    - `p` -- the underlying prime number
-
-    - ``prec`` -- the precision
-
-    - ``subtype`` -- either ``"cap"`` or ``"float"``, 
-      specifying the precision model used for tracking precision
-
-    - ``label`` -- a string or ``None`` (default: ``None``)
-
-    TESTS::
-
-        sage: R = ZpLC(17)   # indirect doctest
-        doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
-        See http://trac.sagemath.org/23505 for details.
-        sage: R._prec_type()
-        'lattice-cap'
-
-        sage: R = ZpLF(17)   # indirect doctest
-        sage: R._prec_type()
-        'lattice-float'
-
-        sage: R = QpLC(17)   # indirect doctest
-        sage: R._prec_type()
-        'lattice-cap'
-
-        sage: R = QpLF(17)   # indirect doctest
-        sage: R._prec_type()
-        'lattice-float'
-    """
-    def __init__(self, p, prec, print_mode, names, label=None):
-        """
-        Initialization.
-
-        TESTS::
-
-            sage: R = ZpLC(17)   # indirect doctest
-            sage: R._prec_type()
-            'lattice-cap'
-            sage: R._subtype
-            'cap'
-
-            sage: R = ZpLF(17)   # indirect doctest
-            sage: R._prec_type()
-            'lattice-float'
-            sage: R._subtype
-            'float'
-        """
-        from sage.rings.padics.lattice_precision import pRational
-        self._approx_zero = pRational(p, 0)
-        self._approx_one = pRational(p, 1)
-        self._approx_minusone = pRational(p, -1)
-        if label is None:
-            self._label = None
-        else:
-            self._label = str(label)
-        # We do not use the standard attribute element_class 
-        # because we need to be careful with precision
-        # Instead we implement _element_constructor_ (cf below)
-        if self._subtype == 'cap':
-            (self._prec_cap_relative, self._prec_cap_absolute) = prec
-            self._zero_cap = None
-            self._precision = PrecisionLattice(p, label)
-            element_class = pAdicLatticeCapElement
-        elif self._subtype == 'float':
-            self._prec_cap_relative = prec
-            self._prec_cap_absolute = Infinity
-            self._zero_cap = prec
-            self._precision = PrecisionModule(p, label, prec)
-            element_class = pAdicLatticeFloatElement
-        else:
-            raise ValueError("subtype must be either 'cap' or 'float'")
-        self._element_class = self.__make_element_class__(element_class)
-        pAdicGeneric.__init__(self, self, p, prec, print_mode, names, None)
-
-    def _prec_type(self):
-        """
-        Return the precision handling type.
-
-        EXAMPLES::
-
-            sage: ZpLC(5)._prec_type()
-            'lattice-cap'
-        """
-        return 'lattice-' + self._subtype
-
-    def is_lattice_prec(self):
-        """
-        Returns whether this `p`-adic ring bounds precision using
-        a lattice model.
-
-        In lattice precision, relationships between elements
-        are stored in a precision object of the parent, which
-        allows for optimal precision tracking at the cost of
-        increased memory usage and runtime.
-
-        EXAMPLES::
-
-            sage: R = ZpCR(5, 15)
-            sage: R.is_lattice_prec()
-            False
-            sage: x = R(25, 8)
-            sage: x - x
-            O(5^8)
-            sage: S = ZpLC(5, 15)
-            sage: S.is_lattice_prec()
-            True
-            sage: x = S(25, 8)
-            sage: x - x
-            O(5^30)
-        """
-        return True
-
-    def precision_cap(self):
-        """
-        Return the relative precision cap for this ring if it is finite.
-        Otherwise return the absolute precision cap.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(3)
-            sage: R.precision_cap()
-            20
-            sage: R.precision_cap_relative()
-            20
-
-            sage: R = ZpLC(3, prec=(Infinity,20))
-            sage: R.precision_cap()
-            20
-            sage: R.precision_cap_relative()
-            +Infinity
-            sage: R.precision_cap_absolute()
-            20
-
-        .. SEEALSO::
-
-            :meth:`precision_cap_relative`, :meth:`precision_cap_absolute`
-        """
-        if self._prec_cap_relative is not Infinity:
-            return self._prec_cap_relative
-        else:
-            return self._prec_cap_absolute
-
-    def precision_cap_relative(self):
-        """
-        Return the relative precision cap for this ring.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(3)
-            sage: R.precision_cap_relative()
-            20
-
-            sage: R = ZpLC(3, prec=(Infinity,20))
-            sage: R.precision_cap_relative()
-            +Infinity
-
-        .. SEEALSO::
-
-            :meth:`precision_cap`, :meth:`precision_cap_absolute`
-        """
-        return self._prec_cap_relative
-
-    def precision_cap_absolute(self):
-        """
-        Return the absolute precision cap for this ring.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(3)
-            sage: R.precision_cap_absolute()
-            40
-
-            sage: R = ZpLC(3, prec=(Infinity,20))
-            sage: R.precision_cap_absolute()
-            20
-
-        .. SEEALSO::
-
-            :meth:`precision_cap`, :meth:`precision_cap_relative`
-        """
-        return self._prec_cap_absolute
-
-    def precision(self):
-        """
-        Return the lattice precision object attached to this parent.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(5, label='precision')
-            sage: R.precision()
-            Precision lattice on 0 objects (label: precision)
-
-            sage: x = R(1, 10); y = R(1, 5)
-            sage: R.precision()
-            Precision lattice on 2 objects (label: precision)
-
-        .. SEEALSO::
-
-            :class:`sage.rings.padics.lattice_precision.PrecisionLattice`
-        """
-        return self._precision
-
-    def label(self):
-        """
-        Return the label of this parent.
-
-        NOTE:
-
-        Labels can be used to distinguish between parents with
-        the same defining data.
-
-        They are useful in the lattice precision framework in order
-        to limit the size of the lattice modeling the precision (which
-        is roughly the number of elements having this parent).
-
-        Elements of a parent with some label do not coerce to a parent 
-        with a different label. However conversions are allowed.
-
-        EXAMPLES:
-
-            sage: R = ZpLC(5)
-            sage: R.label()  # no label by default
-
-            sage: R = ZpLC(5, label='mylabel')
-            sage: R.label()
-            'mylabel'
-
-        Labels are typically useful to isolate computations.
-        For example, assume that we first want to do some calculations
-        with matrices::
-
-            sage: R = ZpLC(5, label='matrices')
-            sage: M = random_matrix(R, 4, 4)
-            sage: d = M.determinant()
-
-        Now, if we want to do another unrelated computation, we can
-        use a different label::
-
-            sage: R = ZpLC(5, label='polynomials')
-            sage: S.<x> = PolynomialRing(R)
-            sage: P = (x-1)*(x-2)*(x-3)*(x-4)*(x-5)
-
-        Without labels, the software would have modeled the
-        precision on the matrices and on the polynomials using the same
-        lattice (manipulating a lattice of higher
-        dimension can have a significant impact on performance).
-        """
-        return self._label
-
-    def _element_constructor_(self, x, prec=None):
-        """
-        Create an element of this parent.
-
-        INPUT:
-
-        - ``x``: the datum from which the element is created
-
-        - ``prec`` -- an integer or ``None`` (the default); the
-          absolute precision of the created element
-
-        NOTE:
-
-        This function tries to be sharp on precision as much as
-        possible.
-        For instance, if the datum ``x`` is itself an element of the
-        same parent, the software remembers that the created element
-        is actually equal to ``x`` (at infinite precision)::
-
-            sage: R = ZpLC(2, prec=(Infinity,50))
-            sage: x = R(1, 10); x
-            1 + O(2^10)
-            sage: y = R(x)   # indirect doctest
-            sage: y
-            1 + O(2^10)
-            sage: x - y
-            O(2^50)
-        """
-        # We first try the copy method which is sharp on precision
-        try:
-            if prec is None:
-                return x.copy(parent=self)
-            elif x.parent() is self:
-                return x.add_bigoh(prec)
-            else:
-                return x.copy(parent=self).add_bigoh(prec)
-        except (TypeError, ValueError, AttributeError):
-            pass
-        return self._element_class(self, x, prec)
-
-    def convert_multiple(self, *elts):
-        """
-        Convert a list of elements to this parent.
-
-        NOTE:
-
-        This function tries to be sharp on precision as much as
-        possible.
-        In particular, if the precision of the input elements are 
-        handled by a lattice, diffused digits of precision are
-        preserved during the conversion.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2)
-            sage: x = R(1, 10); y = R(1, 5)
-            sage: x,y = x+y, x-y
-
-        Remark that the pair `(x,y)` has diffused digits of precision::
-
-            sage: x
-            2 + O(2^5)
-            sage: y
-            O(2^5)
-            sage: x + y
-            2 + O(2^11)
-
-            sage: R.precision().diffused_digits([x,y])
-            6
-
-        As a consequence, if we convert ``x`` and ``y`` separately, we
-        loose some precision::
-
-            sage: R2 = ZpLC(2, label='copy')
-            sage: x2 = R2(x); y2 = R2(y)
-            sage: x2
-            2 + O(2^5)
-            sage: y2
-            O(2^5)
-            sage: x2 + y2
-            2 + O(2^5)
-
-            sage: R2.precision().diffused_digits([x2,y2])
-            0
-
-        On the other hand, this issue dissapears when we use multiple
-        conversion::
-
-            sage: x2,y2 = R2.convert_multiple(x,y)
-            sage: x2 + y2
-            2 + O(2^11)
-
-            sage: R2.precision().diffused_digits([x2,y2])
-            6
-        """
-        p = self.prime()
-
-        # We sort elements by precision lattice
-        elt_by_prec = { }
-        elt_other = [ ]
-        indices = { }
-        for i in range(len(elts)):
-            x = elts[i]; idx = id(x)
-            if indices.has_key(idx):
-                indices[idx].append(i)
-            else:
-                indices[idx] = [i]
-            if isinstance(x, pAdicLatticeElement):
-                prec = x.parent().precision()
-                if prec.prime() != p:
-                    raise TypeError("conversion between different p-adic rings not supported")
-                if elt_by_prec.has_key(prec):
-                    elt_by_prec[prec].append(x)
-                else:
-                    elt_by_prec[prec] = [x]
-            else:
-                elt_other.append(x)
-
-        # We create the elements
-        ans = len(elts)*[None]
-        selfprec = self._precision
-        # First the elements with precision lattice
-        for (prec, L) in iteritems(elt_by_prec):
-            if prec is selfprec:
-                # Here, we use the copy method in order
-                # to be sharp on precision
-                for x in L:
-                    y = x.copy(parent=self)
-                    for i in indices[id(x)]:
-                        ans[i] = y
-            else:
-                lattice = prec.precision_lattice(L)
-                for j in range(len(L)):
-                    x = L[j]; dx = [ ]
-                    for i in range(j):
-                        dx.append([L[i], lattice[i,j]])
-                    prec = lattice[j,j].valuation(p)
-                    y = self._element_class(self, x.value(), prec, dx=dx, dx_mode='values', check=False, reduce=False)
-                    for i in indices[id(x)]:
-                        ans[i] = y
-                    L[j] = y
-        # Now the other elements
-        for x in elt_other:
-            y = self._element_class(self, x)
-            for i in indices[id(x)]:
-                ans[i] = y
-
-        # We return the created elements
-        return ans
-
 
 class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
     """
@@ -1258,15 +845,23 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
 
     - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
 
+    - ``subtype`` -- either ``'cap'`` or ``'float'``
+
     - ``print_mode`` -- dictionary with print options
 
     - ``names`` -- how to print the prime
 
     - ``label`` -- the label of this ring
 
+    .. SEEALSO::
+
+        :meth:`label`
+
     EXAMPLES::
 
         sage: R = ZpLC(next_prime(10^60)) # indirect doctest
+        doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+        See http://trac.sagemath.org/23505 for details.
         sage: type(R)
         <class 'sage.rings.padics.padic_base_leaves.pAdicRingLattice_with_category'>
 
@@ -1278,31 +873,10 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         """
         Initialization.
 
-        INPUT:
+        TESTS:
 
-        - ``p`` -- prime
-
-        - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
-
-        - ``print_mode`` -- dictionary with print options
-
-        - ``names`` -- how to print the prime
-
-        - ``label`` -- the label of this ring
-
-        EXAMPLES::
-
-            sage: R = ZpLC(next_prime(10^60)) # indirect doctest
-            sage: type(R)
-            <class 'sage.rings.padics.padic_base_leaves.pAdicRingLattice_with_category'>
-
-            sage: R = ZpLC(2, label='init') # indirect doctest
-            sage: R
-            2-adic Ring with lattice-cap precision (label: init)
-
-        .. SEEALSO::
-
-            :meth:`label`
+            sage: R = ZpLC(7, label='init')
+            sage: TestSuite(R).run(skip='_test_teichmuller')
         """
         # We need to set the subtype first, so that
         # pAdicRingBaseGeneric.__init__ can work
@@ -1312,28 +886,6 @@ class pAdicRingLattice(pAdicLatticeGeneric, pAdicRingBaseGeneric):
         else:
             pAdicRingBaseGeneric.__init__(self, p, prec, print_mode, names, None)
         pAdicLatticeGeneric.__init__(self, p, prec, print_mode, names, label)
-
-    def _repr_(self, do_latex=False):
-        """
-        Return a representation of this parent.
-
-        EXAMPLES::
-
-            sage: R = ZpLC(2); R   # indirect doctest
-            2-adic Ring with lattice-cap precision
-            sage: latex(R)
-            \mathbb Z_{2}
-        """
-        if do_latex:
-            if self._label is not None:
-                return "\\verb'%s' (\simeq \\mathbb Z_{%s})" % (self._label, self.prime())
-            else:
-                return "\\mathbb Z_{%s}" % self.prime()
-        else:
-            if self._label is not None:
-                return "%s-adic Ring with lattice-%s precision (label: %s)" % (self.prime(), self._subtype, self._label)
-            else:
-                return "%s-adic Ring with lattice-%s precision" % (self.prime(), self._subtype)
 
     def _coerce_map_from_(self, R):
         """
@@ -1513,15 +1065,23 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
 
     - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
 
+    - ``subtype`` -- either ``'cap'`` or ``'float'``
+
     - ``print_mode`` -- dictionary with print options
 
     - ``names`` -- how to print the prime
 
     - ``label`` -- the label of this ring
 
+    .. SEEALSO::
+
+        :meth:`label`
+
     EXAMPLES::
 
         sage: R = QpLC(next_prime(10^60)) # indirect doctest
+        doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
+        See http://trac.sagemath.org/23505 for details.
         sage: type(R)
         <class 'sage.rings.padics.padic_base_leaves.pAdicFieldLattice_with_category'>
 
@@ -1533,31 +1093,10 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         """
         Initialization.
 
-        INPUT:
+        TESTS::
 
-        - ``p`` -- prime
-
-        - ``prec`` -- precision cap, given as a pair (``relative_cap``, ``absolute_cap``)
-
-        - ``print_mode`` -- dictionary with print options
-
-        - ``names`` -- how to print the prime
-
-        - ``label`` -- the label of this ring
-
-        EXAMPLES::
-
-            sage: R = QpLC(next_prime(10^60)) # indirect doctest
-            sage: type(R)
-            <class 'sage.rings.padics.padic_base_leaves.pAdicFieldLattice_with_category'>
-
-            sage: R = QpLC(2,label='init') # indirect doctest
-            sage: R
-            2-adic Field with lattice-cap precision (label: init)
-
-        .. SEEALSO::
-
-            :meth:`label`
+            sage: R = ZpLC(7, label='init')
+            sage: TestSuite(R).run(skip='_test_teichmuller')
         """
         # We need to set the subtype first, so that
         # pAdicFieldBaseGeneric.__init__ can work
@@ -1567,28 +1106,6 @@ class pAdicFieldLattice(pAdicLatticeGeneric, pAdicFieldBaseGeneric):
         else:
             pAdicFieldBaseGeneric.__init__(self, p, prec, print_mode, names, None)
         pAdicLatticeGeneric.__init__(self, p, prec, print_mode, names, label)
-
-    def _repr_(self, do_latex=False):
-        """
-        Return a representation of this parent.
-
-        EXAMPLES::
-
-            sage: K = QpLC(2); K   # indirect doctest
-            2-adic Field with lattice-cap precision
-            sage: latex(K)
-            \mathbb Q_{2}
-        """
-        if do_latex:
-            if self._label is not None:
-                return "\\verb'%s' (\simeq \\mathbb Q_{%s})" % (self._label, self.prime())
-            else:
-                return "\\mathbb Q_{%s}" % self.prime()
-        else:
-            if self._label is not None:
-                return "%s-adic Field with lattice-%s precision (label: %s)" % (self.prime(), self._subtype, self._label)
-            else:
-                return "%s-adic Field with lattice-%s precision" % (self.prime(), self._subtype)
 
     def _coerce_map_from_(self, R):
         """
