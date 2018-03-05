@@ -165,7 +165,7 @@ RUN make build
 # Image with a full build of sage and its documentation.                       #
 ################################################################################
 FROM make-build as make-all
-RUN make
+# RUN make
 
 ################################################################################
 # Image with a full build of sage and its documentation but everything         #

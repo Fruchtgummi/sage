@@ -127,6 +127,13 @@ test-doctest-long:
     DOCTEST_PARAMETERS: "--long"
   when: manual
 
+test-pdf:
+  stage: test
+  script:
+    - . .ci/pull-gitlab.sh sagemath-dev
+    - . .ci/test-pdf.sh "$DOCKER_IMAGE"
+  when: manual
+
 # Pushes the built images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
 dockerhub:
