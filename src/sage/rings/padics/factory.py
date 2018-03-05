@@ -83,7 +83,7 @@ def _default_show_prec(type, print_mode):
 
     INPUT:
 
-    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'``, 
+    - ``type`` -- a string: ``'capped-rel'``, ``'capped-abs'``, ``'fixed-mod'``, ``'floating-point'``,
       ``'lattice-cap'`` or ``'lattice-float'``
     - ``print_mode`` -- a string: ``'series'``, ``'terse'``, ``'val-unit'``, ``'digits'``, ``'bars'``
 
@@ -1759,7 +1759,7 @@ class Zp_class(UniqueFactory):
             raise ValueError("label keyword only supported for lattice precision")
         return get_key_base(p, prec, type, print_mode, names, ram_name, print_pos, print_sep, print_alphabet,
                             print_max_terms, show_prec, check,
-                            ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap', 'lattice-float'], 
+                            ['capped-rel', 'fixed-mod', 'capped-abs', 'floating-point', 'lattice-cap', 'lattice-float'],
                             label=label)
 
     def create_object(self, version, key):
@@ -2625,7 +2625,7 @@ def ZpLC(p, prec=None, *args, **kwds):
     The precision is global.
     It is encoded by a lattice in a huge vector space whose dimension
     is the number of elements having this parent. Precision is tracked
-    using automatic differentiation techniques (see [CRV2014]_ and 
+    using automatic differentiation techniques (see [CRV2014]_ and
     [CRV2018]_).
 
     Concretely, this precision datum is an instance of the class
@@ -2684,7 +2684,7 @@ def ZpLC(p, prec=None, *args, **kwds):
     Observe that `5^10 = 9765625` and `5^5 = 3125`.
     The above matrix then reflects the precision on `x` and `y`.
 
-    Now, observe how the precision lattice changes while performing 
+    Now, observe how the precision lattice changes while performing
     computations::
 
         sage: x, y = 3*x+2*y, 2*(x-y)
@@ -2693,8 +2693,8 @@ def ZpLC(p, prec=None, *args, **kwds):
         [    3125 48825000]
         [       0 48828125]
 
-    The matrix we get is no longer diagonal, meaning that some digits 
-    of precision are diffused among the two new elements `x` and `y`. 
+    The matrix we get is no longer diagonal, meaning that some digits
+    of precision are diffused among the two new elements `x` and `y`.
     They nevertheless show up when we compute for instance `x+y`::
 
         sage: x
@@ -2704,7 +2704,7 @@ def ZpLC(p, prec=None, *args, **kwds):
         sage: x+y
         17565 + O(5^11)
 
-    These diffused digits of precision (which are tracked but 
+    These diffused digits of precision (which are tracked but
     do not appear on the printing) allow to be always sharp on
     precision.
 
