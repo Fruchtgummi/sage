@@ -1390,7 +1390,7 @@ class Zp_class(UniqueFactory):
     The third one is lattice precision.
     It is not attached to a single `p`-adic number but is a unique
     object modeling the precision on a set of `p`-adics, which is
-    typically the set of all elements within the same parent.
+    typically the set of all elements within the same parent::
 
         sage: R = ZpLC(17)
         sage: x = R(1,10); y = R(1,5)
