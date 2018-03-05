@@ -19,12 +19,14 @@
 
 version: 2
 jobs:
-  # As https://circleci.com/docs/2.0/docker-layer-caching/ is a paid feature,
-  # we do build & test & release in one step.
   build:
     machine: true
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - docker-v1-sagemath_dev-develop-
+      - run: xzcat /tmp/docker-sagemath_dev/image.tar.xz | docker load || true
       - run:
           # The docker commands sometimes take a while to produce output
           no_output_timeout: 30m
@@ -41,27 +43,36 @@ jobs:
             export DOCKER_TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
             . .ci/update-env.sh
 
-            # Select ARTIFACT_BASE depending on the current branch/tag
-            case $DOCKER_TAG in
-            "develop" | "latest")
-              export ARTIFACT_BASE=source-clean
-              ;;
-            *)
-              # Select sagemath/sagemath-dev:develop as the ARTIFACT_BASE
-              # unless the user has explicitly selected a differnt one as a
-              # CircleCI environment variable.
-              export ARTIFACT_BASE=${ARTIFACT_BASE:-sagemath/sagemath-dev:develop}
-              ;;
-            esac
-
             # Build docker images
             . .ci/build-docker.sh
-
-            # Test that the images work
-            . .ci/test-dev.sh $DOCKER_IMAGE_DEV
-            . .ci/test-cli.sh $DOCKER_IMAGE_CLI
-            . .ci/test-jupyter.sh $DOCKER_IMAGE_CLI localhost
-
-            # Push docker images to dockerhub if a dockerhub user has been configured
-            . .ci/push-dockerhub.sh sagemath-dev
-            . .ci/push-dockerhub.sh sagemath
+      - run:
+            mkdir -p /tmp/docker-sagemath_dev/
+            docker save $DOCKER_IMAGE_DEV | xz -3 > /tmp/docker-sagemath_dev/image.tar.xz
+      - save_cache:
+          key: docker-v1-sagemath_dev-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /tmp/docker-sagemath_dev
+            #
+            #
+            #            # Select ARTIFACT_BASE depending on the current branch/tag
+            #            case $DOCKER_TAG in
+            #            "develop" | "latest")
+            #              export ARTIFACT_BASE=source-clean
+            #              ;;
+            #            *)
+            #              # Select sagemath/sagemath-dev:develop as the ARTIFACT_BASE
+            #              # unless the user has explicitly selected a differnt one as a
+            #              # CircleCI environment variable.
+            #              export ARTIFACT_BASE=${ARTIFACT_BASE:-sagemath/sagemath-dev:develop}
+            #              ;;
+            #            esac
+            #
+            #
+            #            # Test that the images work
+            #            . .ci/test-dev.sh $DOCKER_IMAGE_DEV
+            #            . .ci/test-cli.sh $DOCKER_IMAGE_CLI
+            #            . .ci/test-jupyter.sh $DOCKER_IMAGE_CLI localhost
+            #
+            #            # Push docker images to dockerhub if a dockerhub user has been configured
+            #            . .ci/push-dockerhub.sh sagemath-dev
+            #            . .ci/push-dockerhub.sh sagemath
