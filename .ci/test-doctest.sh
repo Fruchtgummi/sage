@@ -16,26 +16,30 @@
 
 set -ex
 
+run_doctests() {
+    docker run --entrypoint sh "$1" -c "sage -tp $@ ||
+                                        sage -tp --failed $@ ||
+                                        sage -tp --failed $@"
+}
+
 case "$2" in
     --new)
-        # Try to go back to the latest commit by the release manager
-        git reset `git log --author release@sagemath.org -1 --format=%H` || true
-        export DOCTEST_PARAMETERS="--new"
+        LATEST_RELEASE=`git log --author release@sagemath.org -1 --format=%H`
+        MODIFIED_ADDED=`git diff --diff-filter=MC --name-only "$LATEST_RELEASE" | grep -E '*.(py|pyx|rst)'`
+        if [[ "x$MODIFIED_ADDED" = "x" ]]; then
+            echo "No testable files have been modified/added."
+        else
+            run_doctests $MODIFIED_ADDED
+        fi
         ;;
     --short)
         # TODO: Upgrade this with https://trac.sagemath.org/ticket/25270
-        export DOCTEST_PARAMETERS="--all"
+        run_doctests --all
         ;;
     --long)
-        export DOCTEST_PARAMETERS="--long"
+        run_doctests --all
         ;;
     *)
         exit 1
         ;;
 esac
-
-# Run tests once, and then try the failing files twice to work around flaky doctests.
-docker run --entrypoint sh -e DOCTEST_PARAMETERS "$1" -c 'sage -tp $DOCTEST_PARAMETERS ||
-                                                               sage -tp --failed $DOCTEST_PARAMETERS ||
-                                                               sage -tp --failed $DOCTEST_PARAMETERS'
-
