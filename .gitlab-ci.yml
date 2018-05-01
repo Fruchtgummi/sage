@@ -39,9 +39,10 @@ image: docker:latest
 
 stages:
   - build
+  - check
+  - release
   - test
-  - upload
-  - review
+  - test-long
 
 variables:
   DOCKER_TAG: $CI_COMMIT_REF_NAME
@@ -119,20 +120,20 @@ build-from-clean:
     # 60 GB of HDD are available
     - do
 
-test-dev:
-  stage: test
+check-dev:
+  stage: check
   script:
     - . .ci/pull-gitlab.sh sagemath-dev
-    - sh .ci/test-dev.sh "$DOCKER_IMAGE"
+    - sh .ci/check-dev.sh "$DOCKER_IMAGE"
 
-test-cli:
-  stage: test
+check-cli:
+  stage: check
   script:
     - . .ci/pull-gitlab.sh sagemath
-    - sh .ci/test-cli.sh "$DOCKER_IMAGE"
+    - sh .ci/check-cli.sh "$DOCKER_IMAGE"
 
-test-jupyter:
-  stage: test
+check-jupyter:
+  stage: check
   script:
     # Force usage of docker-in-docker (and don't start docker on a bind-mounted
     # /var/run/docker.sock set through a private GitLab CI variable) so that
@@ -141,7 +142,7 @@ test-jupyter:
     - apk update
     - apk add wget
     - . .ci/pull-gitlab.sh sagemath
-    - sh .ci/test-jupyter.sh "$DOCKER_IMAGE" docker
+    - sh .ci/check-jupyter.sh "$DOCKER_IMAGE" docker
 
 # Pushes the built images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
@@ -184,3 +185,20 @@ binder:
   environment:
     name: "binder/${CI_COMMIT_REF_SLUG}"
     url: "https://github.com/${SAGE_BINDER_ENV_GITHUB}/tree/${CI_COMMIT_REF_SLUG}"
+
+# Run fast doctests
+test-doctest:
+  stage: test
+  script:
+    - apk update
+    - apk add git
+    - . .ci/pull-gitlab.sh sagemath
+    - sh .ci/test-doctest.sh "$DOCKER_IMAGE" --new
+    - sh .ci/test-doctest.sh "$DOCKER_IMAGE" --short
+
+# Run doctests --long
+test-doctest-long:
+  stage: test-long
+  script:
+    - . .ci/pull-gitlab.sh sagemath
+    - sh .ci/test-doctest.sh "$DOCKER_IMAGE" --long

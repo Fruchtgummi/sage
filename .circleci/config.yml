@@ -20,53 +20,71 @@ version: 2
 jobs:
   # As https://circleci.com/docs/2.0/docker-layer-caching/ is a paid feature,
   # we do build & test & release in one step.
-  build:
+  build-check-release:
     machine: true
     steps:
-      - checkout
-      - run:
-          # The docker commands sometimes take a while to produce output
-          no_output_timeout: 30m
-          command: |
-            # CircleCI has no mechanism to hide secret variables.
-            # Therefore we roll our own to protect $SECRET_* variables.
-            . .ci/protect-secrets.sh
-            # Collect debug infos about the system we are running on
-            .ci/describe-system.sh
-            # Set MAKE and NTHREADS according to the machine we are running on
-            . .ci/setup-make-parallelity.sh
+    - checkout
+    - run:
+        command: |
+          . .circleci/before-script.sh
+          # Build docker images
+          .ci/build-docker.sh
 
-            # Set DOCKER_TAG according to the current branch/tag
-            export DOCKER_TAG=${CIRCLE_TAG:-$CIRCLE_BRANCH}
-            . .ci/update-env.sh
+          # Test that the images work
+          .ci/check-dev.sh $DOCKER_IMAGE_DEV
+          .ci/check-cli.sh $DOCKER_IMAGE_CLI
+          .ci/check-jupyter.sh $DOCKER_IMAGE_CLI localhost
 
-            # Select ARTIFACT_BASE depending on the current branch/tag
-            case $DOCKER_TAG in
-            "develop" | "latest")
-              export ARTIFACT_BASE=source-clean
-              ;;
-            *)
-              # Select sagemath/sagemath-dev:develop as the ARTIFACT_BASE
-              # unless the user has explicitly selected a differnt one as a
-              # CircleCI environment variable.
-              export ARTIFACT_BASE=${ARTIFACT_BASE:-sagemath/sagemath-dev:develop}
-              ;;
-            esac
+          # Push docker images to dockerhub if a dockerhub user has been configured
+          .ci/push-dockerhub.sh sagemath-dev
+          .ci/push-dockerhub.sh sagemath
 
-            # Build docker images
-            .ci/build-docker.sh
+          # Create configuration for binder
+          export BRANCH=${CIRCLE_BRANCH}
+          export CI_URL="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}"
+          export CI_BADGE="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}.svg?style=svg"
+          .ci/build-binder.sh
 
-            # Test that the images work
-            .ci/test-dev.sh $DOCKER_IMAGE_DEV
-            .ci/test-cli.sh $DOCKER_IMAGE_CLI
-            .ci/test-jupyter.sh $DOCKER_IMAGE_CLI localhost
+  doctest-short:
+    machine: true
+    steps:
+    - checkout
+    - run:
+        command: |
+          . .circleci/before-script.sh
 
-            # Push docker images to dockerhub if a dockerhub user has been configured
-            .ci/push-dockerhub.sh sagemath-dev
-            .ci/push-dockerhub.sh sagemath
+          . .ci/pull-dockerhub.sh sagemath
 
-            # Create configuration for binder
-            export BRANCH=${CIRCLE_BRANCH}
-            export CI_URL="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}"
-            export CI_BADGE="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}.svg?style=svg"
-            .ci/build-binder.sh
+          .ci/test-doctest.sh "$DOCKER_IMAGE" --new
+          # TODO: Enable this once we have https://trac.sagemath.org/ticket/25270
+          # .ci/test-doctest.sh "$DOCKER_IMAGE" --short
+
+  doctest-long:
+    machine: true
+    steps:
+    - checkout
+    - run:
+        environment:
+          DOCTEST_PARAMETERS: "--long"
+        command: |
+          . .circleci/before-script.sh
+
+          . .ci/pull-dockerhub.sh sagemath
+
+          .ci/test-doctest.sh "$DOCKER_IMAGE" --long
+
+workflows:
+  version: 2
+  build-check-release-test:
+    jobs:
+    - build-check-release
+    - doctest-short:
+        requires:
+        - build-check-release
+    - doctest-long-approval:
+        type: approval
+        requires:
+        - doctest-short
+    - doctest-long:
+        requires:
+        - doctest-long-approval
