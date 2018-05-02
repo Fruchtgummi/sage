@@ -20,6 +20,8 @@
 
 set -ex
 
+unset DOCKER_IMAGE
+
 # Pull the built images from the dockerhub registry and give them the original
 # names they had after built.
 # We require $DOCKER_USER and $SECRET_DOCKER_PASS to be set. Otherwise we would
@@ -30,4 +32,4 @@ if [ -z "$DOCKER_USER" -o -z "$SECRET_DOCKER_PASS" ]; then
 fi
 
 export DOCKER_IMAGE="$DOCKER_USER/$1:$DOCKER_TAG"
-docker pull $DOCKER_IMAGE
+docker pull "$DOCKER_IMAGE"

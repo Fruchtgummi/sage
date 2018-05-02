@@ -30,5 +30,6 @@ if [ -z "$DOCKER_USER" -o -z "$SECRET_DOCKER_PASS" ]; then
 else
   cat "$SECRET_DOCKER_PASS" | docker login -u $DOCKER_USER --password-stdin
   export DOCKER_IMAGE=${DOCKER_USER:-sagemath}/$1:$DOCKER_TAG
-  docker push $DOCKER_IMAGE
+  docker tag "$1" "$DOCKER_IMAGE"
+  docker push "$DOCKER_IMAGE"
 fi

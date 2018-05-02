@@ -24,7 +24,6 @@ set -ex
 # names they had after built.
 # Note that "set -x" prints the $CI_BUILD_TOKEN here but GitLab removes it
 # automatically from the log output.
-docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-docker pull $CI_REGISTRY_IMAGE/$1:$DOCKER_TAG
-export DOCKER_IMAGE="${DOCKER_USER:-sagemath}/$1:$DOCKER_TAG"
-docker tag $CI_REGISTRY_IMAGE/$1:$DOCKER_TAG $DOCKER_IMAGE
+docker login -u gitlab-ci-token -p "$CI_BUILD_TOKEN" "$CI_REGISTRY"
+export DOCKER_IMAGE="$CI_REGISTRY_IMAGE/$1:$DOCKER_TAG"
+docker pull "$DOCKER_IMAGE"

@@ -40,7 +40,7 @@ docker_build --pull --target build-time-dependencies --tag build-time-dependenci
 docker_build --pull --target make-all --tag make-all .
 
 # Build the release image without build artifacts.
-docker_build --target sagemath --tag "$DOCKER_IMAGE_CLI" .
+docker_build --target sagemath --tag sagemath .
 # Build the developer image with the build artifacts intact.
 # Note: It's important to build the dev image last because it might be tagged as ARTIFACT_BASE.
-docker_build --target sagemath-dev --tag "$DOCKER_IMAGE_DEV" .
+docker_build --target sagemath-dev --tag sagemath-dev .

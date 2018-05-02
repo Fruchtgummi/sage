@@ -153,6 +153,7 @@ push-dockerhub:
     - tags
   script:
     - . .ci/pull-gitlab.sh sagemath
+    - docker tag "$DOCKER_IMAGE" sagemath
     - sh .ci/push-dockerhub.sh sagemath
 
 # Pushes the built dev images to Docker Hub if the Settings -> CI/CD -> Secret
@@ -164,6 +165,7 @@ push-dockerhub-dev:
     - develop
   script:
     - . .ci/pull-gitlab.sh sagemath-dev
+    - docker tag "$DOCKER_IMAGE" sagemath-dev
     - sh .ci/push-dockerhub.sh sagemath-dev
 
 # Create a configuration for binder to allow experimenting with the image that
