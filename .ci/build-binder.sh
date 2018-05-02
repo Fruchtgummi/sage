@@ -75,7 +75,7 @@ export AUTHOR_JSON="$(escape_json $AUTHOR_MD)"
 export COMMIT_MESSAGE="`git log -1 --format=format:%s%n%n%-b`"
 export COMMIT_MESSAGE_MD="$(escape_md $COMMIT_MESSAGE)"
 export COMMIT_MESSAGE_JSON="$(escape_json $COMMIT_MESSAGE_MD)"
-export COMMIT_TIMESTAMP=$(git log -1 --format=format:%aD)
+export COMMIT_TIMESTAMP="$(git log -1 --format=format:%aD)"
 export COMMIT_URL="${HTTP_GIT_SAGE}/$(git log -1 --format=%H)"
 export BINDER_URL="https://mybinder.org/v2/git/${HTTP_GIT_BINDER}/${BRANCH}?filepath=review.ipynb"
 
