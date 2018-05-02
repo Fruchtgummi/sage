@@ -61,18 +61,20 @@ echo "$SSH_KNOWN_HOSTS" | sed 's/\\n/\n/g' >> ~/.ssh/known_hosts
 
 # escape_md: Escape for interpolation in Markdown literal blocks by stripping out all backticks.
 escape_md() {
-    echo -n "$1" | sed 's/`//g'
+    echo -n "$*" | sed 's/`//g'
 }
 # escape_json: Escape for interpolation in JSON double quoted strings.
 escape_json() {
-    echo -nE "$1" | python -c 'import json,sys; print(json.dumps(sys.stdin.read())[2:-2])'
+    echo -nE "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read())[2:-2])'
 }
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SSH_GIT_BINDER.
-export AUTHOR_MD=$(escape_md "`git log -1 --format=format:%an`")
-export AUTHOR_JSON=$(escape_json "$AUTHOR_MD")
-export COMMIT_MESSAGE_MD=$(escape_md "`git log -1 --format=format:%s%n%n%-b`")
-export COMMIT_MESSAGE_JSON=$(escape_json "$COMMIT_MESSAGE_MD")
+export AUTHOR="`git log -1 --format=format:%an`"
+export AUTHOR_MD="$(escape_md $AUTHOR)"
+export AUTHOR_JSON="$(escape_json $AUTHOR_MD)"
+export COMMIT_MESSAGE="`git log -1 --format=format:%s%n%n%-b`"
+export COMMIT_MESSAGE_MD="$(escape_md $COMMIT_MESSAGE)"
+export COMMIT_MESSAGE_JSON="$(escape_json $COMMIT_MESSAGE_MD)"
 export COMMIT_TIMESTAMP=$(git log -1 --format=format:%aD)
 export COMMIT_URL="${HTTP_GIT_SAGE}/$(git log -1 --format=%H)"
 export BINDER_URL="https://mybinder.org/v2/git/${HTTP_GIT_BINDER}/${BRANCH}?filepath=review.ipynb"
