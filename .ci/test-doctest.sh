@@ -29,15 +29,15 @@ case "$2" in
         if [[ "x$MODIFIED_ADDED" = "x" ]]; then
             echo "No testable files have been modified/added."
         else
-            run_doctests $MODIFIED_ADDED
+            run_doctests "$1" $MODIFIED_ADDED
         fi
         ;;
     --short)
         # TODO: Upgrade this with https://trac.sagemath.org/ticket/25270
-        run_doctests --all
+        run_doctests "$1" --all
         ;;
     --long)
-        run_doctests --all
+        run_doctests "$1" --all --long
         ;;
     *)
         exit 1
