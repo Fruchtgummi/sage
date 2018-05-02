@@ -30,7 +30,7 @@
 #                  http://www.gnu.org/licenses/
 # ****************************************************************************
 
-set -exo pipefail
+set -ex
 
 if [[ -z "$DOCKER_IMAGE" ]]; then
     echo "DOCKER_IMAGE is not set. The image is not available on a public registry. Cannot build binder."
