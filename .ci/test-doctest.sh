@@ -17,7 +17,9 @@
 set -ex
 
 run_doctests() {
-    docker run --entrypoint sh "$1" -c "sage -tp $@ ||
+    IMAGE="$1"
+    shift
+    docker run --entrypoint sh "$IMAGE" -c "sage -tp $@ ||
                                         sage -tp --failed $@ ||
                                         sage -tp --failed $@"
 }
