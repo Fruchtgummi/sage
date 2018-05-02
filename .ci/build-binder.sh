@@ -53,6 +53,12 @@ cat "$SECRET_SSH_GIT_BINDER_KEY" | sed 's/\\n/\n/g' > ~/.ssh/id_rsa
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/id_rsa
 
+# Setup known_hosts to be able to git push without "Host key verification
+# failed" later. (Some default hosts are configured in .ci/known_hosts, you may
+# add more in $SSH_KNOWN_HOSTS through CI variables.
+cat .ci/known_hosts/* >> ~/.ssh/known_hosts
+echo "$SSH_KNOWN_HOSTS" | sed 's/\\n/\n/g' >> ~/.ssh/known_hosts
+
 # escape_md: Escape for interpolation in Markdown literal blocks by stripping out all backticks.
 escape_md() {
     echo -n "$1" | sed 's/`//g'

@@ -176,7 +176,6 @@ binder:
   script:
     - apk update
     - apk add gettext git openssh python
-    - mkdir -p ~/.ssh && cp .ci/known_hosts.github ~/.ssh/known_hosts
     - export BRANCH=${CI_COMMIT_REF_SLUG}
     - export CI_URL="${CI_PROJECT_URL}/commits/${CI_COMMIT_REF_NAME}"
     - export CI_BADGE="${CI_PROJECT_URL}/badges/${CI_COMMIT_REF_NAME}/pipeline.svg"
