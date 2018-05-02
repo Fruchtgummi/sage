@@ -172,6 +172,9 @@ push-dockerhub-dev:
 # we have just built.
 binder:
   stage: release
+  variables:
+    SSH_GIT_BINDER: git@gitlab.com:sagemath/dev/generated/sage-binder.git
+    BINDER_REPOSITORY: sagemath/dev/generated/sage-binder
   only:
     - branches
     - tags

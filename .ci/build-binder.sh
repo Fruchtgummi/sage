@@ -86,6 +86,7 @@ for template in *;do
     mv "$template" "${template}.tmpl"
     envsubst < "${template}.tmpl" > "$template"
     rm -f "${template}.tmpl"
+    cat "$template"
     git add "$template"
 done
 # Verify that the notebook is valid JSON
