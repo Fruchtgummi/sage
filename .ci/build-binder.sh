@@ -65,7 +65,7 @@ escape_md() {
 }
 # escape_json: Escape for interpolation in JSON double quoted strings.
 escape_json() {
-    echo -nE "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read())[2:-2])'
+    echo -n "$*" | python -c 'import json,sys; print(json.dumps(sys.stdin.read())[1:-1])'
 }
 # Collect some metadata to include in the home page of the Jupyter notebook and
 # also in the README of the branch on SSH_GIT_BINDER.
