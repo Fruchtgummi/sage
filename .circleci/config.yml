@@ -37,7 +37,7 @@ jobs:
 
           # Push docker images to dockerhub if a dockerhub user has been configured
           .ci/push-dockerhub.sh sagemath-dev
-          .ci/push-dockerhub.sh sagemath
+          . .ci/push-dockerhub.sh sagemath
 
           # Create configuration for binder
           export BRANCH=${CIRCLE_BRANCH}

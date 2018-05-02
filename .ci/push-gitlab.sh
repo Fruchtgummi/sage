@@ -5,6 +5,8 @@
 # Docker Hub.)
 # This script expects a single parameter, the base name of the docker image
 # such as sagemath or sagemath-dev.
+# If you source this script, it sets $DOCKER_IMAGE to the name of the pushed
+# image.
 
 # ****************************************************************************
 #       Copyright (C) 2018 Julian Rüth <julian.rueth@fsfe.org>
@@ -22,4 +24,5 @@ set -ex
 # automatically from the log output.
 docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
 docker tag ${DOCKER_USER:-sagemath}/$1:$DOCKER_TAG $CI_REGISTRY_IMAGE/$1:$DOCKER_TAG
-docker push $CI_REGISTRY_IMAGE/$1:$DOCKER_TAG
+export DOCKER_IMAGE=$CI_REGISTRY_IMAGE/$1:$DOCKER_TAG
+docker push $DOCKER_IMAGE
