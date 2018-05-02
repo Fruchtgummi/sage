@@ -25,7 +25,7 @@ run_doctests() {
 case "$2" in
     --new)
         LATEST_RELEASE=`git log --author release@sagemath.org -1 --format=%H`
-        MODIFIED_ADDED=`git diff --diff-filter=MC --name-only "$LATEST_RELEASE" | grep -E '*.(py|pyx|rst)'`
+        MODIFIED_ADDED=`git diff --diff-filter=MC --name-only "$LATEST_RELEASE" | grep -E '.*\.(py|pyx|rst)$'`
         if [[ "x$MODIFIED_ADDED" = "x" ]]; then
             echo "No testable files have been modified/added."
         else
