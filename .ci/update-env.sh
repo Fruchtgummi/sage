@@ -21,5 +21,9 @@ set -ex
 # maximum of 128 characters."
 export DOCKER_TAG=`echo $DOCKER_TAG | tr -d '[:space:]' | tr -c '[:alnum:]_.-' '-' | sed 's/^[-.]*//' | cut -c1-128`
 
-[[ -z "$DOCKER_TAG" ]] && export DOCKER_TAG=none
-[[ "$DOCKER_TAG" = "master" ]] && export DOCKER_TAG=latest
+if [[ -z "$DOCKER_TAG" ]]; then
+    export DOCKER_TAG=none
+fi
+if [[ "$DOCKER_TAG" = "master" ]]; then
+    export DOCKER_TAG=latest
+fi
