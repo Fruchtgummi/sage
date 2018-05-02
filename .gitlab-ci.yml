@@ -180,6 +180,7 @@ binder:
     - export BRANCH=${CI_COMMIT_REF_SLUG}
     - export CI_URL="${CI_PROJECT_URL}/commits/${CI_COMMIT_REF_NAME}"
     - export CI_BADGE="${CI_PROJECT_URL}/badges/${CI_COMMIT_REF_NAME}/pipeline.svg"
+    - export HTTP_GIT_SAGE="{CI_PROJECT_URL}/commit"
     - . .ci/pull-gitlab.sh sagemath
     - sh .ci/build-binder.sh
   environment:
