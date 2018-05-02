@@ -94,3 +94,5 @@ git -c user.name=sage.binder -c user.email=sage.binder@build.invalid commit -m "
 unset SSH_AUTH_SOCK
 unset SSH_ASKPASS
 git push --force "${SSH_GIT_BINDER}" "HEAD:${BRANCH}"
+
+echo "Your binder setup has been created. You can try out the code on this branch by going to ${BINDER_URL}"
