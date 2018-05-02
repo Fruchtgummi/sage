@@ -147,7 +147,7 @@ check-jupyter:
 # Pushes the built images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
 push-dockerhub:
-  stage: upload
+  stage: release
   only:
     - branches
     - tags
@@ -158,7 +158,7 @@ push-dockerhub:
 # Pushes the built dev images to Docker Hub if the Settings -> CI/CD -> Secret
 # variables DOCKER_USER and SECRET_DOCKER_PASS have been set up.
 push-dockerhub-dev:
-  stage: upload
+  stage: release
   only:
     - master
     - develop
@@ -169,13 +169,13 @@ push-dockerhub-dev:
 # Create a configuration for binder to allow experimenting with the image that
 # we have just built.
 binder:
-  stage: review
+  stage: release
   only:
     - branches
     - tags
   script:
     - apk update
-    - apk add gettext git openssh
+    - apk add gettext git openssh python
     - mkdir -p ~/.ssh && cp .ci/known_hosts.github ~/.ssh/known_hosts
     - export BRANCH=${CI_COMMIT_REF_SLUG}
     - export CI_URL="${CI_PROJECT_URL}/commits/${CI_COMMIT_REF_NAME}"

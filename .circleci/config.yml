@@ -40,6 +40,7 @@ jobs:
           . .ci/push-dockerhub.sh sagemath
 
           # Create configuration for binder
+          pyenv local 2.7.12
           export BRANCH=${CIRCLE_BRANCH}
           export CI_URL="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}"
           export CI_BADGE="https://circleci.com/gh/${SAGE_GITHUB}/tree/${CIRCLE_BRANCH}.svg?style=svg"
