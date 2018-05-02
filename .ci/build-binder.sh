@@ -37,7 +37,7 @@ if [[ -z "$DOCKER_IMAGE" ]]; then
     exit 0
 fi
 
-if [[ -z "$SECRET_GIT_BINDER_KEY" ]]; then
+if [[ -z "$SECRET_SSH_GIT_BINDER_KEY" ]]; then
     echo "No deployment key for git configured. Not pushing binder configuration."
     exit 0
 fi
