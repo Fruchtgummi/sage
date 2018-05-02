@@ -19,6 +19,8 @@
 
 set -ex
 
+unset DOCKER_IMAGE
+
 [ -z "$DOCKER_TAG" ] && (echo "Can not push untagged build."; exit 0)
 
 # Push the built images to the docker hub (and fail silently if
